@@ -1,0 +1,512 @@
+[
+  {
+    "alias": [
+      "需求跟踪",
+      "Issue Tracker",
+      "项目管理工具"
+    ],
+    "category": "engineering",
+    "id": "eng-linear-jira",
+    "name": "Linear/Jira：需求的任务看板",
+    "principle": {
+      "detail": "这类工具的学名叫 Issue Tracker（问题跟踪器），核心思想只有一句：把“要做的事”变成一张有状态的卡片。\n\n每张卡片都有标题、描述、负责人、优先级、截止日期，更重要的是“状态机”：待办 → 进行中 → 待验收 → 已完成。状态流转留下完整时间线，谁什么时候接手、为什么延期、最终怎么解决的，全都可查。产品经理提的“登录页加个记住我”，从提出、评审、排期、开发、测试到上线，经历的每一步都在卡片上留痕。\n\nJira 是老牌霸主，功能极重：自定义工作流、审批流、燃尽图，大公司爱它；代价是配置复杂，新人要学一阵。Linear 是新锐，哲学是“快”：键盘操作行云流水、界面干净，初创团队爱它。选哪个不重要，重要的是团队养成“事事有卡、卡卡有主”的习惯——口头说的需求会丢，聊天记录会沉，只有卡片是团队的共同记忆。",
+      "steps": [
+        "产品经理创建一个需求卡片",
+        "写清背景、验收标准和优先级",
+        "需求进入迭代，分配给开发",
+        "开发认领，关联代码分支",
+        "测试按验收标准逐条验证",
+        "验证通过，上线并关闭卡片"
+      ],
+      "summary": "把每件事变成一张有状态的卡片，需求从提出到上线的全过程都在卡片上留痕、可追溯。"
+    },
+    "scene": "产品经理在群里说：“登录页加个记住我，下版本上。”两周后功能上线了。这中间发生了什么？谁排的期、谁开发的、测了哪几轮、为什么延期两天——答案不在聊天记录里，而在一张叫 issue 的卡片上。Linear 和 Jira 就是管这些卡片的工具。",
+    "sources": [],
+    "tagline": "一个需求从出生到上线的旅行记录",
+    "guide": {
+      "code": null,
+      "options": [
+        {
+          "name": "先看懂三列看板",
+          "desc": "待办 → 进行中 → 已完成。所有工作都在这三列里流动，一眼看清团队在忙什么、卡在哪。",
+          "when": "你刚被拉进项目，先看板再看群"
+        },
+        {
+          "name": "一张卡只讲一件事",
+          "desc": "标题说清“做什么”，描述写清“为什么”和“做到什么程度算完”。一卡多事等于没卡。",
+          "when": "建卡时，标题如果一句话说不清，说明事拆得不够细"
+        },
+        {
+          "name": "状态随手更新",
+          "desc": "开工拖到“进行中”，做完拖到“待验收”。看板是活的，状态不更新，看板就是死的。",
+          "when": "每天下班前花 30 秒更新，这是团队的“心跳”"
+        }
+      ],
+      "pitfalls": [
+        "需求只写一句话：没有验收标准，开发靠猜，上线靠吵",
+        "建完卡没人更新状态：看板永远“进行中”，等于没有看板",
+        "把聊天记录当需求文档：三天后没人找得到结论，扯皮无据",
+        "鸡毛蒜皮都建卡：重要需求被淹没，建卡也要分级"
+      ],
+      "steps": [
+        "接到任务先建卡：标题说清“做什么”，别写“做个登录”这种谜语",
+        "描述里写清背景、验收标准、优先级——这是以后扯皮的依据",
+        "开工了，把卡拖到“进行中”，指定负责人和截止日",
+        "开发时关联代码分支，合并后状态自动流转",
+        "做完拖到“待验收”，按验收标准逐条验",
+        "验证通过，关闭卡片——它成了团队可检索的记忆"
+      ],
+      "heading": "🙋 我该怎么用它",
+      "en": "HANDS-ON",
+      "short": "使用",
+      "num": "用"
+    }
+  },
+  {
+    "id": "eng-tdd",
+    "name": "TDD：先写测试再写代码",
+    "alias": [
+      "测试驱动开发",
+      "Test-Driven Development",
+      "红绿重构"
+    ],
+    "category": "engineering",
+    "tagline": "先写考卷，再写答案",
+    "scene": "你接了个需求：给订单系统加“满 200 减 20”。老手先埋头写代码再补测试；TDD 反过来：先写测试——“满 200 应减 20”，运行失败（功能还没写）；再写刚好通过的代码；最后重构。循环往复，功能长出来了，测试网也织好了。",
+    "principle": {
+      "summary": "红（写失败的测试）→ 绿（写最少代码让测试通过）→ 重构（保持测试通过下优化），小步循环逼出清晰的接口设计。",
+      "steps": [
+        "红：写一个测试，描述期望行为",
+        "运行测试，确认它是失败的",
+        "绿：写刚好能通过的最少代码",
+        "运行测试，确认全部通过",
+        "重构：消除重复，保持测试通过",
+        "循环：下一个小功能重复以上"
+      ],
+      "detail": "TDD（Kent Beck 推广）的反直觉之处在于：测试不是目的，设计才是。先写测试逼你在动手前想清楚三件事：这个函数的输入输出长什么样？边界情况有哪些？名字怎么起才合理？——这些恰恰是“先写代码”时最容易糊弄过去的。\n\n“红-绿-重构”是它的心跳：红，写一个注定失败的测试（功能还没实现）；绿，用最笨、最少的代码让它变绿（先求对，再求好）；重构，在测试网的保护下放心地消除重复、优化结构。因为每一步都有测试兜底，重构不再是“改出 bug 的勇敢者的游戏”。\n\n适用场景很明确：逻辑复杂、边界多的核心代码（计费、优惠计算、解析器），测试即文档，新人看测试就知道这函数该干嘛。不适用场景也明确：探索中的 UI、需求一天三变的原型——测试写得比代码还快，纯属内耗。最大的误区是把 TDD 等同于“覆盖率 100%”：覆盖率是副产品，为凑数字而写的测试，本身就是一种浪费。"
+    },
+    "sources": [],
+    "guide": {
+      "options": [
+        {
+          "name": "pytest（Python）",
+          "desc": "断言即测试，写起来最接近自然语言",
+          "when": "Python 项目，TDD 入门首选"
+        },
+        {
+          "name": "Jest / Vitest（JS）",
+          "desc": "前端生态的测试运行器，开箱即用",
+          "when": "前端/Node 项目，TDD 或组件测试"
+        },
+        {
+          "name": "JUnit / Go testing",
+          "desc": "各语言标准测试框架",
+          "when": "Java/Go 等后端项目的单元测试"
+        }
+      ],
+      "steps": [
+        "挑一个最小的功能点，明确它的输入输出",
+        "先写测试：只描述期望，不写实现",
+        "运行确认失败（红），避免测试本身是错的",
+        "写最少代码让测试通过（绿）",
+        "重构实现，测试保持全绿",
+        "提交：测试和实现一起进仓库"
+      ],
+      "code": {
+        "lang": "python",
+        "label": "TDD 三步走：满减优惠 · 示意",
+        "code": "# 1. 红：先写测试（功能还没实现，注定失败）\ndef test_discount():\n    assert calc_price(200) == 180  # 满 200 减 20\n    assert calc_price(199) == 199  # 不满不减\n\n# 2. 绿：写刚好通过的最少代码\ndef calc_price(amount):\n    return amount - 20 if amount >= 200 else amount\n\n# 3. 重构：在测试保护下优化（比如抽出常量、支持多档）\n# 每次改完跑一遍测试，全绿才算完\n# pytest test_discount.py"
+      },
+      "pitfalls": [
+        "为凑覆盖率而写测试：测的全是无意义的 getter/setter",
+        "测试锁死实现细节：重构内部写法就全红，测试比代码还脆弱",
+        "在需求一天三变的原型期硬套 TDD，测试重写成本超过收益",
+        "只写单元测试不写集成测试：每个零件都对，组装起来是错的"
+      ],
+      "heading": "🛠️ 开发者：应该如何接入",
+      "en": "INTEGRATION",
+      "short": "接入",
+      "num": "接"
+    }
+  },
+  {
+    "id": "eng-adr",
+    "name": "ADR：给技术选型留的字条",
+    "alias": [
+      "架构决策记录",
+      "Architecture Decision Record"
+    ],
+    "category": "engineering",
+    "tagline": "给未来的自己留一张纸条",
+    "scene": "半年后新同事问：“为啥缓存用 Redis 不用 Memcached？”会议室一片沉默——当初记得“选了 A”，但没人记得“为什么没选 B”。ADR 就是回答这种问题的纸条：决策是什么、为什么、放弃了什么，一页写清。",
+    "principle": {
+      "summary": "把重要的技术选型写成一页标准化文档（背景/决策/备选/后果），和代码一起版本管理，对抗团队的“决策失忆症”。",
+      "steps": [
+        "遇到重要技术选型或架构取舍",
+        "写 ADR：背景、决策、备选方案、后果",
+        "团队评审，记录不同意见",
+        "合并进仓库 docs/adr 目录",
+        "后人查代码时顺手看到决策上下文",
+        "决策变更时更新状态，不删历史"
+      ],
+      "detail": "ADR（Michael Nygard 在《架构之美》中推广）解决的是“决策失忆症”：代码告诉你“是什么”，注释告诉你“怎么做”，但“为什么是这样而不是那样”——这个最有价值的信息，默认是丢失的。三个月后没人记得当初为什么放弃方案 B，于是有人“优化”回了 B，踩了当年已经踩过的坑。\n\n一份 ADR 很薄，固定结构：标题、状态（提议/已采纳/已废弃）、背景（在什么约束下做决定）、决策（选了什么）、备选方案（考虑过什么、为什么没选——这是全文最有价值的部分）、后果（接受什么代价）。\n\n存放位置是关键设计：放在代码仓库的 docs/adr/ 下，和代码一起做版本管理。决策变了怎么办？不删旧 ADR，把状态标成“已废弃”，再写一份新的——历史决策链本身就是财富。什么时候该写？经验法则：这个决定如果半年后有人问“为啥”，而你答不上来，就值得写。选数据库、选框架、拆服务边界要写；变量名怎么起，不用写。"
+    },
+    "sources": [],
+    "guide": {
+      "options": [
+        {
+          "name": "手写 Markdown",
+          "desc": "零依赖，一个模板走天下",
+          "when": "小团队，ADR 数量不多"
+        },
+        {
+          "name": "adr-tools",
+          "desc": "命令行脚手架，自动编号和建模板",
+          "when": "ADR 写得多，想规范化管理"
+        },
+        {
+          "name": "Log4brains",
+          "desc": "把 ADR 渲染成可浏览的知识库网站",
+          "when": "ADR 成规模，想给全员查阅"
+        }
+      ],
+      "steps": [
+        "在仓库建 docs/adr 目录，定一个 Markdown 模板",
+        "编号规则：0001-xxx.md 递增，标题说清决策",
+        "按模板写：背景、决策、备选、后果四段",
+        "PR 评审 ADR，和代码评审同等对待",
+        "合并后状态标为“已采纳”，后续变更只追加不删除"
+      ],
+      "code": {
+        "lang": "markdown",
+        "label": "一份 ADR 的标准模板 · 示意",
+        "code": "# ADR-0007：缓存选型用 Redis 而非 Memcached\n\n状态：已采纳（2026-10-07）\n\n## 背景\n订单服务需要缓存热点商品，QPS 约 2 万，要求支持数据结构\n和持久化。\n\n## 决策\n选用 Redis Cluster。\n\n## 备选方案\n- Memcached：更快更简单，但只支持 KV，不支持排行榜用的\n  Sorted Set，且无持久化，重启即失忆。\n- 自研本地缓存：零网络开销，但多实例数据不一致。\n\n## 后果\n接受运维复杂度上升；获得数据结构与持久化能力；\n若未来 QPS 超 10 万，需重新评估分片策略。"
+      },
+      "pitfalls": [
+        "只写“选了 A”，不写“为什么没选 B”：后人依然会问",
+        "存在个人云文档里：团队看不到，等于没写",
+        "决策变了不更新状态：新旧 ADR 打架，后人无所适从",
+        "什么都写 ADR：变量命名也走评审，团队会被流程拖死"
+      ],
+      "heading": "🛠️ 团队该如何落地 ADR",
+      "en": "INTEGRATION",
+      "short": "接入",
+      "num": "接"
+    }
+  },
+  {
+    "id": "eng-wiki",
+    "name": "Wiki（团队知识库）",
+    "alias": [
+      "团队知识库",
+      "Knowledge Base"
+    ],
+    "category": "engineering",
+    "tagline": "团队的大脑外挂",
+    "scene": "新人入职第一天，mentor 甩来一个链接：“先看这个 wiki，把环境搭起来。”里面写着：代码在哪、分支怎么命名、测试环境地址、发布流程、常见报错怎么解。没有这个 wiki，他得把每个人都问一遍，而每个人都只记得一部分。",
+    "principle": {
+      "summary": "把散落在聊天记录和个人脑中的经验，沉淀成人人可编辑、按场景组织的活文档，让知识不再随人员流动而流失。",
+      "steps": [
+        "有人踩坑，解决问题",
+        "顺手把过程和结论写下来",
+        "沉淀到 wiki 的对应场景下",
+        "后人遇到同样问题，直接搜索",
+        "不用重复问人，知识完成传递",
+        "定期打扫过期文档，保持新鲜"
+      ],
+      "detail": "Wiki 和“文档”有微妙的区别：文档常常是写给领导看的、写完就死的；wiki 是活的——人人可编辑、门槛低、按“场景”组织（“新人 onboarding”“发布流程”“线上事故复盘”），而不是按部门。它解决的核心问题是“知识随人走”：老员工离职带走的不只是代码能力，还有“那个报错重启一下就好”“发布前要先合这个分支”这类隐性知识。\n\n好的 wiki 有三个特征：第一，有清晰的入口页——新人顺着“第一天/第一周”清单走，不迷路；第二，按“我要做什么”组织，而不是“我们有什么”，找得到才有价值；第三，有人打扫——指定 owner 定期归档过期内容，否则 wiki 会变成“过期信息的坟场”，大家搜到错的还不如不搜。\n\n工具不重要（Notion、语雀、Confluence、Outline 都行），重要的是“写下来的习惯”：解决一个线上问题，顺手记三行；回答新人一个问题，顺手沉淀成一篇。团队的知识复利，就是这样一页一页攒出来的。"
+    },
+    "sources": [],
+    "guide": {
+      "options": [
+        {
+          "name": "先找两个入口：新人指南和常用地址",
+          "desc": "好的 wiki 都有“第一天清单”式的入口页，顺着走不迷路。别一上来就全文搜索。",
+          "when": "入职第一天，先看入口页再看别的"
+        },
+        {
+          "name": "用搜索，别用翻",
+          "desc": "wiki 是按场景组织的，直接搜“发布流程”“测试环境”，比一层层点目录快十倍。",
+          "when": "你知道要找什么，但不知道在哪"
+        },
+        {
+          "name": "看到过期内容顺手改",
+          "desc": "wiki 是活的，人人可编辑。你改的那一行，可能救了下一个新人两小时。",
+          "when": "你发现文档里的步骤已经对不上了"
+        }
+      ],
+      "steps": [
+        "入职先打开 wiki，顺着“新人第一天/第一周”清单走：代码在哪、环境怎么搭",
+        "遇到问题先搜 wiki：这个报错有没有人记过",
+        "搜到了照着做，省得把每个人问一遍",
+        "搜不到再问人，问完把答案补回 wiki",
+        "定期看看自己负责的那块，过时了就更新"
+      ],
+      "code": null,
+      "pitfalls": [
+        "搜到过期文档按错步骤做：比没有文档更坑，动手前先看更新时间",
+        "只看不写：知识永远只进不出，wiki 慢慢变成“别人的”wiki",
+        "把 wiki 当网盘：堆文件不写说明，三个月后没人知道那是啥",
+        "入口页缺失：新人进来依然迷路，入口页是 wiki 的门面"
+      ],
+      "heading": "🙋 我该怎么用它",
+      "en": "HANDS-ON",
+      "short": "使用",
+      "num": "用"
+    }
+  },
+  {
+    "id": "eng-npm-nodejs",
+    "name": "npm / Node.js",
+    "alias": [
+      "Node",
+      "包管理器",
+      "package.json"
+    ],
+    "category": "engineering",
+    "tagline": "让 JS 走出浏览器的两个人",
+    "scene": "你想写个小工具批量改文件名，敲下 npm install，几秒钟后依赖装好，工具跑起来了。十几年前不可想象：JS 只能活在浏览器，想复用代码只能复制粘贴。Node.js 和 npm 联手终结了那个时代。",
+    "principle": {
+      "summary": "Node.js 把 V8 引擎搬出浏览器，让 JS 能读写文件、开服务；npm 是它的应用商店，一行命令装走全世界开源代码。",
+      "steps": [
+        "2009 年：Node.js 发布",
+        "V8 引擎 + 事件循环 + 系统 API",
+        "JS 第一次能读写文件、监听端口",
+        "开源包爆发式增长，复用成刚需",
+        "npm 诞生：统一的包仓库 + 安装命令",
+        "package.json 成为项目的身份证"
+      ],
+      "detail": "Node.js 的本质是“换了宿主的 JS”：浏览器里的 JS 能操作 DOM 但碰不到文件系统；Node.js 把 Chrome 的 V8 引擎抽出来，配上事件循环（event loop，一种“单线程处理高并发”的模型）和文件、网络等系统 API，JS 从此能写服务端、写脚本、写工具。\n\n但语言能跑只是第一步。很快大家发现：每个项目都要处理日期、发 HTTP 请求、解析 Excel，重复造轮子太蠢。npm（Node Package Manager）就是答案：一个中央仓库 + 一条安装命令，`npm install dayjs`，全世界的开源代码任你取用。今天 npm 上有数百万个包，前端工程化的地基。\n\npackage.json 是每个 Node 项目的“身份证”：name/version 标识身份，scripts 把常用命令起别名（`npm run dev`），dependencies/devDependencies 记录依赖及版本。配合 lock 文件（package-lock.json），保证“你装的和我装的是同一套版本”——终结了“在我电脑上是好的”这句经典甩锅。"
+    },
+    "sources": [
+      {
+        "title": "npm 官方文档：package.json",
+        "url": "https://docs.npmjs.com/cli/v11/configuring-npm/package-json"
+      }
+    ],
+    "guide": {
+      "options": [
+        {
+          "name": "npm",
+          "desc": "Node 官方自带，最通用",
+          "when": "默认选择，兼容性最好"
+        },
+        {
+          "name": "pnpm",
+          "desc": "硬链接共享依赖，又快又省磁盘",
+          "when": "多项目、多仓库，node_modules 爆炸时"
+        },
+        {
+          "name": "yarn",
+          "desc": "老牌替代品，berry 版特性激进",
+          "when": "历史项目沿用，或喜欢它的新特性"
+        }
+      ],
+      "steps": [
+        "官网装 LTS 版 Node.js，自带 npm",
+        "项目根目录 npm init，一路回车生成 package.json",
+        "npm install <包名> 装依赖，--save-dev 装开发依赖",
+        "把常用命令写进 scripts，一句 npm run 启动",
+        "提交代码时带上 lock 文件，不提交 node_modules"
+      ],
+      "code": {
+        "lang": "json",
+        "label": "package.json：项目的身份证 · 示意",
+        "code": "{\n  \"name\": \"my-tool\",\n  \"version\": \"1.0.0\",\n  \"scripts\": {\n    \"dev\": \"node index.js\",     // npm run dev 启动\n    \"test\": \"node --test\"       // npm test 跑测试\n  },\n  \"dependencies\": {\n    \"dayjs\": \"^2.0.0\"           // 运行时需要：日期处理\n  },\n  \"devDependencies\": {\n    \"eslint\": \"^9.0.0\"          // 只有开发时需要：代码检查\n  }\n}\n// npm install 后，以上依赖全部自动装进 node_modules"
+      },
+      "pitfalls": [
+        "把 node_modules 提交到 git：仓库爆炸，队友想打人",
+        "dependencies 和 devDependencies 分不清：生产环境装了一堆测试工具",
+        "不提交 lock 文件：每个人装的版本不一样，“在我电脑上是好的”",
+        "全局安装（-g）一堆包：换电脑就抓瞎，项目依赖请一律本地装"
+      ],
+      "heading": "🛠️ 开发者：应该如何接入",
+      "en": "INTEGRATION",
+      "short": "接入",
+      "num": "接"
+    }
+  },
+  {
+    "id": "eng-tauri-electron",
+    "name": "Tauri/Electron：用网页技术做桌面 App",
+    "alias": [
+      "桌面应用开发",
+      "跨端桌面"
+    ],
+    "category": "engineering",
+    "tagline": "用网页技术，做桌面应用",
+    "scene": "VS Code 界面像网页，却能读写本地文件——它是 Web 技术做的桌面应用。而 1Password 安装包只有十几 MB。同样“网页做桌面”，一个走 Electron，一个走 Tauri，体积差出一个数量级。",
+    "principle": {
+      "summary": "Electron 是“自带整个 Chromium 浏览器”：体验一致但包大；Tauri 是“借用系统自带的浏览器内核”：包小但依赖系统环境。",
+      "steps": [
+        "想复用 Web 技术栈开发桌面应用",
+        "Electron：打包整个浏览器",
+        "前端跑在自带浏览器里，体验处处一致",
+        "代价：每个应用都背着上百 MB 的浏览器",
+        "Tauri：改用系统自带的 WebView 渲染",
+        "Rust 写后端，安装包只剩几 MB"
+      ],
+      "detail": "Electron 的思路是“大力出奇迹”：把 Chromium（渲染网页）和 Node.js（读写文件、调系统 API）打包进每一个应用。前端开发者用熟悉的 HTML/CSS/JS 就能做出 VS Code、Slack、Discord 这样的桌面软件，且 Windows/macOS/Linux 渲染完全一致。但代价是每个应用都自带一个浏览器：安装包动辄上百 MB，内存占用也高。\n\nTauri 走了另一条路：不打包浏览器，直接调用操作系统自带的网页渲染内核（Windows 的 WebView2、macOS 的 WebKit），后端用 Rust 写（替代 Node.js 的角色，负责文件、系统调用）。1Password 8 就是这么做的，安装包只有十几 MB，内存占用也小一个量级。\n\nTrade-off 很清晰：Electron 生态成熟、行为一致，适合复杂应用和快速交付；Tauri 轻量、安全模型更严格（默认能力受限），适合对体积敏感的新项目，代价是 Rust 学习成本，以及不同系统 WebView 版本差异可能带来的样式小坑。没有银弹，只有取舍。"
+    },
+    "sources": [
+      {
+        "title": "Tauri vs Electron 实测对比：体积、内存与取舍",
+        "url": "https://www.gethopp.app/blog/tauri-vs-electron?ref=hopp"
+      },
+      {
+        "title": "Electron 官方文档",
+        "url": "https://www.electronjs.org/docs"
+      },
+      {
+        "title": "Tauri 官方快速开始",
+        "url": "https://tauri.app/start/"
+      }
+    ],
+    "guide": {
+      "options": [
+        {
+          "name": "Electron",
+          "desc": "打包 Chromium + Node，生态最成熟",
+          "when": "复杂桌面应用，团队是前端背景，要快速交付"
+        },
+        {
+          "name": "Tauri 2.0",
+          "desc": "系统 WebView + Rust 后端，轻量还支持移动端",
+          "when": "对体积/内存敏感，或想一套代码出桌面+手机"
+        },
+        {
+          "name": "PWA / Web 应用",
+          "desc": "干脆不做桌面端，浏览器即应用",
+          "when": "功能不需要深度系统权限时最省事"
+        }
+      ],
+      "steps": [
+        "评估：需要文件系统/托盘/全局快捷键等系统能力吗",
+        "Electron：electron-forge 脚手架起项目，前端照常用",
+        "主进程（Node）负责系统调用，渲染进程负责界面",
+        "Tauri：npm create tauri-app 起项目，学基础 Rust",
+        "Rust 端用 #[tauri::command] 暴露能力给前端调用",
+        "打包：注意签名和自动更新通道（electron-updater / tauri updater）"
+      ],
+      "code": {
+        "lang": "rust",
+        "label": "Tauri：Rust 后端暴露命令给前端 · 示意",
+        "code": "// src-tauri/src/main.rs\nuse tauri::Manager;\n\n// 一个“命令”：前端 JS 可以直接调用它\n#[tauri::command]\nfn read_config() -> String {\n    std::fs::read_to_string(\"config.json\")\n        .unwrap_or_else(|_| \"{}\".into())\n}\n\nfn main() {\n    tauri::Builder::default()\n        .invoke_handler(tauri::generate_handler![read_config])\n        .run(tauri::generate_context!())\n        .expect(\"启动失败\");\n}\n// 前端：import { invoke } from '@tauri-apps/api';\n// await invoke('read_config')"
+      },
+      "pitfalls": [
+        "Electron 不做体积优化：默认打包塞进 devDependencies，用户下载几百 MB",
+        "Tauri 直接上生产：团队没人会 Rust，出了 bug 两眼一抹黑",
+        "依赖系统 WebView：用户机器 WebView 版本太旧，样式错乱",
+        "把密钥/Token 写在前端代码里：桌面应用可被反编译，和网页一样不安全"
+      ],
+      "heading": "🛠️ 开发者：应该如何接入",
+      "en": "INTEGRATION",
+      "short": "接入",
+      "num": "接"
+    }
+  },
+  {
+    "id": "eng-github",
+    "category": "engineering",
+    "name": "GitHub：把开源项目玩明白",
+    "alias": [
+      "GitHub 用法",
+      "改后缀技巧",
+      "awesome 清单",
+      "trending 榜单"
+    ],
+    "tagline": "改后缀、找宝藏、看证书、攒星标",
+    "scene": "朋友甩来一个 GitHub 链接，说“这个开源项目超好用”。你点进去满屏代码和英文，README 看不懂，想跑起来又无从下手。其实玩转 GitHub 就四件事：换个方式看懂项目、找到更多宝藏项目、搞清代码能不能商用、给好项目点个 star。",
+    "principle": {
+      "summary": "GitHub 是全球最大的代码托管和协作平台，也是最大的开源社区；玩转它就是四件事：看懂项目、发现宝藏、合规使用、参与互动。",
+      "steps": [
+        "GitHub = 代码仓库 + 开源社区",
+        "仓库地址：github.com/作者/项目名",
+        "公开仓库的代码，任何网站都能拉取",
+        "改网址 = 换个“阅读器”打开同一份代码",
+        "LICENSE 文件决定代码能不能商用",
+        "star 是点赞，攒的是影响力"
+      ],
+      "detail": "GitHub 可以理解成程序员的“代码网盘 + 朋友圈”：代码存在上面（版本管理），大家围绕代码协作（提问题、改代码、合代码）。\n\n为什么改几个字母就能变出新功能？因为 GitHub 上的公开仓库是开放数据，任何网站都能拉取。gitdiagram、deepwiki 这些第三方服务，就是把同一份代码用不同方式“翻译”给你看：画成架构图、写成百科、压成纯文本。github.dev 是官方在线编辑器，stackblitz 是在线运行平台。所以“改后缀”不是黑客技巧，而是这些服务约定的“快捷入口”。\n\n找项目也有捷径：awesome 清单是网友整理的主题收藏夹（比如 awesome-python），trending 是 GitHub 官方的每日热门榜单，按语言和时间筛选。\n\n两个必备常识：一、每个仓库的 LICENSE 文件就是“使用说明书”，MIT 最宽松（保留署名就能商用），GPL 则要求你的衍生作品也必须开源；二、star 是 GitHub 的点赞，公开项目的 star 数是硬通货——写在简历上比“熟悉”两个字管用得多，这也是“单人涨薪最快”这个梗的由来。"
+    },
+    "guide": {
+      "heading": "🙋 我该怎么玩转它",
+      "en": "HANDS-ON",
+      "short": "使用",
+      "num": "用",
+      "options": [
+        {
+          "name": "gitdiagram.com 看架构图",
+          "desc": "把 github.com 换成 gitdiagram.com，仓库秒变可交互架构图，点模块直达文件",
+          "when": "想快速看懂一个陌生项目的结构"
+        },
+        {
+          "name": "deepwiki.com 读百科",
+          "desc": "换成 deepwiki.com，AI 把仓库写成维基百科，还能直接对话提问",
+          "when": "想系统了解项目，并且想问问题"
+        },
+        {
+          "name": "gitingest.com 转纯文本",
+          "desc": "换成 gitingest.com，整个仓库压成一份纯文本",
+          "when": "想把项目喂给 AI，让它帮你读代码"
+        },
+        {
+          "name": "github1s.com 秒看源码",
+          "desc": "换成 github1s.com，1 秒用 VS Code 界面浏览代码",
+          "when": "想像在编辑器里一样翻代码、搜文件"
+        },
+        {
+          "name": "github.dev 在线改代码",
+          "desc": "把 github.com 换成 github.dev（或在仓库页按 . 键），浏览器里直接改",
+          "when": "想小改几行代码，不想装环境"
+        },
+        {
+          "name": "stackblitz.com/github 在线运行",
+          "desc": "拼成 stackblitz.com/github/作者/项目名，浏览器里直接跑起来",
+          "when": "想不装环境就把项目跑起来看效果"
+        }
+      ],
+      "steps": [
+        "找宝藏：awesome 清单按主题淘，trending 看每日热门",
+        "看项目：先读 README，看不懂结构用 gitdiagram",
+        "问项目：deepwiki 对话提问，或 gitingest 喂给 AI",
+        "动手玩：github1s 看源码，github.dev 改代码，stackblitz 跑起来",
+        "商用前看 LICENSE：MIT 最宽松，GPL 有“传染性”",
+        "觉得好就点 star：收藏加鼓励，star 多是硬通货"
+      ],
+      "code": null,
+      "pitfalls": [
+        "改后缀只适用于公开仓库：私有仓库别贴到第三方网站",
+        "商用代码前先看 LICENSE，别默认可以随便用",
+        "别买 star、别刷 star，被发现很丢人还会被清理",
+        "trending 榜单看看就好，star 数不等于质量"
+      ]
+    },
+    "sources": [
+      {
+        "title": "GitHub Trending 官方榜单",
+        "url": "https://github.com/trending"
+      },
+      {
+        "title": "Awesome 清单总入口",
+        "url": "https://github.com/sindresorhus/awesome"
+      },
+      {
+        "title": "Choose a License：选开源许可证",
+        "url": "https://choosealicense.com/"
+      },
+      {
+        "title": "GitDiagram：把 GitHub 仓库变成可交互架构图",
+        "url": "https://blog.csdn.net/Jacket0603/article/details/153484495"
+      },
+      {
+        "title": "利用 DeepWiki 高效阅读项目源码",
+        "url": "https://juejin.cn/post/7517854096176660506"
+      },
+      {
+        "title": "Gitingest 官网",
+        "url": "https://gitingest.com/"
+      }
+    ]
+  }
+]
