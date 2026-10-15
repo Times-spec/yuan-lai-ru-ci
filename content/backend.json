@@ -1,0 +1,1420 @@
+[
+  {
+    "id": "backend-redis-cache",
+    "category": "backend",
+    "name": "Redis 缓存",
+    "alias": [
+      "内存数据库",
+      "KV 存储"
+    ],
+    "tagline": "内存里的闪电仓库，App 秒开的秘密",
+    "scene": "双11零点抢券，几十万人同时涌入，App 却依然秒开；刷短视频时点赞数、评论数瞬间更新。这些高频读写的数据并没有每次都去查硬盘里的数据库，而是放在 Redis 这台「内存仓库」里——内存读写比硬盘快上千倍，这就是大多数 App 快的原因。",
+    "principle": {
+      "summary": "把热点数据放进内存，用微秒级读写扛住数据库扛不住的高并发。",
+      "steps": [
+        "用户请求打到后端服务",
+        "先去 Redis 内存里查",
+        "命中：微秒级直接返回",
+        "没命中：查数据库",
+        "把结果写回 Redis 设过期",
+        "下次同样请求直接命中"
+      ],
+      "detail": "Redis 快，第一个原因是它把数据全放在内存里。传统数据库的数据在硬盘上，查一次要经历寻道、读盘，毫秒级起步；内存随机访问是纳秒级，差距上千倍。第二个原因是它的网络模型：单线程处理命令配合 IO 多路复用（epoll，一种「一个线程同时盯着上万个连接」的技术），避免了线程切换的开销，单机就能扛住十万级 QPS。\n\n典型用法叫「缓存旁路」：读时先查 Redis，没有再查数据库并回填；写时先更新数据库再删除缓存（而不是更新缓存，避免并发下的数据错乱）。配套的过期时间（TTL）让数据自动失效，防止内存被撑爆。\n\n但缓存有三座大山：缓存穿透（查根本不存在的数据，每次都打到数据库，用布隆过滤器或缓存空值挡）、缓存击穿（某个热点 key 突然过期，大量请求同时打穿数据库，用互斥锁让只有一个请求去重建）、缓存雪崩（大批 key 同时过期，错开过期时间加随机值）。Redis 本身不是银弹，它通过 RDB 快照和 AOF 日志做持久化，但定位依然是「快而不一定最可靠」，核心数据永远以数据库为准。"
+    },
+    "sources": [
+      {
+        "title": "Redis 官方文档",
+        "url": "https://redis.io/docs/latest/"
+      }
+    ],
+    "guide": {
+      "options": [
+        {
+          "name": "自建 Redis",
+          "desc": "开源免费，一台服务器就能跑",
+          "when": "中小项目、学习练手"
+        },
+        {
+          "name": "云 Redis（阿里云/腾讯云）",
+          "desc": "托管高可用，自动备份扩容",
+          "when": "生产环境、不想半夜被叫起来修"
+        },
+        {
+          "name": "Redis Cluster",
+          "desc": "官方分片集群，数据分散到多节点",
+          "when": "单机内存不够、要水平扩展"
+        }
+      ],
+      "steps": [
+        "选部署方式：开发用 Docker 一行拉起，生产建议云托管",
+        "确定缓存策略：哪些数据进缓存、过期时间多长",
+        "代码里实现缓存旁路：先查缓存，未命中查库回填",
+        "设置合理的 maxmemory 和淘汰策略（如 allkeys-lru）",
+        "给 Redis 设密码，绝不把 6379 端口暴露到公网",
+        "加上监控：命中率、内存使用、慢查询"
+      ],
+      "code": {
+        "lang": "python",
+        "label": "缓存旁路模式（Cache-Aside）·示意",
+        "code": "import redis, json\n\nr = redis.Redis(host=\"localhost\", port=6379, decode_responses=True)\n\ndef get_user(uid):\n    key = f\"user:{uid}\"\n    cached = r.get(key)\n    if cached:                      # 命中：直接返回\n        return json.loads(cached)\n    user = db.query(\"SELECT * FROM users WHERE id=%s\", uid)  # 未命中：查库\n    if user:\n        r.setex(key, 300, json.dumps(user))  # 回填，5 分钟过期\n    return user\n\ndef update_user(uid, data):\n    db.update(uid, data)\n    r.delete(f\"user:{uid}\")         # 写时删缓存，而非更新缓存"
+      },
+      "pitfalls": [
+        "先删缓存再更新数据库，并发下会读到旧数据——标准做法是先更新库再删缓存",
+        "key 没有统一命名规范，半年后没人知道 user:1 和 u_1 是不是同一个东西",
+        "value 存了几 MB 的大对象，一次 GET 拖慢整个 Redis（单线程会被阻塞）",
+        "忘记设过期时间，内存被撑爆后 Redis 开始按淘汰策略丢数据"
+      ],
+      "heading": "🛠️ 开发者：应该如何接入",
+      "en": "INTEGRATION",
+      "short": "接入",
+      "num": "接"
+    }
+  },
+  {
+    "id": "backend-mysql-index",
+    "category": "backend",
+    "name": "MySQL 索引",
+    "alias": [
+      "B+树索引",
+      "数据库索引"
+    ],
+    "tagline": "没有它，百万行查询要 10 秒",
+    "scene": "同样是查订单，有人一点筛选秒出结果，有人的后台转圈半天。差别往往就在索引上：加了索引的查询走「目录」定位，没加索引的只能逐行翻——一百万行数据，差距就是毫秒和十秒的区别。",
+    "principle": {
+      "summary": "用 B+ 树给数据建「有序目录」，把全表扫描变成按目录定位。",
+      "steps": [
+        "查询条件里有 WHERE 字段",
+        "优化器检查该字段有无索引",
+        "有：沿 B+ 树逐层定位",
+        "叶子节点拿到数据位置",
+        "直接读取目标行返回",
+        "无：只能逐行全表扫描"
+      ],
+      "detail": "索引的本质是「以空间换时间」的目录。InnoDB 的索引用 B+ 树实现：一种矮胖的多叉树，所有数据都存在叶子节点，且叶子节点按顺序连成链表。查数据时从根节点一层层二分定位，树高一般只有 3～4 层，意味着查上千万行数据也只需要 3～4 次磁盘 IO——而全表扫描要把每一行都读一遍。\n\n聚簇索引（一般就是主键）比较特殊：叶子节点直接存着整行数据。普通二级索引的叶子节点只存「索引列 + 主键」，查到主键后还要回聚簇索引再查一次完整行，这叫「回表」。所以 SELECT * 会比只查索引列慢一截。\n\n索引不是越多越好：每次写入数据都要同步更新所有索引，索引太多写操作会变慢，还占磁盘。经典口诀是「最左前缀」：联合索引 (a,b,c) 能服务 WHERE a=?、WHERE a=? AND b=?，但服务不了 WHERE b=?。建索引前先用 EXPLAIN 看执行计划，让数据说话。"
+    },
+    "sources": [
+      {
+        "title": "MySQL 8.0 官方手册：InnoDB 索引类型",
+        "url": "https://dev.mysql.com/doc/refman/8.0/en/innodb-index-types.html"
+      }
+    ],
+    "guide": {
+      "options": [
+        {
+          "name": "B-Tree 普通索引",
+          "desc": "最常用，适合等值和范围查询",
+          "when": "WHERE、ORDER BY、JOIN 的字段"
+        },
+        {
+          "name": "唯一索引",
+          "desc": "值不重复，自带去重约束",
+          "when": "用户名、手机号、订单号"
+        },
+        {
+          "name": "全文索引",
+          "desc": "对文本内容做分词搜索",
+          "when": "文章标题、商品描述的模糊搜索"
+        }
+      ],
+      "steps": [
+        "用慢查询日志或 EXPLAIN 找出慢 SQL",
+        "看 WHERE、JOIN、ORDER BY 里用到了哪些字段",
+        "给高频查询字段加索引，遵循最左前缀原则",
+        "上线前在测试库验证执行计划确实走了索引",
+        "定期用 EXPLAIN 复查，防止数据量变化后索引失效"
+      ],
+      "code": {
+        "lang": "sql",
+        "label": "EXPLAIN 看执行计划 + 建索引·示意",
+        "code": "-- 看看这条 SQL 到底怎么执行的\nEXPLAIN SELECT * FROM orders\nWHERE user_id = 1001 AND status = 'paid';\n\n-- 给高频查询字段加索引\nCREATE INDEX idx_user_status ON orders(user_id, status);\n\n-- 联合索引遵循最左前缀：(user_id, status)\n-- 能加速 WHERE user_id=? / WHERE user_id=? AND status=?\n-- 但加速不了只有 WHERE status=? 的查询"
+      },
+      "pitfalls": [
+        "在索引列上做函数运算（如 WHERE YEAR(created)=2024），索引直接失效",
+        "字符串字段没指定长度建索引，索引文件比数据还大",
+        "一张表建了十几个索引，写入一次要更新十几棵树，越写越慢",
+        "用 LIKE '%关键词%' 前缀模糊查询，B+ 树索引帮不上忙"
+      ],
+      "heading": "🛠️ 开发者：应该如何接入",
+      "en": "INTEGRATION",
+      "short": "接入",
+      "num": "接"
+    }
+  },
+  {
+    "id": "backend-mysql-transaction",
+    "category": "backend",
+    "name": "MySQL 事务",
+    "alias": [
+      "ACID",
+      "数据库事务"
+    ],
+    "tagline": "转账不能只扣款、不入账",
+    "scene": "银行转账时如果系统在扣款后突然断电，钱不能凭空消失，也不能凭空多出来。事务就是数据库的「后悔药」机制：把多个操作打包成一个整体，要么全部成功，要么全部撤销，绝不留下半成品——这就是 ACID 里那个 A（原子性）在保驾护航。",
+    "principle": {
+      "summary": "用 ACID 四性把一组 SQL 打包成原子操作，要么全成功，要么全回滚。",
+      "steps": [
+        "BEGIN 开启事务",
+        "执行扣款、入账等多条 SQL",
+        "全部成功：COMMIT 提交",
+        "中途出错：ROLLBACK 回滚",
+        "回滚后数据恢复原样",
+        "其他会话看不到中间状态"
+      ],
+      "detail": "事务解决的是「一组操作必须同生共死」的问题。ACID 是四个承诺：原子性（Atomicity，要么全做要么全不做）、一致性（Consistency，数据从一个合法状态到另一个合法状态）、隔离性（Isolation，并发事务互不干扰）、持久性（Durability，提交了就丢不了）。\n\n实现上靠两种日志：undo log 记录「改之前的值」，回滚时按它恢复；redo log 记录「改了什么」，即使断电重启也能把已提交的数据找回来。隔离性则靠锁和 MVCC（多版本并发控制，一种「给每个事务看到不同版本数据」的机制）实现，代价是隔离级别越高并发越差。\n\n默认的 REPEATABLE READ 能防脏读和不可重复读，但会有幻读（两次查询之间冒出新行）；SERIALIZABLE 最严格但性能最差。实战建议：事务尽量短，能 50 毫秒提交就别拖 5 秒——长事务持有锁不放，是线上死锁和慢查询的头号元凶。"
+    },
+    "sources": [
+      {
+        "title": "MySQL 8.0 官方参考手册",
+        "url": "https://dev.mysql.com/doc/refman/8.0/en/"
+      }
+    ],
+    "guide": {
+      "options": [
+        {
+          "name": "InnoDB 事务",
+          "desc": "MySQL 默认引擎，原生支持 ACID",
+          "when": "绝大多数业务表"
+        },
+        {
+          "name": "程序端事务管理",
+          "desc": "Spring @Transactional 等框架声明式事务",
+          "when": "Java 系项目，不想手写 BEGIN/COMMIT"
+        },
+        {
+          "name": "分布式事务（Seata/XA）",
+          "desc": "跨库、跨服务的事务协调",
+          "when": "微服务拆分后的强一致场景（能不用就不用）"
+        }
+      ],
+      "steps": [
+        "确认表引擎是 InnoDB（MyISAM 不支持事务）",
+        "用 BEGIN 开启事务，业务 SQL 按顺序执行",
+        "全部成功则 COMMIT，有异常则 ROLLBACK",
+        "把事务边界收敛到最小：只包必须原子的操作",
+        "避免在事务里调外部接口、发 MQ——慢且不可回滚",
+        "压测观察锁等待，设置合理的 innodb_lock_wait_timeout"
+      ],
+      "code": {
+        "lang": "sql",
+        "label": "转账事务：要么全成，要么全回滚·示意",
+        "code": "START TRANSACTION;\n\n-- 先检查余额是否充足（加锁读，防止并发超扣）\nSELECT balance FROM accounts WHERE id = 1 FOR UPDATE;\n\nUPDATE accounts SET balance = balance - 100 WHERE id = 1;\nUPDATE accounts SET balance = balance + 100 WHERE id = 2;\n\nCOMMIT;      -- 都成功：提交\n-- ROLLBACK; -- 有异常：回滚，数据恢复原样"
+      },
+      "pitfalls": [
+        "事务里调用第三方接口，接口超时导致锁持有几十秒，整个表被拖死",
+        "catch 住异常却忘了 ROLLBACK，连接归还连接池时带着未提交事务",
+        "长事务 + 大批量 UPDATE，一次锁几十万行，直接把业务打挂",
+        "误以为 MyISAM 表也有事务——它没有，回滚不了"
+      ],
+      "heading": "🛠️ 开发者：应该如何接入",
+      "en": "INTEGRATION",
+      "short": "接入",
+      "num": "接"
+    }
+  },
+  {
+    "id": "backend-docker",
+    "category": "backend",
+    "name": "Docker 容器",
+    "alias": [
+      "容器化",
+      "容器技术"
+    ],
+    "tagline": "终结「在我电脑上明明是好的」",
+    "scene": "程序在开发电脑上跑得好好的，一上服务器就报错：缺库、版本不对、路径不同。Docker 把应用连同操作系统依赖打包成镜像，哪里运行都是一模一样的环境——开发、测试、生产终于不再「各说各话」。",
+    "principle": {
+      "summary": "把应用和依赖打成镜像，容器是镜像的运行实例，一次构建、处处运行。",
+      "steps": [
+        "编写 Dockerfile 描述构建步骤",
+        "docker build 生成镜像",
+        "镜像分层存储，可复用共享",
+        "docker run 启动容器实例",
+        "容器间相互隔离、资源受限",
+        "删容器不影响镜像，随时重建"
+      ],
+      "detail": "Docker 解决的是「环境不一致」这个千古难题。传统部署靠文档和运维手工装环境，差一个库版本就可能崩；Docker 把应用代码、运行时、系统库、配置文件全部打进镜像（image），镜像是只读模板，容器（container）是它的运行实例——就像类和对象的关系。\n\n技术上靠 Linux 的两大机制：Namespace 做隔离（每个容器有独立的进程、网络、文件系统视角），Cgroups 做资源限制（这个容器最多用 2 核 4G）。和虚拟机相比，容器没有 Guest OS，启动是毫秒级，一台机器能跑几十上百个。\n\n镜像采用分层存储：每一行 Dockerfile 指令产生一层，相同的基层（如 Python 3.12）在多个镜像间共享，既省磁盘又加快拉取。多阶段构建（multi-stage build）是常用优化：编译阶段用大镜像，运行阶段只拷二进制文件，镜像体积能从 1GB 压到几十 MB。"
+    },
+    "sources": [
+      {
+        "title": "Docker 官方文档",
+        "url": "https://docs.docker.com/"
+      }
+    ],
+    "guide": {
+      "options": [
+        {
+          "name": "Docker Engine",
+          "desc": "官方容器运行时，事实标准",
+          "when": "Linux 服务器、本地开发"
+        },
+        {
+          "name": "Docker Desktop",
+          "desc": "带图形界面的桌面版",
+          "when": "Mac/Windows 开发机"
+        },
+        {
+          "name": "Podman",
+          "desc": "红帽主推的无守护进程替代品",
+          "when": "对 Docker 守护进程有安全顾虑的场景"
+        }
+      ],
+      "steps": [
+        "安装 Docker，跑通 docker run hello-world",
+        "为项目写 Dockerfile：选基础镜像、拷代码、装依赖",
+        "用 .dockerignore 排除 node_modules、.git 等无用文件",
+        "docker build -t myapp:1.0 . 构建镜像",
+        "docker run -d -p 8080:8080 myapp:1.0 启动验证",
+        "推送到镜像仓库，服务器上拉取运行"
+      ],
+      "code": {
+        "lang": "dockerfile",
+        "label": "多阶段构建 Dockerfile·示意",
+        "code": "# 多阶段构建：先编译，再用 slim 镜像运行\nFROM node:20 AS builder\nWORKDIR /app\nCOPY package*.json ./\nRUN npm ci\nCOPY . .\nRUN npm run build\n\nFROM node:20-slim\nWORKDIR /app\nCOPY --from=builder /app/dist ./dist\nCOPY --from=builder /app/node_modules ./node_modules\nEXPOSE 3000\nCMD [\"node\", \"dist/index.js\"]"
+      },
+      "pitfalls": [
+        "容器里写文件没挂卷，容器一删数据全丢——数据库容器必须挂载 volume",
+        "用 latest 标签部署，回滚时根本不知道上一个 latest 是哪个版本",
+        "Dockerfile 里每行 RUN 都产生一层，apt-get update 和 install 分开写导致缓存失效",
+        "容器内进程没处理 SIGTERM，K8s 滚动更新时请求被粗暴杀掉"
+      ],
+      "heading": "🛠️ 开发者：应该如何接入",
+      "en": "INTEGRATION",
+      "short": "接入",
+      "num": "接"
+    }
+  },
+  {
+    "id": "backend-docker-compose",
+    "category": "backend",
+    "name": "Docker Compose：一键启动整套服务",
+    "alias": [
+      "容器编排",
+      "compose"
+    ],
+    "tagline": "一条命令，拉起整个开发环境",
+    "scene": "新同事入职第一天，配环境配到怀疑人生：先装 MySQL，再装 Redis，还调 Node 版本。Docker Compose 用一个 YAML 文件声明所有服务，一条 up 命令就把数据库、缓存、应用全拉起来——环境配置从此有了「说明书」。",
+    "principle": {
+      "summary": "用 YAML 声明多容器应用的服务、网络与卷，一条命令编排启停。",
+      "steps": [
+        "编写 compose.yaml 声明服务",
+        "定义服务间的依赖与网络",
+        "挂载卷持久化数据",
+        "docker compose up 一键启动",
+        "各服务通过服务名互访",
+        "docker compose down 清理"
+      ],
+      "detail": "单个容器好管，一堆容器就乱了：Web 应用依赖 MySQL 和 Redis，启动有先后，网络要互通，数据要持久化。Compose 就是这套「多容器说明书」：一个 YAML 文件里声明每个服务用什么镜像、暴露什么端口、挂什么卷、依赖谁，Compose 按依赖顺序拉起，还自动建好内部网络——服务之间直接用服务名当主机名互相访问，不用记 IP。\n\n它和 K8s 的分工很明确：Compose 管开发和测试环境的「一键还原」，K8s 管生产的「大规模调度」。Compose 的卷（volume）解决数据持久化：容器删了重建，MySQL 的数据还在。环境变量和 .env 文件让同一份 compose 文件能在开发、测试间复用。\n\n注意 Compose 不做高可用：服务挂了它只会按 restart 策略重启本机容器，不会跨机器调度。生产环境要扩缩容、滚动更新，还是得上 K8s 或云托管服务。"
+    },
+    "sources": [
+      {
+        "title": "Docker Compose 官方文档",
+        "url": "https://docs.docker.com/compose/"
+      }
+    ],
+    "guide": {
+      "options": [
+        {
+          "name": "Docker Compose",
+          "desc": "官方编排工具，单机多容器",
+          "when": "本地开发、测试环境一键拉起"
+        },
+        {
+          "name": "Kubernetes",
+          "desc": "生产级容器编排，自动扩缩容",
+          "when": "多机器集群、高可用生产环境"
+        },
+        {
+          "name": "Podman Compose",
+          "desc": "Podman 生态的兼容实现",
+          "when": "用 Podman 不用 Docker 的团队"
+        }
+      ],
+      "steps": [
+        "在项目根目录创建 compose.yaml",
+        "声明 app、db、redis 三个服务及镜像版本",
+        "用 volumes 给数据库挂载数据卷",
+        "用 depends_on 声明启动依赖顺序",
+        "敏感配置放 .env 文件，不进版本库",
+        "docker compose up -d 启动，logs -f 看日志"
+      ],
+      "code": {
+        "lang": "yaml",
+        "label": "compose.yaml：一键拉起应用三件套·示意",
+        "code": "services:\n  app:\n    build: .\n    ports: [\"3000:3000\"]\n    depends_on: [db, redis]\n    env_file: [.env]\n  db:\n    image: mysql:8.0\n    volumes: [db-data:/var/lib/mysql]\n    environment:\n      MYSQL_ROOT_PASSWORD: ${DB_PASS}\n  redis:\n    image: redis:7\nvolumes:\n  db-data:"
+      },
+      "pitfalls": [
+        "depends_on 只保证启动顺序，不保证 MySQL 真的就绪——应用要加重试或健康检查",
+        "数据库没挂 volume，docker compose down -v 手一抖数据全没",
+        "把 .env（含密码）提交到 Git，密钥直接泄露",
+        "生产环境直接用 compose 跑，单机挂了全挂——它不是高可用方案"
+      ],
+      "heading": "🛠️ 开发者：应该如何接入",
+      "en": "INTEGRATION",
+      "short": "接入",
+      "num": "接"
+    }
+  },
+  {
+    "id": "backend-nginx-reverse-proxy",
+    "category": "backend",
+    "name": "Nginx 反向代理",
+    "alias": [
+      "反向代理",
+      "Nginx"
+    ],
+    "tagline": "所有请求，先过它这一关",
+    "scene": "你在浏览器输入网址，请求并没有直达写业务代码的那台服务器，而是先被 Nginx 接住：它负责 HTTPS 加密、把静态图片直接返回、再把动态请求转发给真正的应用。Nginx 就像公司前台——客人先到前台，再被领到对的办公室。",
+    "principle": {
+      "summary": "挡在应用服务器前面，统一处理 HTTPS、静态文件、转发与限流的流量网关。",
+      "steps": [
+        "客户端请求打到 Nginx",
+        "Nginx 完成 TLS 握手解密",
+        "静态资源直接从磁盘返回",
+        "动态请求按规则转发后端",
+        "补上真实 IP 等请求头",
+        "拿到后端响应返回客户端"
+      ],
+      "detail": "「反向」是相对「正向」代理而言的：正向代理是替客户端上网（比如梯子），反向代理是替服务端接客——客户端以为自己在和 Nginx 说话，背后真正干活的可能是 Node、Java 或 Python 服务。\n\nNginx 能扛高并发，靠的是事件驱动模型：一个 worker 进程用 epoll 同时盯着上万个连接，连接空闲时不占线程，数据来了才处理。对比传统「一个连接一个线程」的 Apache，内存占用低一个数量级，这也是它成为默认网关的原因。\n\n网关层的价值在于「后端不用重复造轮子」：HTTPS 证书只在 Nginx 上配一次（SSL 卸载），静态文件走 sendfile 零拷贝直接返回，慢请求在这里做限流和超时熔断。proxy_set_header 透传 X-Real-IP 很关键——否则后端看到的客户端 IP 全是 Nginx 自己，限流、风控都会错乱。"
+    },
+    "sources": [
+      {
+        "title": "Nginx 官方文档：反向代理指南",
+        "url": "https://docs.nginx.com/nginx/admin-guide/web-server/reverse-proxy/"
+      }
+    ],
+    "guide": {
+      "options": [
+        {
+          "name": "Nginx",
+          "desc": "C 语言编写的老牌高性能网关，资源占用极低",
+          "when": "绝大多数 Web 服务的入口网关"
+        },
+        {
+          "name": "Caddy",
+          "desc": "自动申请续期 HTTPS 证书，配置极简",
+          "when": "个人项目、小团队，不想折腾证书"
+        },
+        {
+          "name": "Traefik",
+          "desc": "云原生网关，自动发现容器服务",
+          "when": "Docker/K8s 环境，服务频繁启停"
+        }
+      ],
+      "steps": [
+        "安装 Nginx，确认能打开默认欢迎页",
+        "写 server 块监听 80/443，配好域名和证书",
+        "location / 下用 proxy_pass 转发到应用端口",
+        "加上 proxy_set_header 透传 Host 和真实 IP",
+        "静态目录用 root/alias 直接返回，加 expires 缓存头",
+        "nginx -t 检查语法，reload 平滑生效"
+      ],
+      "code": {
+        "lang": "nginx",
+        "label": "反向代理 + 静态文件配置·示意",
+        "code": "server {\n    listen 443 ssl;\n    server_name example.com;\n\n    # 静态资源：Nginx 直接返回，不打扰后端\n    location /static/ {\n        root /var/www;\n        expires 30d;\n    }\n\n    # 动态请求：转发给应用服务器\n    location / {\n        proxy_pass http://127.0.0.1:3000;\n        proxy_set_header Host $host;\n        proxy_set_header X-Real-IP $remote_addr;\n        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;\n    }\n}"
+      },
+      "pitfalls": [
+        "忘了透传 X-Real-IP，后端日志里的用户 IP 全是 127.0.0.1",
+        "proxy_pass 末尾多一个 /，转发路径拼接全错——/api/users 变成了 /users",
+        "上传大文件被 client_max_body_size 默认 1MB 拦下，报 413",
+        "后端 WebSocket 没加 Upgrade 头，连接握手失败"
+      ],
+      "heading": "🛠️ 开发者：应该如何接入",
+      "en": "INTEGRATION",
+      "short": "接入",
+      "num": "接"
+    }
+  },
+  {
+    "id": "backend-load-balancer",
+    "category": "backend",
+    "name": "负载均衡",
+    "alias": [
+      "LB",
+      "流量分发"
+    ],
+    "tagline": "一台扛不住，就上十台",
+    "scene": "春运抢票、双11零点，单台服务器再强也会被流量淹没。负载均衡就是站在前面的「交通警察」：把涌入的请求按规则分给后面十几台服务器，哪台挂了就自动摘掉——用户只感觉到快，感觉不到某台机器正在冒烟。",
+    "principle": {
+      "summary": "把流量按策略分摊到多台服务器，故障节点自动摘除，实现高可用。",
+      "steps": [
+        "请求到达负载均衡器",
+        "按策略选一台健康后端",
+        "转发请求并等待响应",
+        "定期健康检查各节点",
+        "故障节点自动摘除",
+        "节点恢复后重新加入"
+      ],
+      "detail": "负载均衡的核心就两件事：怎么分、挂了怎么办。分发策略各有性格：轮询（round-robin）简单公平，适合机器配置相近；加权轮询让高配机器多干活；最少连接把请求发给当前最闲的；一致性哈希让同一个用户的请求总落到同一台，适合有本地缓存的场景。\n\n健康检查是生命线：均衡器定期探活，连续失败几次就把节点摘掉，流量自动绕开；节点恢复后再加回来。配合 Session 保持（sticky session）或干脆无状态化设计，才能保证用户不被踢下线。\n\n实现分三层：DNS 轮询最便宜但故障切换慢；Nginx/HAProxy 在四层/七层做，灵活且可编程；云厂商的 CLB/ALB 开箱即用但按量计费。大多数团队的路径是：先用 Nginx 的 upstream 顶住，流量再大就换云负载均衡。选型时还要考虑会话保持和 TLS 卸载位置：TLS 在均衡器上卸载最省后端 CPU，但内网就是明文，金融级场景要端到端加密。"
+    },
+    "sources": [],
+    "guide": {
+      "options": [
+        {
+          "name": "Nginx upstream",
+          "desc": "免费，随手可配，支持多种策略",
+          "when": "中小流量、自建机房"
+        },
+        {
+          "name": "HAProxy",
+          "desc": "老牌四层/七层均衡器，性能极强",
+          "when": "超高并发、需要精细控制"
+        },
+        {
+          "name": "云负载均衡（CLB/ALB）",
+          "desc": "托管高可用，按量付费",
+          "when": "上云团队，不想自己运维"
+        }
+      ],
+      "steps": [
+        "准备 2 台以上配置相同的应用服务器",
+        "确保应用无状态：Session 放 Redis，不存本地",
+        "在 Nginx 里写 upstream 块列出所有后端",
+        "选策略：默认轮询，或按需加 weight/ip_hash",
+        "配健康检查，故障节点自动摘除",
+        "压测验证：kill 一台后端，业务不受影响"
+      ],
+      "code": {
+        "lang": "nginx",
+        "label": "Nginx upstream 加权轮询·示意",
+        "code": "upstream backend {\n    # 加权轮询：配置好的机器多分流量\n    server 10.0.0.1:3000 weight=3;\n    server 10.0.0.2:3000 weight=2;\n    server 10.0.0.3:3000 weight=1;\n    # ip_hash;  # 需要会话保持时打开：同一 IP 固定打到同一台\n}\n\nserver {\n    listen 80;\n    location / {\n        proxy_pass http://backend;\n        proxy_next_upstream error timeout;  # 后端挂了自动换一台重试\n    }\n}"
+      },
+      "pitfalls": [
+        "Session 存应用本地内存，用户下次被分到另一台就掉线——Session 必须外置",
+        "健康检查只测端口通不通，应用其实已经假死——要检查业务接口",
+        "后端超时没配 proxy_next_upstream，一台慢机器拖慢所有请求",
+        "文件上传落到某台机器本地磁盘，负载到别的机器就找不到文件"
+      ],
+      "heading": "🛠️ 开发者：应该如何接入",
+      "en": "INTEGRATION",
+      "short": "接入",
+      "num": "接"
+    }
+  },
+  {
+    "id": "backend-message-queue",
+    "category": "backend",
+    "name": "消息队列",
+    "alias": [
+      "MQ",
+      "RabbitMQ",
+      "Kafka"
+    ],
+    "tagline": "秒杀不崩的幕后功臣",
+    "scene": "秒杀开始的瞬间，一百万个下单请求涌进来——如果直接打数据库，数据库当场去世。消息队列像一个巨大的「蓄水池」：请求先进队列排队，后端服务再不紧不慢地一个个处理，洪峰就这样被削平了。",
+    "principle": {
+      "summary": "生产者只管往队列扔消息，消费者异步处理，削峰填谷、解耦系统。",
+      "steps": [
+        "秒杀请求瞬间涌入",
+        "请求先进入消息队列排队",
+        "立即返回「排队中」给用户",
+        "消费者按处理能力取消息",
+        "逐个扣库存、下单、通知",
+        "处理完确认，失败可重试"
+      ],
+      "detail": "消息队列做三件事：削峰、异步、解耦。削峰是把瞬时洪峰摊平到时间轴上；异步是让用户不用等慢操作（发短信、生成报表扔进队列就返回）；解耦是让上下游不用互相等待——订单服务只管发「下单成功」消息，库存、物流、通知各自订阅，谁挂了都不影响下单。\n\n代价是系统从「同步确定」变成「最终一致」：消息可能重复投递（网络超时重试），消费者必须做幂等（同一条消息处理多次结果不变）；消息也可能乱序，对顺序敏感的业务要按 key 分区。\n\n选型看场景：RabbitMQ 功能全、路由灵活，适合业务解耦；Kafka 吞吐恐怖、消息可回放，适合日志和大数据；Redis Stream 轻量，适合已经有 Redis 的小团队。云厂商的消息队列则省掉运维。消息的投递语义分三种：至多一次（可能丢）、至少一次（可能重复）、恰好一次（最难实现）。业务选型时先想清楚自己能接受哪种，再决定幂等和去重的投入。"
+    },
+    "sources": [],
+    "guide": {
+      "options": [
+        {
+          "name": "RabbitMQ",
+          "desc": "功能最全，路由、延迟队列开箱即用",
+          "when": "业务系统解耦、订单履约链路"
+        },
+        {
+          "name": "Kafka",
+          "desc": "百万级吞吐，消息可持久化回放",
+          "when": "日志收集、行为数据、大数据管道"
+        },
+        {
+          "name": "Redis Stream",
+          "desc": "轻量，复用已有 Redis",
+          "when": "小团队、不想引入新组件"
+        }
+      ],
+      "steps": [
+        "梳理链路：哪些操作可以异步（发短信、扣库存、记日志）",
+        "选型并部署 MQ，创建交换机/主题和队列",
+        "生产者发送消息，只带必要字段和业务 ID",
+        "消费者实现幂等：用业务 ID 去重",
+        "配置重试和死信队列，失败消息有地方查",
+        "监控积压量，积压告警就是扩容信号"
+      ],
+      "code": {
+        "lang": "python",
+        "label": "生产者投递 + 消费者幂等处理·示意",
+        "code": "import pika\n\nconn = pika.BlockingConnection(pika.ConnectionParameters(\"localhost\"))\nch = conn.channel()\nch.queue_declare(queue=\"order_queue\", durable=True)  # 队列持久化\n\n# 生产者：秒杀请求只管扔进队列，立刻返回\nch.basic_publish(\n    exchange=\"\", routing_key=\"order_queue\",\n    body=b'{\"order_id\": 10086}',\n    properties=pika.BasicProperties(delivery_mode=2),  # 消息持久化\n)\n\n# 消费者：按自己的节奏慢慢处理\ndef callback(ch, method, props, body):\n    create_order(body)   # 必须幂等：重复投递不产生重复订单\n    ch.basic_ack(delivery_tag=method.delivery_tag)\n\nch.basic_consume(queue=\"order_queue\", on_message_callback=callback)\nch.start_consuming()"
+      },
+      "pitfalls": [
+        "消费者没做幂等，网络抖动导致重复投递，用户被扣了两次款",
+        "消息体塞了整个订单对象，队列成了数据库——只传 ID，需要时再查",
+        "消费速度长期跟不上生产，队列积压到磁盘爆掉才发现",
+        "用 MQ 做 RPC 同步调用，超时重试引发雪崩——同步场景别用队列"
+      ],
+      "heading": "🛠️ 开发者：应该如何接入",
+      "en": "INTEGRATION",
+      "short": "接入",
+      "num": "接"
+    }
+  },
+  {
+    "id": "backend-cdn",
+    "category": "backend",
+    "name": "CDN 内容分发网络",
+    "alias": [
+      "内容分发",
+      "边缘加速"
+    ],
+    "tagline": "让你访问的总是隔壁的服务器",
+    "scene": "你在北京刷 B 站，视频却秒开——视频文件根本不在 B 站的中央机房，而是提前复制到了离你最近的 CDN 节点上。CDN 就是遍布全国的「前置仓」：热门内容提前铺货，用户就近取货，源站压力骤减。",
+    "principle": {
+      "summary": "把静态资源复制到离用户最近的边缘节点，就近返回，源站只做回源兜底。",
+      "steps": [
+        "用户请求图片/视频资源",
+        "DNS 把用户导向最近节点",
+        "节点有缓存：直接返回",
+        "节点无缓存：回源站取",
+        "源站返回并写入节点缓存",
+        "后续同地区用户直接命中"
+      ],
+      "detail": "CDN 的本质是「空间换时间 + 就近服务」。互联网的主干延迟摆在那：北京用户访问广州机房，光是物理距离就要几十毫秒；CDN 在全国铺了成千上万个边缘节点，通过 DNS 调度把用户引到最近的节点，静态资源（图片、视频、JS、CSS）直接从节点内存/SSD 返回，延迟能压到几毫秒。\n\n关键指标是缓存命中率：命中越高，源站越轻松。靠 Cache-Control 头控制缓存时间；文件更新用「换文件名」而非「清缓存」（webpack 的 hash 命名就是为这个）。回源是兜底：节点没缓存才去源站取一次，然后大家共享。\n\n动态内容也能加速：TCP 优化、链路复用、边缘计算让动态请求走更优路径。但 CDN 不适合强一致场景——刚上传的头像，异地用户可能要等缓存过期才看得到。调试缓存有个小技巧：看响应头里的 X-Cache 或 Age 字段，HIT 表示命中节点缓存，MISS 表示回源了——排查「为什么还是旧内容」先看它。"
+    },
+    "sources": [],
+    "guide": {
+      "options": [
+        {
+          "name": "阿里云/腾讯云 CDN",
+          "desc": "国内节点最多，备案域名即开即用",
+          "when": "国内业务、视频图片站"
+        },
+        {
+          "name": "Cloudflare",
+          "desc": "免费套餐慷慨，自带防护",
+          "when": "出海业务、个人站点"
+        },
+        {
+          "name": "AWS CloudFront",
+          "desc": "和 S3 深度集成",
+          "when": "已在 AWS 生态内的项目"
+        }
+      ],
+      "steps": [
+        "把静态资源域名（如 cdn.example.com）接入 CDN",
+        "配置源站地址，CDN 回源去这里取文件",
+        "设置缓存规则：图片视频缓存久，HTML 不缓存",
+        "发布新版本时用文件名 hash，避免缓存未更新",
+        "观察命中率，低于 90% 就要排查规则",
+        "开启 HTTPS 和防盗链，保护源站不被刷"
+      ],
+      "code": {
+        "lang": "nginx",
+        "label": "用缓存头告诉 CDN 缓存多久·示意",
+        "code": "# 源站告诉 CDN 和浏览器：这个资源可以缓存多久\nlocation /static/ {\n    # 图片视频：CDN 缓存 30 天，浏览器缓存 7 天\n    expires 30d;\n    add_header Cache-Control \"public, max-age=2592000\";\n}\n\nlocation /api/ {\n    # 动态接口：不允许 CDN 缓存\n    add_header Cache-Control \"no-store\";\n}\n\n# 带 hash 文件名的资源：可永久缓存\n# app.a3f9c2.js -> 一年后也不会变，变了文件名就变了\nlocation ~* \\.[a-f0-9]{8}\\.(js|css)$ {\n    expires 1y;\n}"
+      },
+      "pitfalls": [
+        "HTML 也被缓存了，用户永远看到旧页面——动态内容必须 no-store",
+        "更新了图片但文件名没变，CDN 缓存迟迟不刷新，被客服追着骂",
+        "没配防盗链，别人网站直接引用你的 CDN 链接，流量费你买单",
+        "回源 Host 配错，CDN 回源取到了默认站点的内容"
+      ],
+      "heading": "🛠️ 开发者：应该如何接入",
+      "en": "INTEGRATION",
+      "short": "接入",
+      "num": "接"
+    }
+  },
+  {
+    "id": "backend-object-storage",
+    "category": "backend",
+    "name": "对象存储：无限容量的云网盘",
+    "alias": [
+      "OSS",
+      "S3",
+      "云存储"
+    ],
+    "tagline": "网盘背后的无限硬盘",
+    "scene": "你在 App 里上传头像、发朋友圈照片，这些文件并没有存在应用服务器的硬盘上——服务器硬盘才多大？它们被扔进了对象存储：一个理论上无限大、按用量付费的「云硬盘」，通过 HTTP 链接随时存取。",
+    "principle": {
+      "summary": "用 HTTP 存取文件的海量存储，按量付费，文件直传直取不经过应用服务器。",
+      "steps": [
+        "后端向对象存储申请上传凭证",
+        "把带签名的上传 URL 给前端",
+        "前端直传文件到对象存储",
+        "存储返回文件的访问 URL",
+        "后端只在数据库里存 URL",
+        "用户访问时直接从存储拉取"
+      ],
+      "detail": "对象存储和你电脑硬盘的组织方式完全不同：没有文件夹层级（看到的「文件夹」只是 key 的前缀），每个文件是一个「对象」，用唯一的 key 存取，元数据和内容分离。这种扁平结构让它可以无限横向扩展。\n\n对开发者最大的改变是「直传」：传统做法是文件先传到应用服务器，服务器再转存，又慢又占带宽；现在后端只签发一个带过期时间的上传 URL，前端直接把文件 PUT 到存储，应用服务器完全不经手流量。下载同理，用户拿到的就是存储的 CDN 链接。\n\n费用按「存储量 + 流量 + 请求次数」算，小文件高频读写反而可能比服务器硬盘贵。私有文件用签名 URL 控制有效期，公开读的 bucket 一定要关掉公共写入，否则第二天账单会教你做人。版本控制是另一个杀手锏：开启后每次覆盖都保留历史版本，误删文件可以找回，代价是存储量翻倍，记得配生命周期规则自动清理旧版本。"
+    },
+    "sources": [],
+    "guide": {
+      "options": [
+        {
+          "name": "对象存储：OSS / S3 / COS",
+          "desc": "文件扔进云存储，返回一个 URL，图片从存储直接发给用户",
+          "when": "用户上传的图片视频，大厂标配做法"
+        },
+        {
+          "name": "服务器本地硬盘",
+          "desc": "文件存在应用服务器的硬盘上，和代码放一起",
+          "when": "小网站、文件少、图省事"
+        },
+        {
+          "name": "CDN 回源到对象存储",
+          "desc": "对象存储 + CDN：热门图片缓存到离用户最近的节点",
+          "when": "图片量大、用户遍布全国甚至全球"
+        }
+      ],
+      "steps": [
+        "你在 App 里点上传，图片先到应用服务器",
+        "服务器把它转存进对象存储（OSS/S3/COS）",
+        "存储返回一个永久 URL，服务器只存这个 URL",
+        "别人打开页面，图片直接从存储或 CDN 加载",
+        "应用服务器从此不再经手图片流量"
+      ],
+      "code": null,
+      "pitfalls": [
+        "全站图片走应用服务器中转：带宽被图片吃光，页面变慢",
+        "bucket 开了公共写入：被人当免费图床刷，流量费爆炸",
+        "文件名用中文原名：URL 编码一乱就 404",
+        "小文件高频读写全走对象存储：请求次数费比硬盘还贵"
+      ],
+      "heading": "🔧 网站的图片到底存在哪",
+      "en": "HOW IT WORKS",
+      "short": "揭秘",
+      "num": "秘"
+    }
+  },
+  {
+    "id": "backend-elasticsearch",
+    "category": "backend",
+    "name": "Elasticsearch 全文搜索",
+    "alias": [
+      "ES",
+      "全文检索",
+      "倒排索引"
+    ],
+    "tagline": "全文搜索，快得像查字典",
+    "scene": "在知识库里搜「报销流程」，0.1 秒就列出所有相关文档，还按相关度排好序。数据库的 LIKE '%报销%' 遇到几十万行就跪了——Elasticsearch 靠「倒排索引」这种数据结构，把搜索变成了查表，自然快如闪电。",
+    "principle": {
+      "summary": "用倒排索引预先建好「词→文档」映射，全文搜索变成查表加排序。",
+      "steps": [
+        "文档写入 ES",
+        "分词器把文本切成词",
+        "建立倒排索引：词→文档列表",
+        "用户输入搜索词",
+        "查倒排表找到候选文档",
+        "按相关度打分排序返回"
+      ],
+      "detail": "数据库是为「精确查」设计的，全文搜索是它的天敌：LIKE '%关键词%' 无法走索引，只能逐行扫描。倒排索引反其道而行：正排是「文档→含有哪些词」，倒排是「词→出现在哪些文档」。建索引时先把文本分词（中文分词比英文难，IK、jieba 都是干这个的），然后为每个词记录它出现过的文档 ID 和位置。搜索时直接查表，毫秒级返回。\n\n排序靠相关度打分（BM25 算法）：词在文档里出现越频繁、越稀有（全网很少文档包含它），得分越高。ES 是分布式的：数据按分片（shard）散到多个节点，并行搜索再汇总，副本（replica）保证挂一台不丢数据。\n\n但 ES 不是数据库：它是「近实时」的，写入后约 1 秒才可搜；也不适合做事务和关联查询。正确姿势是 MySQL 存原始数据，ES 只存需要搜索的字段，用 MQ 或 Canal 同步。"
+    },
+    "sources": [],
+    "guide": {
+      "options": [
+        {
+          "name": "Elasticsearch",
+          "desc": "功能最全，生态最大",
+          "when": "站内搜索、日志检索"
+        },
+        {
+          "name": "Meilisearch / Typesense",
+          "desc": "轻量，开箱即用，中文友好",
+          "when": "中小站点、不想运维 ES 集群"
+        },
+        {
+          "name": "数据库全文索引",
+          "desc": "MySQL/PostgreSQL 自带",
+          "when": "数据量小、搜索需求简单"
+        }
+      ],
+      "steps": [
+        "确定要搜索的字段，只同步这些进 ES",
+        "选分词器：中文用 IK 或 jieba，建索引 mapping",
+        "用 Logstash/Canal 或 MQ 把 MySQL 数据同步过去",
+        "写查询 DSL：match 查询 + 高亮 + 分页",
+        "按业务调权重：标题匹配加分、时间衰减",
+        "监控分片状态，数据量涨了及时扩容"
+      ],
+      "code": {
+        "lang": "json",
+        "label": "ES 查询 DSL：多字段搜索 + 高亮·示意",
+        "code": "{\n  \"query\": {\n    \"multi_match\": {\n      \"query\": \"报销流程\",\n      \"fields\": [\"title^3\", \"content\"],\n      \"type\": \"best_fields\"\n    }\n  },\n  \"highlight\": {\n    \"fields\": { \"content\": {} }\n  },\n  \"sort\": [{ \"_score\": \"desc\" }, { \"updated_at\": \"desc\" }],\n  \"_source\": [\"title\", \"updated_at\"],\n  \"size\": 10\n}"
+      },
+      "pitfalls": [
+        "中文没配分词器，默认按单字切，搜「报销流程」全是噪音",
+        "把 ES 当主数据库用，机器一挂数据找不回来——源数据必须在 MySQL",
+        "深度分页翻到几万页，ES 要聚合所有分片结果，内存直接爆掉",
+        "mapping 建好后想改字段类型，只能重建索引重导数据"
+      ],
+      "heading": "🛠️ 开发者：应该如何接入",
+      "en": "INTEGRATION",
+      "short": "接入",
+      "num": "接"
+    }
+  },
+  {
+    "id": "backend-cron",
+    "category": "backend",
+    "name": "定时任务 Cron",
+    "alias": [
+      "Cron",
+      "计划任务",
+      "定时器"
+    ],
+    "tagline": "每天凌晨三点，准时干活",
+    "scene": "每天凌晨，系统自动备份数据库、生成昨日报表；每月 1 号，账单准时推送到你邮箱。这些没人值守却从不迟到的活，都是定时任务干的——它就像一个不知疲倦的闹钟，到点就执行，风雨无阻，全年无休。",
+    "principle": {
+      "summary": "按时间表达式周期性触发任务，备份、报表、对账这些脏活累活都靠它。",
+      "steps": [
+        "写好要执行的脚本或接口",
+        "用 cron 表达式定执行时间",
+        "注册到调度器",
+        "到点调度器触发执行",
+        "记录日志与执行结果",
+        "失败告警，人工介入"
+      ],
+      "detail": "Cron 来自 Unix，表达式「分 时 日 月 周」五个字段描述周期，比如 0 3 * * * 就是每天凌晨 3 点。操作系统级的 crond 常驻后台，到点 fork 进程执行；应用层的调度器（Spring Scheduler、APScheduler、云函数触发器）原理相同，只是更贴近业务代码。\n\n单机时代很简单，分布式时代就麻烦了：三台机器同时跑「每天清理过期订单」，就会清理三遍。解法有三种：只让一台机器跑（单点，有挂的风险）、抢分布式锁（谁抢到谁跑）、用分布式调度器（XXL-Job、ElasticJob，任务分片到多台）。\n\n定时任务最怕「静默失败」：脚本挂了没人知道，三个月后才发现报表停更。所以每条定时任务都要有执行日志、成功率监控和失败告警。幂等也很重要——凌晨的任务如果因超时被重跑一次，不能重复发账单。"
+    },
+    "sources": [],
+    "guide": {
+      "options": [
+        {
+          "name": "Linux crontab",
+          "desc": "系统自带，零依赖",
+          "when": "单机脚本、运维类任务"
+        },
+        {
+          "name": "XXL-Job / ElasticJob",
+          "desc": "分布式调度，管理界面可查日志",
+          "when": "多机器集群的业务定时任务"
+        },
+        {
+          "name": "云函数触发器",
+          "desc": "按调用次数计费，免运维",
+          "when": "低频任务、不想养服务器"
+        }
+      ],
+      "steps": [
+        "把任务写成独立脚本，保证可重复执行（幂等）",
+        "用 cron 表达式确定执行周期，避开业务高峰",
+        "单机用 crontab -e 注册，集群用分布式调度器",
+        "输出日志到文件，关键步骤打点记录",
+        "配置失败告警：短信/邮件/群机器人",
+        "定期检查任务存活，别让它悄悄停了三个月"
+      ],
+      "code": {
+        "lang": "shell",
+        "label": "crontab 表达式速查 + 示例·示意",
+        "code": "# crontab -e 编辑计划任务\n# 分 时 日 月 周  命令\n\n# 每天凌晨 3:00 备份数据库\n0 3 * * * /opt/backup/mysql_backup.sh >> /var/log/backup.log 2>&1\n\n# 每 5 分钟检查服务是否存活\n*/5 * * * * curl -sf http://localhost:3000/health || systemctl restart app\n\n# 每月 1 号 9:00 生成上月账单\n0 9 1 * * /usr/bin/python3 /opt/billing/monthly.py\n\n# 表达式速查：* 每单位 | */5 每5 | 0 3 每天3点 | 0 9 1 每月1号9点"
+      },
+      "pitfalls": [
+        "多台机器同时跑同一个任务，订单被重复清理——分布式下必须加锁或用调度器",
+        "任务没做幂等，超时重跑导致用户收到两份账单",
+        "脚本里写了相对路径，crond 环境变量不同，手动能跑定时跑就挂",
+        "任务失败没有任何告警，三个月后才发现报表停更了"
+      ],
+      "heading": "🛠️ 开发者：应该如何接入",
+      "en": "INTEGRATION",
+      "short": "接入",
+      "num": "接"
+    }
+  },
+  {
+    "id": "backend-jwt-session",
+    "category": "backend",
+    "name": "JWT vs Session：两种登录态",
+    "alias": [
+      "Token 登录",
+      "登录态"
+    ],
+    "tagline": "登录状态，到底存在哪儿？",
+    "scene": "登录 App 后关掉再打开，不用重新登录——这个「记住我」的状态存在哪？两种主流做法：Session 把状态存在服务端，Cookie 里只放一把钥匙；JWT 则把用户信息直接写进 Token，服务端啥也不存。各有利弊，选错架构会返工。",
+    "principle": {
+      "summary": "Session 状态存服务端、凭钥匙认人；JWT 把身份自包含在 Token 里，无状态但难撤销。",
+      "steps": [
+        "用户提交账号密码",
+        "Session：服务端存状态发钥匙",
+        "JWT：签发含用户信息的 Token",
+        "后续请求携带钥匙或 Token",
+        "服务端验钥匙查状态/验签名",
+        "通过则放行，失败跳登录"
+      ],
+      "detail": "Session 是「认钥匙」模式：登录成功后服务端在内存/Redis 里存一份 {sessionId: 用户信息}，Cookie 里只放 sessionId。每次请求带着钥匙来，服务端查表认人。好处是随时可撤销（删掉那条记录就下线），坏处是服务端要存状态，多台机器要共享 Session（放 Redis）。\n\nJWT（JSON Web Token）是「认章」模式：Token 分三段，中间那段直接写着用户 ID 和过期时间，服务端用密钥签名盖章。请求带着 Token 来，服务端验签名即可，不用查任何存储——天然适合分布式和 App。但代价是「发出去就收不回」：Token 在过期前一直有效，想踢人下线只能搞黑名单（又有状态了）或等过期。\n\n实战组合拳：短有效期 access_token（15 分钟）+ 长有效期 refresh_token（7 天，存服务端可撤销）。敏感操作（改密码、支付）强制重新验证身份，别只信 Token。"
+    },
+    "sources": [],
+    "guide": {
+      "options": [
+        {
+          "name": "Session + Redis",
+          "desc": "状态存在服务端，Cookie 里只放钥匙；随时可踢人下线",
+          "when": "单体应用、后台管理系统，需要强制下线能力"
+        },
+        {
+          "name": "JWT",
+          "desc": "身份自包含在 Token 里，服务端不用存状态，天然适合分布式",
+          "when": "微服务、前后端分离、App、小程序"
+        },
+        {
+          "name": "组合拳：短 JWT + 长 refresh_token",
+          "desc": "15 分钟短命 Token 配 7 天可撤销的刷新令牌，兼顾体验和安全",
+          "when": "生产环境最常见的最终答案"
+        }
+      ],
+      "steps": [
+        "先看架构：单体、机器少→Session 简单直接；服务多、有 App→JWT",
+        "再看需求：要不要“一键踢人下线”？要→Session，或 JWT+黑名单",
+        "定有效期：access_token 按分钟计，refresh_token 按天计",
+        "定存储：Token 放 HttpOnly Cookie（Web）或 Authorization 头（App）",
+        "写登出：Session 删服务端记录；JWT 要么等过期，要么维护黑名单",
+        "敏感操作（改密码、支付）：别只信 Token，加一步验证"
+      ],
+      "code": null,
+      "pitfalls": [
+        "JWT 里塞手机号、权限等敏感信息：Token 只是签名不是加密，人人能解开看",
+        "access_token 有效期设 30 天：等于主动放弃撤销能力",
+        "密钥硬编码进代码还传上 Git：所有历史 Token 都能被伪造",
+        "Session 存本机内存：加第二台机器后用户随机掉线，上 Redis"
+      ],
+      "heading": "🤔 该怎么选",
+      "en": "CHOOSE",
+      "short": "选型",
+      "num": "选"
+    }
+  },
+  {
+    "id": "backend-db-connection-pool",
+    "category": "backend",
+    "name": "数据库连接池",
+    "alias": [
+      "连接池",
+      "Connection Pool"
+    ],
+    "tagline": "建一次连接，复用一万次",
+    "scene": "每次查数据库都要先 TCP 握手、再登录认证，握手一次要几十毫秒——高峰期每秒上万次查询，光握手就能把数据库拖死。连接池提前建好一批连接放着，用完归还，下次直接复用，握手的开销一次就够了。",
+    "principle": {
+      "summary": "预先建立一批数据库连接反复复用，省掉每次 TCP 握手与认证的开销。",
+      "steps": [
+        "应用启动时建好 N 个连接",
+        "业务需要时从池里借一个",
+        "用完立即归还到池中",
+        "池空了：排队等待或扩容",
+        "空闲太久：关闭回收",
+        "应用关闭：优雅释放所有连接"
+      ],
+      "detail": "建一个数据库连接不便宜：TCP 三次握手、TLS（如果开了）、数据库的认证授权、分配会话内存，加起来几十毫秒。高并发下如果每次查询都现建连接，数据库光应付握手就满了——这就是连接池存在的理由。\n\n池的核心参数就三个：最小空闲连接（保底）、最大连接数（上限）、获取超时。最大连接数不是越大越好：数据库的连接数对应着内存和线程，MySQL 默认才 151 个，应用开 500 个连接只会把数据库打爆。经验公式是「池大小约等于 CPU 核数 × 2」，再按压测调。\n\n连接池还顺手解决了「连接泄漏」：借了不还的连接会被超时回收，配合监控能揪出没关连接的代码。云原生时代还有 PgBouncer 这类中间件池，让几千个应用连接复用几十个真实数据库连接。还有一个常见误区是把池建在错误的地方：Serverless 函数里每个实例都建一个池，实例一多连接数照样爆炸——这时应该用中间件池或 RDS Proxy 统一收敛。"
+    },
+    "sources": [],
+    "guide": {
+      "options": [
+        {
+          "name": "HikariCP",
+          "desc": "Java 界最快，以快和稳著称",
+          "when": "Spring Boot 项目默认首选"
+        },
+        {
+          "name": "Druid",
+          "desc": "阿里出品，自带 SQL 监控和防火墙",
+          "when": "需要 SQL 审计、防注入的国内项目"
+        },
+        {
+          "name": "PgBouncer",
+          "desc": "PostgreSQL 专用中间件池",
+          "when": "连接数远超数据库承受能力时"
+        }
+      ],
+      "steps": [
+        "选连接池实现（别自己手写，坑比你想象的多）",
+        "配置 JDBC URL、账号密码（密码走环境变量/密钥管理）",
+        "设最大连接数：先按公式估，再压测微调",
+        "设连接超时和最大生命周期，防止僵尸连接",
+        "业务代码用完连接必须关闭（归还），推荐 try-with-resources",
+        "监控活跃连接数，持续打满就是扩容或优化 SQL 的信号"
+      ],
+      "code": {
+        "lang": "yaml",
+        "label": "HikariCP 连接池配置·示意",
+        "code": "spring:\n  datasource:\n    url: jdbc:mysql://db:3306/shop?useSSL=false&serverTimezone=Asia/Shanghai\n    username: ${DB_USER}      # 账号密码走环境变量\n    password: ${DB_PASS}\n    hikari:\n      maximum-pool-size: 20   # 最大连接数：别超过数据库承受能力\n      minimum-idle: 5         # 最小空闲连接：保底\n      connection-timeout: 3000       # 借不到连接最多等 3 秒\n      max-lifetime: 1800000         # 连接最多活 30 分钟，防止僵尸连接\n      leak-detection-threshold: 60000  # 借出 60 秒不还，记日志告警"
+      },
+      "pitfalls": [
+        "最大连接数设 500，数据库 max_connections 才 151——应用集体报错 Too many connections",
+        "查完不关连接，池子被借空，新请求全部超时排队",
+        "长事务抱着连接不放，池子被几个慢查询占满",
+        "连接超时设得太短，网络一抖正常请求也被误杀"
+      ],
+      "heading": "🛠️ 开发者：应该如何接入",
+      "en": "INTEGRATION",
+      "short": "接入",
+      "num": "接"
+    }
+  },
+  {
+    "id": "backend-distributed-lock",
+    "category": "backend",
+    "name": "分布式锁",
+    "alias": [
+      "Redis 锁",
+      "Redlock"
+    ],
+    "tagline": "多台机器，抢同一件事",
+    "scene": "三台服务器同时跑「清理过期优惠券」，如果都动手，同一批券会被清三遍。单机用 synchronized 就行，多台机器互不认识——这时需要一把「所有人都能看到的锁」，Redis 的原子命令就是这把锁的最佳载体。",
+    "principle": {
+      "summary": "用 Redis 原子命令实现跨进程互斥，同一时刻只允许一个执行者。",
+      "steps": [
+        "抢锁：SET key 值 NX PX 原子执行",
+        "成功拿到锁：执行业务",
+        "没拿到：等待或直接放弃",
+        "业务完成：用 Lua 脚本释放",
+        "释放时校验值，防止删别人的锁",
+        "超时未完成：锁自动过期防死锁"
+      ],
+      "detail": "分布式锁的本质是「找一个大家都信任的第三方来仲裁」。Redis 的 SET key value NX PX 10000 是原子操作：NX 表示「不存在才设置」（抢锁），PX 表示「10 秒自动过期」（防死锁，持有者挂了锁也不会永远卡住），两个动作一步完成，不存在抢到一半的中间态。\n\n释放锁必须校验身份：只能删自己加的锁。做法是 value 存随机数，释放时用 Lua 脚本「比对 value 一致才删除」——Lua 在 Redis 里单线程执行，比对+删除不可分割，否则 A 的锁过期了，B 刚加上，A 一删就把 B 的锁删了。\n\n看门狗（watchdog）解决「业务没跑完锁先过期」：后台线程定期续期。但这也意味着锁不是绝对可靠——Redis 主从切换时可能丢锁。对正确性要求极高的场景（资金），Redlock 多节点方案仍有争议，能用数据库唯一约束解决的，优先不用分布式锁。"
+    },
+    "sources": [
+      {
+        "title": "Redis 官方文档",
+        "url": "https://redis.io/docs/latest/"
+      }
+    ],
+    "guide": {
+      "options": [
+        {
+          "name": "Redis SET NX",
+          "desc": "最常用，实现简单",
+          "when": "防重复执行、秒杀扣库存"
+        },
+        {
+          "name": "Redisson",
+          "desc": "Java 客户端，看门狗自动续期",
+          "when": "Spring 生态，不想手写 Lua"
+        },
+        {
+          "name": "ZooKeeper/etcd",
+          "desc": "强一致，锁更可靠",
+          "when": "已有 ZK/etcd 基础设施的团队"
+        }
+      ],
+      "steps": [
+        "选实现：简单场景手写 SET NX，复杂用 Redisson",
+        "加锁用 SET key 随机值 NX PX 超时，原子一条命令",
+        "value 用 UUID，保证释放时能认出是自己的锁",
+        "释放用 Lua 脚本：校验 value 一致才 DEL",
+        "业务超时时间必须小于锁过期时间，或加看门狗续期",
+        "没抢到锁要有退路：重试几次或直接返回，不硬等"
+      ],
+      "code": {
+        "lang": "python",
+        "label": "SET NX 抢锁 + Lua 安全释放·示意",
+        "code": "import redis, uuid\n\nr = redis.Redis(decode_responses=True)\ntoken = str(uuid.uuid4())  # 随机值：证明这把锁是我的\n\n# 抢锁：NX 不存在才设，PX 10 秒自动过期，原子一步完成\nlocked = r.set(\"lock:coupon_clean\", token, nx=True, px=10000)\nif not locked:\n    print(\"没抢到锁，放弃执行\")\nelse:\n    try:\n        clean_expired_coupons()  # 执行业务\n    finally:\n        # Lua 脚本：是我的锁才删，防止误删别人的\n        r.eval(\n            \"if redis.call('get', KEYS[1]) == ARGV[1] then \"\n            \"return redis.call('del', KEYS[1]) else return 0 end\",\n            1, \"lock:coupon_clean\", token,\n        )"
+      },
+      "pitfalls": [
+        "用 SETNX 和 EXPIRE 两条命令，中间崩了锁永不过期——必须用一条原子命令",
+        "释放锁没校验 value，误删了别人的锁，互斥直接失效",
+        "业务跑 30 秒，锁 10 秒就过期了，第二个执行者进来造成并发",
+        "锁的粒度太大，一把大锁串行化了整个业务，性能还不如不用"
+      ],
+      "heading": "🛠️ 开发者：应该如何接入",
+      "en": "INTEGRATION",
+      "short": "接入",
+      "num": "接"
+    }
+  },
+  {
+    "id": "backend-api-gateway",
+    "category": "backend",
+    "name": "API 网关：所有请求的统一入口",
+    "alias": [
+      "网关",
+      "Gateway"
+    ],
+    "tagline": "所有 API 的统一大门",
+    "scene": "App 要调几十个后端接口：用户、订单、支付……如果每个服务各自做鉴权、限流，代码重复得到处都是。API 网关站在所有服务前面当「总机」：统一验身份、统一限流，再按路径把请求分发到对的服务，后端只管写业务。",
+    "principle": {
+      "summary": "统一处理鉴权、限流、路由转发，所有 API 先过网关再到业务服务。",
+      "steps": [
+        "客户端请求打到网关",
+        "网关校验 Token/签名",
+        "检查限流配额",
+        "按路由规则转发服务",
+        "聚合响应返回客户端",
+        "记录日志与监控指标"
+      ],
+      "detail": "微服务拆分后，对外暴露几十个服务既混乱又危险：每个服务都要重复做鉴权、CORS、限流，前端还要记一堆域名。网关把这些「横切关注点」收拢到一处：请求先进网关，网关验身份、查限流、做路由，后端服务只收「干净」的内部请求。\n\n网关和 Nginx 反向代理的区别在于「懂业务」：Nginx 主要做流量转发，网关还能做 JWT 校验、按用户限流、请求聚合（一次查用户+订单拼成一个响应给 App）、协议转换（HTTP 转 gRPC）。\n\n但网关也是单点：它挂了所有服务都不可用，所以网关本身必须高可用部署；同时别把业务逻辑写进网关——网关一旦变成「大泥球」，每次改业务都要动网关，微服务的独立性就没了。网关选型还要看协议支持：REST 转 gRPC、WebSocket 长连接透传、按权重灰度发布，这些能力各家差异很大。建议先列出自己的必备清单再对比，别被漂亮的 demo 忽悠了。"
+    },
+    "sources": [],
+    "guide": {
+      "options": [
+        {
+          "name": "Kong",
+          "desc": "插件生态最丰富，Lua 可扩展",
+          "when": "需要鉴权、限流、监控一站式"
+        },
+        {
+          "name": "Apache APISIX",
+          "desc": "国产，性能强，动态路由",
+          "when": "云原生、配置经常变的场景"
+        },
+        {
+          "name": "Spring Cloud Gateway",
+          "desc": "Java 生态无缝集成",
+          "when": "全家桶都是 Spring Cloud 的团队"
+        }
+      ],
+      "steps": [
+        "梳理所有对外 API，统一收敛到网关域名下",
+        "选网关产品并高可用部署（至少 2 节点）",
+        "配置路由规则：/api/user/* 转用户服务",
+        "接入鉴权插件：校验 JWT 或 API Key",
+        "按用户/接口配置限流阈值",
+        "接监控告警，网关延迟升高第一时间知道"
+      ],
+      "code": {
+        "lang": "yaml",
+        "label": "声明式路由：鉴权 + 限流·示意",
+        "code": "routes:\n  - id: user-api\n    uri: /api/user/*        # 外部路径\n    upstream:               # 转发到用户服务集群\n      type: roundrobin\n      nodes:\n        \"10.0.0.1:8080\": 1\n        \"10.0.0.2:8080\": 1\n    plugins:\n      jwt-auth: {}          # 统一验 JWT\n      limit-count:          # 每个用户每分钟 100 次\n        count: 100\n        time_window: 60\n        key: consumer_name"
+      },
+      "pitfalls": [
+        "网关只部署了一个节点，它一挂全站不可用——网关必须高可用",
+        "把业务校验逻辑写进网关插件，网关变成改不动的「大泥球」",
+        "限流 key 用错成了全局 key，一个用户刷接口全站被限",
+        "网关超时比后端还短，后端还在跑，网关先返回了 504"
+      ],
+      "heading": "🛠️ 开发者：应该如何接入",
+      "en": "INTEGRATION",
+      "short": "接入",
+      "num": "接"
+    }
+  },
+  {
+    "id": "backend-log-collection",
+    "category": "backend",
+    "name": "日志收集",
+    "alias": [
+      "ELK",
+      "集中式日志"
+    ],
+    "tagline": "出问题时，先看日志",
+    "scene": "凌晨三点告警响了：支付成功率下跌。十几台服务器，日志散落在各台机器上，一个个 SSH 上去翻要翻到天亮。日志收集系统把所有日志汇到一处，搜一个订单号，全链路的报错按时间排好——定位问题从小时级变成分钟级。",
+    "principle": {
+      "summary": "把分散的日志汇总到中央存储，可检索、可告警，ELK 是经典方案。",
+      "steps": [
+        "应用输出结构化日志",
+        "采集器 tail 日志文件",
+        "传输到中央队列/存储",
+        "索引后可全文检索",
+        "配置错误关键字告警",
+        "按订单号串联全链路"
+      ],
+      "detail": "单机时代看日志就是 tail -f，分布式时代不行了：请求被负载到 A 机器，DB 在 B 机器，日志散得到处都是。集中式日志做三件事：收集（Filebeat/Fluentd tail 每个容器的日志文件）、传输（经 Kafka 缓冲防丢）、存储检索（Elasticsearch 建索引，Kibana 查）。\n\n想让日志好查，输出时就要「结构化」：JSON 格式，带时间、级别、traceId（链路追踪 ID，一个请求从头到尾都带同一个 ID，跨服务也能串起来）、userId、orderId。搜 orderId=10086，全链路日志按时间排好，这就是可观测性的底座。\n\n日志也有成本：全量 DEBUG 日志一天几个 TB，存储账单惊人。做法是分级：INFO 进索引保留 7 天，DEBUG 只留本地；错误日志配关键字告警，5 分钟内出现 10 次直接电话告警。Loki 是轻量替代：只索引标签不索引内容，省 10 倍存储，适合预算有限的团队。"
+    },
+    "sources": [],
+    "guide": {
+      "options": [
+        {
+          "name": "ELK（ES+Logstash+Kibana）",
+          "desc": "功能最全，检索强大",
+          "when": "中大型团队、有专人运维"
+        },
+        {
+          "name": "Loki + Grafana",
+          "desc": "轻量，存储成本低一个数量级",
+          "when": "K8s 环境、预算有限"
+        },
+        {
+          "name": "云日志服务（SLS/CLS）",
+          "desc": "开箱即用，按量付费",
+          "when": "上云团队，不想自建"
+        }
+      ],
+      "steps": [
+        "统一日志格式：JSON，带时间、级别、traceId",
+        "每个服务部署采集器（Filebeat/Fluentd）",
+        "日志经 Kafka 缓冲，写入 ES 或 Loki",
+        "Kibana/Grafana 配好常用查询面板",
+        "错误关键字配告警规则",
+        "定保留策略：热数据 7 天，冷数据转低成本存储"
+      ],
+      "code": {
+        "lang": "python",
+        "label": "结构化 JSON 日志输出·示意",
+        "code": "import logging, json\n\n# 结构化日志：JSON 格式，带 traceId，方便集中检索\nclass JsonFormatter(logging.Formatter):\n    def format(self, record):\n        return json.dumps({\n            \"time\": self.formatTime(record),\n            \"level\": record.levelname,\n            \"trace_id\": getattr(record, \"trace_id\", \"-\"),\n            \"msg\": record.getMessage(),\n        }, ensure_ascii=False)\n\nhandler = logging.StreamHandler()\nhandler.setFormatter(JsonFormatter())\nlogger = logging.getLogger(\"app\")\nlogger.addHandler(handler)\n\n# 输出示例：{\"time\": \"...\", \"level\": \"ERROR\",\n#           \"trace_id\": \"abc123\", \"msg\": \"支付回调签名校验失败\"}"
+      },
+      "pitfalls": [
+        "日志打成纯文本，traceId 埋在句子里，集中检索时根本查不出来",
+        "密码、Token 打进日志，日志系统成了最大的泄密源",
+        "全量 DEBUG 上线，一天几个 TB，存储账单爆炸",
+        "日志没配保留策略，磁盘满了先挂的是日志系统自己"
+      ],
+      "heading": "🛠️ 开发者：应该如何接入",
+      "en": "INTEGRATION",
+      "short": "接入",
+      "num": "接"
+    }
+  },
+  {
+    "id": "backend-health-check",
+    "category": "backend",
+    "name": "健康检查与优雅停机",
+    "alias": [
+      "探针",
+      "优雅发布"
+    ],
+    "tagline": "上线不丢请求，下线不杀进程",
+    "scene": "发布新版本时，旧容器被直接杀掉，正在支付的用户当场报错。健康检查像「体检」：K8s 定期问服务「你还好吗」，答不上来就摘掉流量；优雅停机像「交接班」：收到下线信号后，先拒绝新请求，把手头的处理完再退出——用户毫无感知。",
+    "principle": {
+      "summary": "探针持续报告服务是否可用，优雅停机让旧实例处理完手头请求再退出。",
+      "steps": [
+        "应用暴露 /health 存活探针",
+        "暴露 /ready 就绪探针",
+        "编排系统定期探测",
+        "探针失败：摘流量/重启",
+        "收到 SIGTERM 停止接新请求",
+        "处理完手头请求再退出"
+      ],
+      "detail": "滚动发布时如果没有健康检查，新版本还没启动完就接流量，用户看到一堆 502；旧版本被 SIGKILL 直接杀掉，正在处理的支付请求就断了。两个探针分工不同：liveness（存活）答不上来说明进程僵死了，K8s 会重启它；readiness（就绪）答不上来说明暂时不能接流量（刚启动、依赖还没好），K8s 先把它的流量摘掉，好了再加回来。\n\n优雅停机处理的是「下线」那一刻：收到 SIGTERM 后，应用先告诉网关「别再给我新请求」，等手头的请求处理完（设个上限如 30 秒）、关闭连接池、刷完日志，再退出。Node 要监听 SIGTERM，Java 靠 Spring 的 graceful shutdown，Go 用 signal.Notify。\n\n探针接口一定要轻：/health 只返回 200，别在里面查数据库——数据库一抖，所有实例被同时摘掉，雪崩就是这么来的。"
+    },
+    "sources": [],
+    "guide": {
+      "options": [
+        {
+          "name": "K8s 探针",
+          "desc": "liveness/readiness 标准机制",
+          "when": "容器化部署的生产环境"
+        },
+        {
+          "name": "Spring Boot Actuator",
+          "desc": "Java 生态开箱即用的健康端点",
+          "when": "Spring 项目"
+        },
+        {
+          "name": "自定义心跳",
+          "desc": "简单 HTTP 接口 + 外部监控",
+          "when": "非 K8s 的传统部署"
+        }
+      ],
+      "steps": [
+        "应用里加 /health 接口，只做轻量自检",
+        "区分 liveness（进程活着）和 readiness（能接流量）",
+        "K8s deployment 里配置两个探针的路径和阈值",
+        "代码里监听 SIGTERM，实现优雅停机逻辑",
+        "设置 terminationGracePeriodSeconds 给足退出时间",
+        "发布时观察：先摘流量、再停旧版，错误率无抖动"
+      ],
+      "code": {
+        "lang": "yaml",
+        "label": "K8s 存活/就绪探针配置·示意",
+        "code": "# Kubernetes 探针配置（示意）\nlivenessProbe:          # 存活探针：挂了就重启容器\n  httpGet: { path: /health, port: 3000 }\n  initialDelaySeconds: 10\n  periodSeconds: 10\nreadinessProbe:         # 就绪探针：没好就先摘流量\n  httpGet: { path: /ready, port: 3000 }\n  initialDelaySeconds: 5\n  periodSeconds: 5\nterminationGracePeriodSeconds: 30  # 给 30 秒优雅退出"
+      },
+      "pitfalls": [
+        "健康检查接口里查数据库，DB 一抖所有实例被同时摘掉，直接雪崩",
+        "没处理 SIGTERM，K8s 发信号后进程被强制杀掉，支付请求中断",
+        "readiness 和 liveness 用同一个接口，启动慢的服务被反复重启，永远起不来",
+        "优雅停机超时设太短，长请求还没跑完就被杀了"
+      ],
+      "heading": "🛠️ 开发者：应该如何接入",
+      "en": "INTEGRATION",
+      "short": "接入",
+      "num": "接"
+    }
+  },
+  {
+    "id": "backend-vps",
+    "category": "backend",
+    "name": "VPS：合租一台服务器",
+    "alias": [
+      "虚拟专用服务器",
+      "VPS 主机",
+      "便宜服务器"
+    ],
+    "tagline": "一台机器，N 个人分着用",
+    "scene": "想搭个个人博客，搜了一圈服务器：云服务器一个月几十块，VPS 居然一年才一百多，还写着“独立 IP、root 权限”。这么便宜，能买吗？VPS 的本质是“合租”：一台物理机切成几十台小电脑，大家共享硬件——便宜，但邻居搞事你也会卡。",
+    "principle": {
+      "summary": "一台物理机切成多台虚拟小电脑，各有独立系统但共享硬件；便宜，性能看邻居脸色。",
+      "steps": [
+        "一台高配物理机：几十核 CPU、上百 G 内存",
+        "虚拟化软件把它切成几十台“小电脑”",
+        "每台有独立系统和 root 权限",
+        "但 CPU、内存、硬盘 IO 大家共享",
+        "邻居跑满资源，你的网站跟着卡"
+      ],
+      "detail": "VPS 全称虚拟专用服务器，技术上就是虚拟化：一台高配物理机装上 KVM 这类虚拟化软件，切出几十台相互隔离的“小电脑”。每台有自己的操作系统、独立 IP 和 root 权限，用起来像一台真正的服务器，但底层的 CPU、内存、硬盘 IO 是大家共享的。\n\n它为什么这么便宜？两个原因：一是规模效应，一台机器卖几十份；二是“超售”——商家赌所有人不会同时跑满，1 核的 CPU 可能卖给 4 个人。生意好的商家超售克制，用着跟独享差不多；黑心商家超售十几倍，晚上高峰期卡成 PPT，这就是 VPS 口碑两极分化的根源。\n\n大厂的“轻量应用服务器”（阿里云、腾讯云都有）本质上也是 VPS，但不超售、带宽实在，还预装了建站镜像，适合新手。传统 VPS 商家（如搬瓦工）胜在便宜、线路可选，适合会折腾的人。记住一条线：玩具和测试用 VPS，真要做正经业务，早晚要搬到资源独享的云服务器。"
+    },
+    "guide": {
+      "heading": "🤔 VPS 这么便宜，能买吗",
+      "en": "CHOOSE",
+      "short": "选择",
+      "num": "选",
+      "options": [
+        {
+          "name": "大厂轻量应用服务器",
+          "desc": "阿里云/腾讯云的轻量服务器：不超售、带宽实在，预装博客、面板镜像",
+          "when": "新手搭博客、小网站，图省心不想折腾"
+        },
+        {
+          "name": "传统 VPS 商家",
+          "desc": "老牌 VPS 商，便宜量大，机房线路可选",
+          "when": "会折腾、要特定线路，或预算卡得死"
+        },
+        {
+          "name": "云服务器 ECS / CVM",
+          "desc": "贵一点，但 CPU 内存独享、随时升降配",
+          "when": "网站有正经流量，或要长期稳定跑业务"
+        },
+        {
+          "name": "直接上 PaaS",
+          "desc": "Vercel、Netlify：连服务器都不用买，推代码即上线",
+          "when": "纯静态博客/文档站，不想管服务器"
+        }
+      ],
+      "steps": [
+        "先想清楚用途：博客、测试、跑小服务，需求差很多",
+        "新手直接选大厂轻量服务器，应用镜像一键装好博客",
+        "传统 VPS 先看评价：商家跑路、IP 被墙是两大坑",
+        "下单前确认：流量按月算还是按带宽，有没有退款政策",
+        "网站做起来了就迁到云服务器，资源独享更稳"
+      ],
+      "code": null,
+      "pitfalls": [
+        "超售严重的 VPS，晚上高峰期卡成 PPT",
+        "小商家跑路，数据一夜清零，重要数据一定异地备份",
+        "共享 IP 被前人玩坏：邮件进垃圾箱、IP 被墙连不上",
+        "只看首年价不看续费价：首年 99，续费 999"
+      ]
+    },
+    "sources": []
+  },
+  {
+    "id": "backend-ecs",
+    "category": "backend",
+    "name": "云服务器 ECS：租一台弹性电脑",
+    "alias": [
+      "ECS",
+      "CVM",
+      "EC2",
+      "云主机"
+    ],
+    "tagline": "随开随关、随时升降配的电脑",
+    "scene": "网站做好了，别人说“去租台服务器部署一下”。你打开阿里云，CPU、内存、带宽、镜像、地域一堆选项直接懵了：第一台服务器到底怎么租、配置怎么选、会不会买贵？其实 ECS 就是一台放在云上的电脑，随开随关，配置不够随时加钱升级。",
+    "principle": {
+      "summary": "ECS（阿里云叫法，腾讯云叫 CVM、AWS 叫 EC2）是云上的虚拟电脑：按需租用，配置随时升降，开机即用。",
+      "steps": [
+        "云厂商机房里躺着成千上万台物理机",
+        "虚拟化切出“电脑”，你租其中一台",
+        "选地域：离你的用户越近访问越快",
+        "选配置：CPU、内存、带宽按需搭配",
+        "选镜像：装好系统的“出厂设置”",
+        "开机：拿到 IP 和密码，远程连上即用"
+      ],
+      "detail": "ECS、腾讯云的 CVM、AWS 的 EC2，说的是同一种东西，只是各家叫法不同：云上的虚拟电脑。和自己买电脑最大的区别是“弹性”——配置不够了不用换机器，控制台点几下就能加 CPU 加内存；不用了直接关机释放，不花冤枉钱。\n\n租的时候真正要做决定的就四样：地域（用户在哪选哪，国内业务还能顺手备案）、配置（个人博客 2 核 2G 起步，不够再升，别一次买顶配）、镜像（操作系统的“出厂设置”，新手可以直接选带宝塔面板的镜像）、带宽（决定同时多少人能流畅访问，1M 带宽跑图片站会卡）。\n\n和传统 VPS 相比，ECS 贵的那部分钱买的是“独享”和“省心”：CPU 内存是你的就是你的，不会被邻居抢；硬盘可以打快照，误删数据能回滚；挂了可以一键迁移。对第一次租服务器的人来说，记住一句就行：先买小，不够再升，云服务器最大的优点就是不用一次做对选择。"
+    },
+    "guide": {
+      "heading": "🙋 我该怎么租一台",
+      "en": "HANDS-ON",
+      "short": "使用",
+      "num": "用",
+      "options": [
+        {
+          "name": "按量付费",
+          "desc": "开机计费、关机停服，用多少算多少",
+          "when": "测试、临时任务、流量忽高忽低的业务"
+        },
+        {
+          "name": "包年包月",
+          "desc": "一次买 1-3 年，单价最便宜",
+          "when": "网站长期跑，生产环境的主力机器"
+        },
+        {
+          "name": "抢占式实例",
+          "desc": "买云厂商的闲置算力，低至 1 折，但可能被随时回收",
+          "when": "跑批处理、压测等中断了也不心疼的任务"
+        }
+      ],
+      "steps": [
+        "选地域：用户在哪就选哪，国内业务选国内节点",
+        "选配置：小博客 2 核 2G 起步，不够再升",
+        "选镜像：Alibaba Cloud Linux，或带宝塔面板的镜像",
+        "设好密码（或密钥），拿到公网 IP",
+        "远程连上：装网站环境、传代码、配域名解析",
+        "设个快照自动备份，删库前先想想备份"
+      ],
+      "code": null,
+      "pitfalls": [
+        "地域选错：人在国内选了美西节点，访问慢还备不了案",
+        "带宽买 1M 跑图片站：打开一张图转半天圈",
+        "安全组没关端口：数据库 3306 裸奔在公网",
+        "按量付费的测试机忘关：跑了一个月，账单吓一跳"
+      ]
+    },
+    "sources": [
+      {
+        "title": "阿里云 ECS 产品页",
+        "url": "https://www.aliyun.com/product/ecs"
+      }
+    ]
+  },
+  {
+    "id": "backend-iaas-paas-saas",
+    "category": "backend",
+    "name": "IaaS/PaaS/SaaS：一张披萨讲明白",
+    "alias": [
+      "云服务三层",
+      "披萨理论",
+      "IaaS PaaS SaaS 区别"
+    ],
+    "tagline": "你想管多少事，决定用哪一层",
+    "scene": "看云厂商广告，IaaS、PaaS、SaaS 三个词总是一起出现，云里雾里。其实用一张披萨就能讲明白：自己在家从和面做到披萨、买半成品回家烤、叫外卖、下馆子——区别只有一个：你想管多少事。",
+    "principle": {
+      "summary": "三层都是“别人帮你干活”，区别是你还要操多少心：IaaS 只给裸机器，PaaS 包到上线，SaaS 直接给成品软件。",
+      "steps": [
+        "自建机房：买服务器、拉网线，全自己管",
+        "IaaS：机房归云厂商，你只管装软件",
+        "PaaS：连服务器都不用看，推代码即上线",
+        "SaaS：成品软件，注册账号直接用",
+        "越往上越省心，越往下越自由"
+      ],
+      "detail": "这个“披萨理论”是云计算圈最经典的比喻：想吃披萨，自己在家从和面开始做（自建机房，什么都自己管）、买半成品回家烤（IaaS：云厂商备好“厨房”，ECS 就是半成品，你只管“烤”也就是装软件）、叫外卖（PaaS：你只管点菜也就是写代码，Vercel 这类平台负责烤好送上门）、下馆子（SaaS：飞书、Notion，菜都做好了，你只管吃）。\n\n对号入座：IaaS 的代表是各家的云服务器（ECS/CVM/EC2）；PaaS 的代表是 Vercel、Netlify——代码一推自动上线，你这辈子都不用登录服务器，本站就跑在 Vercel 上；SaaS 就是你每天用的飞书、钉钉、Notion，注册账号直接用。\n\n怎么选？只看一个问题：你想管多少事。想要的是功能本身、不想碰代码→SaaS；要做自己的产品但不想运维→PaaS；有运维能力、要定制、要合规→IaaS。三层还能混用：公司用 SaaS 办公、网站跑在 PaaS 上、核心数据库放在 IaaS 的云服务器里，各取所需。"
+    },
+    "guide": {
+      "heading": "🤔 我该用哪一层",
+      "en": "CHOOSE",
+      "short": "选择",
+      "num": "选",
+      "options": [
+        {
+          "name": "IaaS：ECS / CVM / EC2",
+          "desc": "只租裸机器，系统、环境、运维全自己来",
+          "when": "有运维能力，或要完全掌控环境、过合规"
+        },
+        {
+          "name": "PaaS：Vercel / Netlify",
+          "desc": "不用管服务器，代码一推自动上线",
+          "when": "个人项目、小团队，只想写代码不想运维"
+        },
+        {
+          "name": "SaaS：飞书 / Notion / 钉钉",
+          "desc": "成品软件，注册账号直接用",
+          "when": "要的是功能本身，不想碰代码和服务器"
+        }
+      ],
+      "steps": [
+        "先问自己：我想管多少事？",
+        "要功能不想折腾→直接 SaaS，注册即用",
+        "要做自己的产品但不想运维→PaaS，推代码就上线",
+        "有运维、要定制、要合规→IaaS，自己装自己管",
+        "三层可以混用：SaaS 办公 + PaaS 跑网站 + IaaS 跑数据库"
+      ],
+      "code": null,
+      "pitfalls": [
+        "小团队硬上 IaaS：服务器半夜挂了没人会修",
+        "PaaS 用嗨了想搬家：被平台绑定，迁移成本高",
+        "SaaS 放核心数据：厂商涨价或关停，业务跟着抖",
+        "把 PaaS 当 IaaS 用：想装特殊软件，发现没 root 权限"
+      ]
+    },
+    "sources": [
+      {
+        "title": "阿里云 ECS 产品页（IaaS 代表）",
+        "url": "https://www.aliyun.com/product/ecs"
+      }
+    ]
+  }
+]
