@@ -1,0 +1,1347 @@
+[
+ {
+  "alias": [
+   "Deep Learning",
+   "深度神经网络"
+  ],
+  "category": "ai",
+  "id": "ai-deep-learning",
+  "name": "深度学习",
+  "principle": {
+   "detail": "在深度学习之前，机器学习有个苦力活叫\"特征工程\"：想让机器识别猫，工程师得手工设计\"边缘检测器\"\"纹理统计量\"，一条条告诉机器该看什么。这条路又贵又快到头——人能想到的特征就那么多。\n\n深度学习的洞见是：别教它看什么，让它自己学。多层神经网络像一条流水线：第一层学边缘，第二层把边缘拼成纹理，第三层拼出眼睛耳朵，最后一层认出\"猫\"。层数越深，能学到的特征越抽象，这就是\"深度\"的含义。2012 年 AlexNet 在 ImageNet 图像赛上把错误率砍掉一大截，深度学习从此一战成名。\n\n为什么是现在才爆发？三个条件同时成熟：海量数据（互联网）、算力（GPU 恰好擅长矩阵运算）、算法（反向传播+ReLU+Dropout 让深层网络训得动）。它解决的是\"表示学习自动化\"——机器自己决定用什么特征，这是整条 AI 逻辑链的起点：后面的神经网络、Transformer，都是在回答\"用什么样的深层结构学得更好\"。",
+   "steps": [
+    "输入原始数据（图片像素、文本）",
+    "逐层提取特征：边缘→纹理→部件",
+    "输出层给出预测（这是猫的概率）",
+    "预测和标准答案比，算出误差",
+    "反向传播：把误差分摊给每一层",
+    "海量数据上重复百万次，权重渐入佳境"
+   ],
+   "summary": "用多层神经网络让机器从数据里自动学出特征，不靠人工设计特征。"
+  },
+  "scene": "新闻里\"深度学习三巨头获图灵奖\"\"AI 看片子超过医生\"，说的都是它。同样是\"机器学习\"，深度学习之前工程师要手工设计特征，之后机器自己从数据里学——这是 AI 近十年爆发的总开关。",
+  "sources": [
+   {
+    "title": "神经网络基础：从感知机到 MLP（GitHub 教程）",
+    "url": "https://github.com/kumawatcodes/neural-grindset/blob/HEAD/Ai_Engineering-Course/06-Deep-Learning-Fundamentals/01-Neural-Network-Basics-Perceptron-MLP.md"
+   }
+  ],
+  "tagline": "机器自己学特征，不靠人工喂",
+  "guide": {
+   "options": [
+    {
+     "name": "经典入门课",
+     "desc": "吴恩达系课程：从逻辑回归一路讲到 CNN，数学要求友好",
+     "when": "零基础第一站，先建立直觉"
+    },
+    {
+     "name": "动手跑起来",
+     "desc": "跟着教程用 PyTorch 跑通 MNIST 手写数字识别",
+     "when": "听完课手痒，想亲手训一个"
+    },
+    {
+     "name": "ImageNet 与 AlexNet 论文",
+     "desc": "2012 年一战成名的那篇，看懂\"为什么是它引爆了深度学习\"",
+     "when": "想理解历史转折点"
+    }
+   ],
+   "pitfalls": [
+    "别一上来就啃数学证明，先跑起来再补理论",
+    "调参玄学多：学习率、batch size 先抄教程的，别自己发明",
+    "小数据集上堆大模型=过拟合，先从小模型小数据玩起"
+   ],
+   "steps": [
+    "先补 Python 和一点 numpy：不用精通，能读写数组就行",
+    "上一门经典入门课，重点搞懂：前向传播、损失函数、反向传播",
+    "亲手跑通 MNIST：从数据加载到训练出 95%+ 准确率",
+    "再横向看看 CNN（看图）和 RNN（看序列），理解\"结构是为数据形态服务的\"",
+    "回头重读本篇的逻辑链：特征工程→自动学特征，这条线就通了"
+   ],
+   "heading": "📚 想深入了解怎么办",
+   "en": "GO DEEPER",
+   "short": "深入",
+   "num": "学"
+  }
+ },
+ {
+  "alias": [
+   "Neural Network",
+   "NN"
+  ],
+  "category": "ai",
+  "id": "ai-neural-network",
+  "name": "神经网络",
+  "principle": {
+   "detail": "单个神经元很简单：把输入分别乘以权重、加起来，再过一个非线性激活函数（如 ReLU），输出一个数。神奇的是堆叠：1958 年的感知机只能画一条直线，连\"异或\"（XOR）这种小学生逻辑都解不了；但把神经元堆成多层，理论上就能拟合任意复杂函数（万能近似定理）——这是神经网络的数学底气。\n\n真正的魔法在\"反向传播\"（1986 年成熟）：输出错了，误差像退潮一样从输出层往回流，每一层按\"这次错里我占几成\"分摊责任，各自微调权重。几百万次之后，权重矩阵里就沉淀出了\"知识\"——注意，知识不是以条目形式存的，而是压缩在几亿个数字的统计规律里。这也解释了为什么神经网络像黑箱：你能看到每个权重，但读不出\"猫有四条腿\"这句话。\n\n在逻辑链上，神经网络是深度学习的\"可学结构\"：深度学习说\"让机器自己学特征\"，神经网络回答\"用这种可微分的堆叠结构，学才成为可能\"。",
+   "steps": [
+    "神经元接收多个输入",
+    "加权求和，再过非线性激活",
+    "多层堆叠，逐层前向传播",
+    "输出预测，和标准答案对比",
+    "反向传播：误差按贡献分摊回去",
+    "每层微调权重，循环往复"
+   ],
+   "summary": "神经元做加权求赏+非线性激活，多层堆叠拟合任意复杂函数，反向传播按\"谁的错\"分摊误差调权重。"
+  },
+  "scene": "新闻里\"这个模型有 1750 亿个神经元\"\"神经网络是个黑箱\"——黑箱感从何而来？单个神经元只是做加权求和，可当它们堆成千上万层之后，知识就沉淀成了谁也读不懂的数字矩阵。",
+  "sources": [
+   {
+    "title": "神经网络基础：从感知机到 MLP（GitHub 教程）",
+    "url": "https://github.com/kumawatcodes/neural-grindset/blob/HEAD/Ai_Engineering-Course/06-Deep-Learning-Fundamentals/01-Neural-Network-Basics-Perceptron-MLP.md"
+   }
+  ],
+  "tagline": "加权求和层层堆，误差分摊回去调",
+  "guide": {
+   "options": [
+    {
+     "name": "3Blue1Brown《神经网络》系列",
+     "desc": "可视化讲透反向传播，B 站有熟肉",
+     "when": "想真正\"看见\"梯度是怎么倒流的"
+    },
+    {
+     "name": "手写 tiny 网络",
+     "desc": "不用框架，numpy 几十行实现前向+反向",
+     "when": "想确认自己真懂了而不是\"感觉懂了\""
+    },
+    {
+     "name": "PyTorch 官方 60 分钟教程",
+     "desc": "从张量到自动微分，官方出品不踩坑",
+     "when": "准备进框架实战"
+    }
+   ],
+   "pitfalls": [
+    "\"黑箱\"是真的：别指望从权重矩阵里读出人类语言的规则",
+    "激活函数不是装饰：没有非线性，堆一万层也只是一层",
+    "梯度消失/爆炸是深层网络的经典坑，理解它才能理解后来的 ResNet"
+   ],
+   "steps": [
+    "先玩感知机：理解\"加权求和+激活\"这一个神经元在干什么",
+    "搞懂 XOR 为什么单层解不了——这是理解\"为什么要深\"的关键",
+    "学链式法则：反向传播本质就是链式法则的工程化",
+    "numpy 手写一个两层网络，跑通异或分类",
+    "再去看万能近似定理：知道\"能拟合\"和\"好训练\"是两回事"
+   ],
+   "heading": "📚 想深入了解怎么办",
+   "en": "GO DEEPER",
+   "short": "深入",
+   "num": "学"
+  }
+ },
+ {
+  "alias": [
+   "Attention",
+   "注意力机制"
+  ],
+  "category": "ai",
+  "id": "ai-transformer",
+  "name": "注意力机制与 Transformer",
+  "principle": {
+   "detail": "在 Transformer 之前，处理语言的主力是 RNN：像人读书一样逐词串行处理，第 100 个词要等前 99 个算完。又慢，长距离还\"健忘\"——句首的信息传到句尾衰减得所剩无几。\n\n2017 年论文《Attention Is All You Need》换了思路：别排队，让每个词同时看输入里的所有词。做法是每个词派出三个向量——Query（我在找什么）、Key（我是什么）、Value（我的内容）。\"银行\"这个词的 Query 和\"河边\"的 Key 相似度高，就多分一点注意力给它；和\"存款\"相关时又转去关注另一边。所有词的 Q/K/V 可以一次算完，全并行，GPU 最爱这种计算。\n\n在逻辑链上，注意力机制解决的是\"结构可放大\"：神经网络给了可学的结构，但 RNN 的串行注定了它做不大；自注意力让计算全并行、任意两个词直连，模型才敢从几亿参数放大到千亿。今天几乎所有大模型（GPT、Claude、Qwen、Llama）都是 Transformer 的变体——它是这条链的心脏。",
+   "steps": [
+    "输入词先变成向量",
+    "每个词生成 Q/K/V 三个向量",
+    "Q 和所有 K 算相似度",
+    "softmax 得到\"关注谁、关注多少\"",
+    "按权重对 V 加权求和",
+    "多头并行，堆叠几十层"
+   ],
+   "summary": "每个词同时看所有词，用 Q/K/V 算出\"该关注谁\"，全并行、长距离直连，模型才敢放大到千亿参数。"
+  },
+  "scene": "\"ChatGPT 背后是 Transformer 架构\"\"2017 年那篇神论文\"——这篇论文之前，AI 读句子像人一样逐词读，又慢又健忘；之后，AI 可以一眼看完全文。",
+  "sources": [
+   {
+    "title": "Attention Is All You Need（Vaswani et al. 2017，论文）",
+    "url": "https://arxiv.org/abs/1706.03762"
+   },
+   {
+    "title": "注意力机制讲解（the-msp-kb）",
+    "url": "https://github.com/community-rocks/the-msp-kb/blob/HEAD/ai-for-msps/foundational-ai-concepts/attention-mechanism.md"
+   }
+  ],
+  "tagline": "每个词同时看所有词，大模型的心脏",
+  "guide": {
+   "options": [
+    {
+     "name": "《Attention Is All You Need》原论文",
+     "desc": "2017 年那篇神论文，8 页正文，值得逐字读",
+     "when": "想看天才的想法最初长什么样"
+    },
+    {
+     "name": "Jay Alammar 图解 Transformer",
+     "desc": "全网最出名的图解，一张图讲清 Q/K/V",
+     "when": "论文读不下去时，先看这篇建立画面感"
+    },
+    {
+     "name": "HuggingFace 官方课程",
+     "desc": "从 tokenizer 到微调，手把手带你跑",
+     "when": "想亲手加载一个 Transformer 模型"
+    }
+   ],
+   "pitfalls": [
+    "别被数学符号吓住：Q/K/V 本质就是\"查询/被查/内容\"三张表",
+    "注意力权重≠模型\"在想什么\"，可视化看看就好别过度解读",
+    "位置编码有好几种，知道\"为什么需要它\"比记住公式重要"
+   ],
+   "steps": [
+    "先复习 RNN 的毛病：串行、健忘——这是 Transformer 要解决的问题",
+    "看 Jay Alammar 的图解，把 Q/K/V 的直觉建立起来",
+    "读原论文，重点看 multi-head 和位置编码这两节",
+    "跑 HuggingFace 教程：加载一个小模型，打印一条注意力权重看看",
+    "对比 GPT/ BERT：一个只看左边（解码器），一个左右都看（编码器）"
+   ],
+   "heading": "📚 想深入了解怎么办",
+   "en": "GO DEEPER",
+   "short": "深入",
+   "num": "学"
+  }
+ },
+ {
+  "alias": [
+   "Tokenization",
+   "分词"
+  ],
+  "category": "ai",
+  "id": "ai-token",
+  "name": "Token：大模型眼中的文字单位",
+  "principle": {
+   "detail": "模型只懂数字，不懂汉字，所以第一步是把文字变成数字 ID。但怎么切是个 trade-off：按词切，词表会爆炸（新词无穷无尽）；按字切，序列又太长（注意力是 O(n²)，长序列贵得离谱）。\n\nBPE（字节对编码）是个聪明的折中：从单个字符出发，反复把文本里最高频的相邻组合并成新 token。高频词如\"学习\"各自占一个 token，罕见词会被拆成几个子词。结果是常用内容又短又省、罕见内容也能表示，一个 5 万左右的词表就能覆盖几乎所有文本。\n\n在逻辑链上，Token 是\"文字进入数学世界\"的第一道门：它承接\"模型只懂数字\"的现实，为后面的 Embedding、预训练铺好输入。一个冷知识：你付的 API 账单、128K 上下文窗口，计的都是 token 不是字；中文通常 1 个汉字约 1.5～2 个 token，所以中文用户调 API 天生贵一点、上下文也更不经用。",
+   "steps": [
+    "原始文本进来",
+    "BPE 按学到的规则切分",
+    "高频词：一个词一个 token",
+    "罕见词：拆成多个子词",
+    "每个 token 映射成数字 ID",
+    "模型实际看到的是 ID 序列"
+   ],
+   "summary": "BPE 把文本切成子词再映射成数字 ID：高频词一个 token，罕见词拆开——模型看到的永远是数字。"
+  },
+  "scene": "API\"按 token 计费\"\"128K 上下文\"\"数一数 token 别超了\"——token 到底是什么？它不是字也不是词，而是一种折中的切分单位，模型眼里你的话全是一串数字。",
+  "sources": [
+   {
+    "title": "LLM 分词器讲解：BPE（llm-tutorial）",
+    "url": "https://github.com/yingwang/llm-tutorial/blob/HEAD/en/01-tokenizer.md"
+   },
+   {
+    "title": "tiktoken 官方仓库（OpenAI）",
+    "url": "https://github.com/openai/tiktoken"
+   }
+  ],
+  "tagline": "模型眼里的文字，全是数字",
+  "guide": {
+   "options": [
+    {
+     "name": "提示词\"减肥\"",
+     "desc": "删掉寒暄和重复背景，一句话能讲清就别写三段，输出长度设上限",
+     "when": "最立竿见影，人人可用"
+    },
+    {
+     "name": "提示缓存（Prompt Caching）",
+     "desc": "各家 API 提供的缓存：重复的系统指令只计费一次，后续调用打折",
+     "when": "系统指令又长又固定、调用频繁时"
+    },
+    {
+     "name": "小活小模型，大活用大模型",
+     "desc": "分类、打标签这类小判断用便宜模型，复杂推理再上旗舰",
+     "when": "用量大、账单肉疼时"
+    }
+   ],
+   "pitfalls": [
+    "128K 上下文是\"能装\"不是\"免费\"，塞满一次的输入 token 照样计费",
+    "中文天生比英文费 token，同样的活中文用户账单更高",
+    "一味追求省 token 把关键信息砍了，答案质量掉得比省的钱多"
+   ],
+   "steps": [
+    "先搞清你用的模型 1 个汉字约几个 token（中文通常 1.5～2 个，比英文贵）",
+    "写提示词时做减法：背景只给模型真需要的，历史对话定期做摘要",
+    "系统指令又臭又长？查一下你用的 API 有没有提示缓存，开了能省一大截",
+    "长文档别整篇塞：先让模型分段摘要，再基于摘要问",
+    "给 max_tokens 设个上限，别让模型自由发挥写小作文",
+    "每月看一眼账单，按输入/输出 token 拆开看，钱花在哪一目了然"
+   ],
+   "heading": "🙋 调用 API 时怎么省 Token",
+   "en": "HANDS-ON",
+   "short": "使用",
+   "num": "用"
+  }
+ },
+ {
+  "alias": [
+   "词向量",
+   "word embedding"
+  ],
+  "category": "ai",
+  "id": "ai-embedding",
+  "name": "Embedding：词语的语义坐标",
+  "principle": {
+   "detail": "Token 解决了\"变数字\"，但 ID 只是编号：\"猫\"是 1234、\"狗\"是 5678，数字之间没有任何关系，模型看不出猫狗比猫车更像。Embedding 解决的就是\"给数字注入语义\"。\n\n它背后的思想叫分布假说：上下文相似的词，语义就相似。\"猫爱吃鱼\"\"狗爱吃骨头\"里，猫和狗出现在相似的上下文中，训练时它们的向量就被推到一起。几百轮之后，\"国王-男人+女人≈女王\"这种类比竟然在向量空间里成立——语义第一次变得可计算。\n\n在逻辑链上，Embedding 是 Token 的下一站：Token 给出离散 ID，Embedding 给出连续语义。它的直接产物就是今天的\"向量数据库\"和语义搜索，也是后面 RAG（检索增强生成）的地基——RAG 本质上就是\"把问题变成向量，去向量库里找最像的文档\"。",
+   "steps": [
+    "token ID 进 embedding 层查表",
+    "得到几百维的稠密向量",
+    "训练中向量被推拉调整",
+    "近义词在空间里聚拢",
+    "向量可做加减类比运算",
+    "存入向量库支持语义检索"
+   ],
+   "summary": "把 token ID 变成稠密向量，语义相近的词在空间里距离近——语义第一次变得可计算。"
+  },
+  "scene": "\"向量数据库\"\"以文搜文\"\"语义搜索\"——搜\"好吃的川菜馆\"能返回\"正宗麻辣火锅\"，靠的不是关键词匹配。背后是一套把\"语义\"变成\"空间距离\"的数学，叫 Embedding。",
+  "sources": [
+   {
+    "title": "LLM 基础：分词、Embedding 与向量空间深潜",
+    "url": "https://medium.com/@srirammoorthy11/llm-fundamentals-a-deep-dive-into-tokenization-embeddings-and-vector-spaces-d5c849297c53"
+   }
+  ],
+  "tagline": "语义第一次变得可计算",
+  "guide": {
+   "code": {
+    "code": "from sentence_transformers import SentenceTransformer\nfrom numpy import dot\nfrom numpy.linalg import norm\n\nmodel = SentenceTransformer(\"all-MiniLM-L6-v2\")\n\n# 一句话 → 384 维向量\nv_cat = model.encode(\"猫是一种可爱的宠物\")\nv_dog = model.encode(\"狗是人类忠实的朋友\")\nv_car = model.encode(\"汽车需要定期保养\")\n\ndef sim(a, b):\n    return dot(a, b) / (norm(a) * norm(b))\n\nprint(\"猫-狗:\", round(float(sim(v_cat, v_dog)), 3))\nprint(\"猫-车:\", round(float(sim(v_cat, v_car)), 3))\n# 语义相近 → 余弦相似度更高",
+    "label": "句向量语义相似度·示意",
+    "lang": "python"
+   },
+   "options": [
+    {
+     "desc": "all-MiniLM-L6-v2 又小又好用的句向量模型",
+     "name": "sentence-transformers",
+     "when": "本地做语义搜索、文本聚类"
+    },
+    {
+     "desc": "text-embedding 系列，按量计费",
+     "name": "OpenAI Embeddings API",
+     "when": "不想自己部署，直接调 API"
+    },
+    {
+     "desc": "FAISS / Chroma / pgvector",
+     "name": "向量数据库",
+     "when": "百万级向量要毫秒级检索时"
+    }
+   ],
+   "pitfalls": [
+    "不同模型的向量空间不互通：A 模型存的向量不能拿 B 模型查",
+    "维度越高不一定越好，够用就行",
+    "以为距离近=完全同义：向量只捕捉统计语义",
+    "中文 embedding 要选对中文优化过的模型"
+   ],
+   "steps": [
+    "token ID 进 embedding 层查表",
+    "得到几百维的稠密向量",
+    "训练中向量被\"推拉\"调整",
+    "近义词在空间里聚拢",
+    "向量可做加减运算",
+    "存入向量库，支持语义检索"
+   ],
+   "heading": "🛠️ 开发者：应该如何接入",
+   "en": "INTEGRATION",
+   "short": "接入",
+   "num": "接"
+  }
+ },
+ {
+  "alias": [
+   "Pre-training",
+   "预训练模型",
+   "基座模型"
+  ],
+  "category": "ai",
+  "id": "ai-pretraining",
+  "name": "预训练：海量文本喂出的通用能力",
+  "principle": {
+   "detail": "训练 AI 最大的拦路虎是标注数据：请人一条条标注\"这是猫\"，又贵又慢，撑不起百亿参数。预训练的天才之处在于发现了免费教材——互联网文本本身。\n\n玩法叫自监督学习：把一句话的最后一个词遮住，让模型猜。\"中国的首都是___\"，猜\"北京\"。猜对了没奖励，猜错了调权重。互联网上有万亿级别的句子，每一句都是一道免费的练习题。模型为了猜准下一个词，被迫学会语法、事实、逻辑、文风——世界知识是这个游戏的副产品。\n\n在逻辑链上，预训练是\"规模化\"的起点：Token/Embedding 解决了输入表示，Transformer 解决了可并行放大的结构，预训练把\"免费数据×大结构×大算力\"拧在一起，第一次练出了通用语言能力。但它留下两个坑：模型只会续写不会听指令（下一环 SFT 解决），以及知识冻结在训练截止日（RAG 解决）。",
+   "steps": [
+    "爬取海量无标注文本",
+    "清洗去重，过滤垃圾",
+    "切成 token 序列",
+    "玩\"预测下一个词\"游戏",
+    "猜错就反向传播调权重",
+    "万亿 token 后涌现通用能力"
+   ],
+   "summary": "在海量无标注文本上玩\"预测下一个词\"的自监督游戏，免费教材练出通用能力，世界知识是副产品。"
+  },
+  "scene": "\"GPT-3 用了 45TB 文本训练\"\"训练一次花几千万美元\"——钱到底烧在哪了？其实是烧在让模型玩一个极其昂贵的\"猜词游戏\"，而这个游戏恰恰不需要任何人工标注。",
+  "sources": [
+   {
+    "title": "Scaling Laws for Neural Language Models（Kaplan et al. 2020）",
+    "url": "https://arxiv.org/abs/2001.08361"
+   }
+  ],
+  "tagline": "预测下一个词，练出通用智能",
+  "guide": {
+   "options": [
+    {
+     "name": "Andrej Karpathy 的 nanoGPT",
+     "desc": "从零手写一个小 GPT，B 站/YouTube 有全程视频",
+     "when": "想亲眼看到\"预测下一个词\"怎么练出智能"
+    },
+    {
+     "name": "HuggingFace 基座模型体验",
+     "desc": "下载 Qwen/Llama 的 Base 版，亲手试\"它只会续写\"",
+     "when": "想体会基座模型和聊天模型的区别"
+    },
+    {
+     "name": "数据工程讨论",
+     "desc": "各实验室的技术报告里关于数据清洗配比的部分",
+     "when": "好奇\"45TB 文本\"到底怎么来的"
+    }
+   ],
+   "pitfalls": [
+    "自己从零预训练大模型不现实：99% 的人站在开源基座肩膀上",
+    "Base 模型只会续写：拿它当聊天用会得到\"十个类似问题\"",
+    "知识有截止日：预训练完那天起，世界对它就是静止的"
+   ],
+   "steps": [
+    "先理解自监督：\"遮住最后一个词让它猜\"——免费教材的来源",
+    "跑 nanoGPT 或 tiny 实验，看损失是怎么降下来的",
+    "亲手对比 Base 版和 Instruct 版：同一个问题，一个续写、一个回答",
+    "了解数据清洗：去重、过滤为什么占这么大篇幅",
+    "最后看缩放定律那篇：预训练回答\"怎么练\"，缩放定律回答\"练多大\""
+   ],
+   "heading": "📚 想深入了解怎么办",
+   "en": "GO DEEPER",
+   "short": "深入",
+   "num": "学"
+  }
+ },
+ {
+  "alias": [
+   "SFT",
+   "Supervised Fine-Tuning",
+   "LoRA",
+   "指令微调"
+  ],
+  "category": "ai",
+  "id": "ai-sft-lora",
+  "name": "微调：教模型听懂指令",
+  "principle": {
+   "detail": "预训练模型有个哭笑不得的毛病：你问它\"中国的首都是哪里？\"，它可能给你续写十个类似的问题——因为它学的是\"预测下一个词\"，不是\"回答问题\"。SFT（指令微调）就是教它从\"续写机器\"变成\"听话助手\"：喂几万条\"指令-回答\"对继续训练，模型学会对话格式、任务跟随。\n\n但全量微调 800 亿参数要海量显存，普通人玩不起。LoRA 的思路很妙：冻结原权重不动，在每一层旁边注入两个小矩阵（A 和 B，秩很低），只训练这两个小矩阵。直觉是：微调需要的\"改变量\"本身就在一个低维子空间里——就像给大楼做装修，不用推倒重建，加几根承重柱就行。\n\n在逻辑链上，SFT 承接预训练的\"只会续写\"问题，把语言模型变成助手；LoRA 则回答了\"没钱没卡怎么微调\"。但它俩只教\"像什么样\"，不解决\"该不该说\"——那是下一环 RLHF 的事。",
+   "steps": [
+    "准备\"指令-回答\"对",
+    "加载预训练基座模型",
+    "继续训练，学对话格式",
+    "LoRA：冻结原权重不动",
+    "只训练注入的低秩小矩阵",
+    "合并得到听话的定制模型"
+   ],
+   "summary": "用\"指令-回答\"对把续写机器调成听话助手；LoRA 冻结原权重只训低秩小矩阵，单卡可微调。"
+  },
+  "scene": "\"微调一个自己的客服模型\"\"Qwen 微调教程\"——开源模型下载下来是\"半成品\"，微调就是请它吃你家的小灶。但全量微调要一屋子显卡，LoRA 让单卡玩家也能上桌。",
+  "sources": [
+   {
+    "title": "InstructGPT：SFT 三阶段（Ouyang et al. 2022）",
+    "url": "http://arxiv.org/abs/2203.02155"
+   },
+   {
+    "title": "LoRA：大模型的低秩适配（Hu et al. 2021）",
+    "url": "https://arxiv.org/abs/2106.09685v2"
+   }
+  ],
+  "tagline": "把续写机器调成听话助手",
+  "guide": {
+   "code": {
+    "code": "from peft import LoraConfig, get_peft_model\nfrom trl import SFTTrainer\n\n# LoRA：冻结原权重，只训练注入的小矩阵\npeft_config = LoraConfig(\n    r=16,               # 秩：小矩阵的\"宽度\"，越大越能学，越慢\n    lora_alpha=32,\n    target_modules=[\"q_proj\", \"v_proj\"],  # 只动注意力的 Q/V\n    lora_dropout=0.05,\n)\nmodel = get_peft_model(base_model, peft_config)\n# 可训练参数从 80 亿 → 几百万，单卡可训\n\ntrainer = SFTTrainer(\n    model=model,\n    train_dataset=instruction_data,  # \"指令-回答\"对\n    peft_config=peft_config,\n)\ntrainer.train()",
+    "label": "PEFT + TRL 做 LoRA 微调·示意",
+    "lang": "python"
+   },
+   "options": [
+    {
+     "desc": "HuggingFace peft 库的 LoraConfig",
+     "name": "PEFT / LoRA",
+     "when": "单卡微调大模型，显存不够全量训"
+    },
+    {
+     "desc": "trl 库的 SFTTrainer",
+     "name": "TRL",
+     "when": "标准的指令微调训练循环"
+    },
+    {
+     "desc": "LLaMA-Factory / unsloth",
+     "name": "一键微调工具",
+     "when": "不想写训练代码，可视化开训"
+    }
+   ],
+   "pitfalls": [
+    "数据质量远重于数量：100 条高质量指令胜过 10 万条垃圾",
+    "微调会洗掉原有能力（灾难性遗忘），通用能力可能下降",
+    "LoRA 的秩不是越大越好，16～64 通常够用",
+    "想靠 SFT 教模型新知识：不如 RAG，微调适合定行为不适合灌知识"
+   ],
+   "steps": [
+    "准备\"指令-回答\"对数据集",
+    "拿预训练好的基座模型",
+    "在其上继续训练，学对话格式",
+    "LoRA：冻结原权重不动",
+    "只训练注入的低秩小矩阵",
+    "合并权重，得到定制模型"
+   ],
+   "heading": "🛠️ 开发者：应该如何接入",
+   "en": "INTEGRATION",
+   "short": "接入",
+   "num": "接"
+  }
+ },
+ {
+  "alias": [
+   "RLHF",
+   "RLAIF",
+   "Alignment",
+   "对齐"
+  ],
+  "category": "ai",
+  "id": "ai-rlhf",
+  "name": "RLHF：用人类反馈调教模型",
+  "principle": {
+   "detail": "SFT 教会了模型\"像助手\"，但有个问题它解决不了：\"该不该说\"。SFT 数据里没人教模型拒绝——于是有了 RLHF（基于人类反馈的强化学习），ChatGPT 懂得拒绝、懂得说\"我不确定\"，主要靠它。\n\n流程分三步：先让模型对同一问题生成多个回答，请人类排序（\"这个好、那个差\"）；再用这些排序训练一个\"奖励模型\"，让它学会像人类一样打分；最后用强化学习（PPO）把语言模型往高分方向推。RLAIF 把第一步昂贵的人类标注换成 AI 法官（如用 GPT-4 给回答排序），成本降一个数量级，效果接近。\n\n在逻辑链上，RLHF 承接 SFT 的\"只教像什么样\"：SFT 定格式，RLHF 定价值观。这也是\"对齐\"（Alignment）一词的来源——让模型的行为与人类偏好对齐。但注意它的边界：它解决\"该不该说\"，不解决\"说得对不对\"（那是幻觉问题）。",
+   "steps": [
+    "模型生成多个候选回答",
+    "人类（或 AI 法官）排序",
+    "训练奖励模型学会打分",
+    "奖励模型当裁判",
+    "强化学习往高分方向推",
+    "模型学会拒绝与诚实"
+   ],
+   "summary": "人类（或 AI 法官）给回答排序→训练奖励模型→强化学习把模型往高分推，教它做\"对\"的事。"
+  },
+  "scene": "\"模型要对齐人类价值观\"\"ChatGPT 为什么懂得拒绝\"——同样的问题，基座模型可能直接续写出有害教程，而你用的版本会礼貌拒绝。这道\"防火墙\"不是提示词，是训练阶段装进去的。",
+  "sources": [
+   {
+    "title": "LLM 强化学习：RLHF/RLAIF/RLVF 全景（2026）",
+    "url": "https://github.com/trishambp/trishambp.github.io/blob/HEAD/_posts/2026-09-10-reinforcement-learning-for-llms-rlhf-rlaif-rlvf-rlef-swirl-post-training.md"
+   },
+   {
+    "title": "State of RL 2025（Turing Post）",
+    "url": "https://www.turingpost.com/p/stateofrl2025"
+   }
+  ],
+  "tagline": "教模型做对的事，而不只是像",
+  "guide": {
+   "options": [
+    {
+     "name": "InstructGPT 论文",
+     "desc": "RLHF 的开山之作，讲清了\"人类排序→奖励模型→PPO\"全套",
+     "when": "想看懂这套流程为什么长这样"
+    },
+    {
+     "name": "DPO 论文",
+     "desc": "更简单的替代方案：不用强化学习，直接优化偏好",
+     "when": "觉得 PPO 太复杂，想找条近路"
+    },
+    {
+     "name": "Anthropic 对齐博客",
+     "desc": "Constitutional AI 等，用 AI 当法官的思路",
+     "when": "对\"AI 监督 AI\"这条线感兴趣"
+    }
+   ],
+   "pitfalls": [
+    "RLHF 解决\"该不该说\"，不解决\"说得对不对\"——那是幻觉问题",
+    "奖励黑客：模型会钻奖励模型的空子，刷出高分废话",
+    "\"对齐税\"：对齐后的模型有时会变\"怂\"，能力略有折损"
+   ],
+   "steps": [
+    "先分清 SFT 和 RLHF：一个教\"像什么样\"，一个教\"该不该\"",
+    "理解奖励模型：它是个\"学会人类品味的打分器\"",
+    "看懂 PPO 在干什么：往高分方向小步推，别推飞",
+    "了解 DPO：把强化学习化简成分类问题，2023 年后的主流",
+    "最后看 RLAIF：人类标注太贵，AI 法官怎么顶上"
+   ],
+   "heading": "📚 想深入了解怎么办",
+   "en": "GO DEEPER",
+   "short": "深入",
+   "num": "学"
+  }
+ },
+ {
+  "alias": [
+   "Inference",
+   "模型部署",
+   "vLLM",
+   "Ollama",
+   "量化"
+  ],
+  "category": "ai",
+  "id": "ai-inference-deploy",
+  "name": "推理部署：让模型跑起来",
+  "principle": {
+   "detail": "训练是\"烧钱学知识\"，推理是\"用知识答题\"：加载权重，输入 prompt，模型逐个 token 往外\"挤\"答案——每生成一个词，都要把整个大模型算一遍。这就是为什么大模型回答是\"流式吐字\"而不是瞬间全文：它真的是一个词一个词想出来的。\n\n部署的核心矛盾是显存：一千亿参数、每个 2 字节（FP16），光权重就要 200GB 显存。两招破局：量化——把权重精度从 16 位降到 8 位甚至 4 位，显存砍半再砍半，精度损失可控；PagedAttention（vLLM 的核心）——像操作系统管理内存页一样管理 KV 缓存，加上连续批处理，把吞吐榨干。\n\n在逻辑链上，推理部署承接\"模型训好了\"：预训练/SFT/RLHF 产出的只是一堆 .bin 权重文件，怎么把它变成 7×24 稳定、低延迟、扛并发的服务，是另一门手艺。Ollama 让个人一键本地跑，vLLM 让公司扛住生产流量。",
+   "steps": [
+    "加载训练好的权重",
+    "用户 prompt 进来",
+    "逐 token 自回归解码",
+    "KV 缓存避免重复计算",
+    "多请求拼成批次一起算",
+    "流式把字一个个吐出来"
+   ],
+   "summary": "权重+逐 token 解码就是推理；量化省显存、PagedAttention 提吞吐——部署是另一门手艺。"
+  },
+  "scene": "\"本地跑大模型\"\"API 太贵了自己部署\"——同样一个 Qwen，有人在笔记本上跟它聊天，有人用它扛住每秒上千次请求。中间差的不是模型，而是真正的推理部署这门手艺。",
+  "sources": [
+   {
+    "title": "vLLM 官方仓库",
+    "url": "https://github.com/vllm-project/vllm"
+   },
+   {
+    "title": "Ollama 官方仓库",
+    "url": "https://github.com/ollama/ollama"
+   }
+  ],
+  "tagline": "权重会思考了，怎么把它端上桌",
+  "guide": {
+   "code": {
+    "code": "# 本地一键跑：Ollama\n$ ollama run qwen3:8b\n# \"你好\" → 模型在你的电脑上逐 token 生成\n\n# 生产部署：vLLM 起一个 OpenAI 兼容接口\n$ vllm serve Qwen/Qwen3-8B \\\n    --quantization awq \\        # 4-bit 量化：显存减半再减半\n    --max-model-len 32768\n# 然后就可以用 OpenAI 的 SDK 调它了：\nfrom openai import OpenAI\nclient = OpenAI(base_url=\"http://localhost:8000/v1\",\n                api_key=\"EMPTY\")\nresp = client.chat.completions.create(\n    model=\"Qwen/Qwen3-8B\", messages=[{\"role\":\"user\",\"content\":\"你好\"}])",
+    "label": "Ollama 本地跑 + vLLM 生产部署·示意",
+    "lang": "bash"
+   },
+   "options": [
+    {
+     "desc": "ollama run qwen3，一行命令本地跑",
+     "name": "Ollama",
+     "when": "个人体验、断网可用、隐私敏感场景"
+    },
+    {
+     "desc": "vllm serve 起 OpenAI 兼容 API",
+     "name": "vLLM",
+     "when": "生产环境要高并发、低延迟"
+    },
+    {
+     "desc": "llama.cpp / HuggingFace TGI",
+     "name": "llama.cpp / TGI",
+     "when": "端侧/CPU 推理，或已有 HF 生态"
+    }
+   ],
+   "pitfalls": [
+    "下载了权重不等于能跑：先算显存（参数量×精度+KV 缓存）",
+    "量化掉点：70B 量化后差距小，7B 量化后差距明显",
+    "并发一高就 OOM：vLLM 的连续批处理要配好上限",
+    "以为本地跑=免费：电费和 Mac 的磨损也是成本"
+   ],
+   "steps": [
+    "拿到训练好的权重文件",
+    "选精度：FP16 直接跑，或量化到 INT8/4",
+    "加载进显存，建 KV 缓存",
+    "用户 prompt 进来，分词",
+    "逐 token 自回归解码",
+    "流式输出，多个请求拼批处理"
+   ],
+   "heading": "🛠️ 开发者：应该如何接入",
+   "en": "INTEGRATION",
+   "short": "接入",
+   "num": "接"
+  }
+ },
+ {
+  "alias": [
+   "Evals",
+   "模型评测",
+   "MMLU",
+   "HumanEval"
+  ],
+  "category": "ai",
+  "id": "ai-benchmark",
+  "name": "Benchmark：给大模型的标准化考试",
+  "principle": {
+   "detail": "没有统一考试，各家发布会都可以自称第一。Benchmark 就是大模型的\"高考\"：标准化考卷=数据集+指标+流程，让不同模型可比较、可复现。四个最出名的各测一面：MMLU 是 57 学科 1.57 万道选择题，测知识广度；HumanEval 是 164 道 Python 函数题，跑过单元测试才算对；GPQA 是理科研究生级难题，专家开卷也只有约 65%；SWE-bench 直接给真实 GitHub issue 和代码库，模型要读 issue、写 patch、跑测试。\n\n关键概念是\"饱和度\"：MMLU 前沿模型已超 92%，标签错误把上限卡在约 95%——卷子刷完，分数涨不动了；HumanEval 同理。而 GPQA Diamond 和 SWE-bench Verified 还能拉开差距，于是形成军备竞赛：旧卷饱和→出更难的新卷（MMLU-Pro、Humanity's Last Exam）。在逻辑链上，评测是整条链的质检员，也是下一环 Harness 存在的原因——没有统一执考，考卷再好也白搭。",
+   "steps": [
+    "定考题：准备数据集",
+    "定评分规则：指标",
+    "统一条件下让模型作答",
+    "打分、排名、公布",
+    "旧卷子被刷到饱和",
+    "出更难的新卷子，循环"
+   ],
+   "summary": "标准化考试=数据集+指标+流程；MMLU 考广度、HumanEval 考代码、GPQA 考推理，考题会\"饱和\"倒逼更难的卷子。"
+  },
+  "scene": "新闻\"某模型在 MMLU 上得分第一，超越 GPT\"——这考试到底考什么？为什么有的榜单大家分数都挤在 90% 上动不了，而有的榜单还能拉开几十分的差距？这套考试系统就是 Benchmark。",
+  "sources": [
+   {
+    "title": "LLM 评测总览：Evals 是什么（ml4devs）",
+    "url": "https://www.ml4devs.com/what-is/evals-llm-evaluation/"
+   },
+   {
+    "title": "2026 LLM Benchmark 全景（skycrumbs）",
+    "url": "https://skycrumbs.com/blog/llm-benchmarks-2026"
+   },
+   {
+    "title": "Benchmark 中文友好讲解（GitHub）",
+    "url": "https://github.com/janbodnar/ai-skolenie/blob/HEAD/en/benchmarks.md"
+   }
+  ],
+  "tagline": "大模型的高考，分数也会通胀",
+  "guide": {
+   "options": [
+    {
+     "name": "综合大榜",
+     "desc": "Open LLM Leaderboard 这类：多个任务平均分，看个大概座次",
+     "when": "选型第一站，快速缩小范围"
+    },
+    {
+     "name": "按场景看专项",
+     "desc": "写代码看 HumanEval/SWE-bench，数学看 MATH，知识看 GPQA",
+     "when": "你的场景明确，专项榜比综合榜准"
+    },
+    {
+     "name": "价格性能榜",
+     "desc": "Artificial Analysis 这类：把分数和 API 价格放一起看",
+     "when": "预算敏感，要性价比"
+    }
+   ],
+   "pitfalls": [
+    "厂商发布会只贴自己赢的榜：多看第三方综合榜",
+    "MMLU 已饱和：还拿它当\"第一\"宣传的，多半是没更好的可吹",
+    "刷榜和训练数据污染是公开的秘密：榜单分数普遍虚高一点",
+    "榜单更新快：半年前的\"第一\"可能已经掉到第五"
+   ],
+   "steps": [
+    "先定你的场景：聊天、写代码、还是知识问答——榜单要对口",
+    "去综合榜看个大概，圈出 3～5 个候选",
+    "去专项榜验证：只看和你场景相关的那 1～2 个分数",
+    "看饱和度：MMLU 这种大家挤在 90%+ 的榜，1～2 分差距基本是噪声",
+    "拿你自己的真实任务实测一轮：榜单≠你的业务效果",
+    "最后看价格：便宜 10 倍、分数差 2 分，多数场景选便宜的"
+   ],
+   "heading": "🤔 选模型时怎么看榜单",
+   "en": "CHOOSE",
+   "short": "选型",
+   "num": "选"
+  }
+ },
+ {
+  "alias": [
+   "lm-eval",
+   "评测框架",
+   "eval harness"
+  ],
+  "category": "ai",
+  "id": "ai-harness",
+  "name": "Harness：铁面无私的 AI 监考官",
+  "principle": {
+   "detail": "有了考卷，还需要铁面无私的监考官。LLM 评测有个恼人特性：prompt 写法稍变，分数就崩。同样测 MMLU，题目前加\"请回答：\"和不加能差好几个点；few-shot 给 5 个和给 0 个更是天壤之别——A 模型 75 分、B 模型 78 分，姿势不同根本没法比。\n\nHarness 就是来统一姿势的：EleutherAI 的 lm-evaluation-harness 把 prompt 模板、few-shot 数、任务版本、打分指标全部标准化，一行命令跑分，任何模型都站在同一起跑线上。它内置 300+ 学术任务，支持 HuggingFace、vLLM、OpenAI API 等后端，是 HF Open LLM Leaderboard 背后的标准工具。\n\n在逻辑链上，Harness 承接 Benchmark 的\"有卷无官\"：考卷解决\"考什么\"，它解决\"怎么考才公平\"。注意边界：它测的是学术基准上的\"裸能力\"，RAG、Agent 行为需要另一类 harness（如 SWE-bench 的执行沙箱）。",
+   "steps": [
+    "选任务：mmlu、gsm8k 等",
+    "harness 按统一模板发卷",
+    "固定 few-shot 数和 prompt",
+    "收集所有模型输出",
+    "按同一套指标打分",
+    "分数可比、可复现、可进 CI"
+   ],
+   "summary": "统一 prompt、few-shot 数、任务版本和打分指标的\"执考框架\"，让不同模型的分数站在同一起跑线上。"
+  },
+  "scene": "开发者\"给新出的开源模型跑个分，看看是不是吹牛\"——但同样的卷子，换个问法分数就变。怎么保证你跑的分和官方公布的是同一个\"分\"？这就需要 Harness 来统一\"执考\"。",
+  "sources": [
+   {
+    "title": "lm-evaluation-harness 官方仓库（EleutherAI）",
+    "url": "https://github.com/EleutherAI/lm-evaluation-harness"
+   },
+   {
+    "title": "lm-evaluation-harness 教程 2026",
+    "url": "https://qaskills.sh/blog/lm-evaluation-harness-tutorial-2026"
+   },
+   {
+    "title": "Open LLM Leaderboard（Hugging Face）",
+    "url": "https://huggingface.co/spaces/HuggingFaceH4/open_llm_leaderboard"
+   }
+  ],
+  "tagline": "给考试配一个铁面无私的监考官",
+  "guide": {
+   "code": {
+    "code": "# 安装：pip install lm-eval\n# 一行命令，给任意模型跑分：\n$ lm_eval --model hf \\\n    --model_args pretrained=Qwen/Qwen3-8B \\\n    --tasks mmlu,gsm8k \\\n    --num_fewshot 5 \\\n    --batch_size 8\n\n# 输出示例：\n# | Tasks | Version | Metric | Value |\n# | mmlu  | 2       | acc    | 0.693 |\n# | gsm8k | 3       | acc    | 0.821 |\n\n# 换 API 模型也行：\n$ lm_eval --model openai-completions \\\n    --model_args model=gpt-4o-mini \\\n    --tasks humaneval",
+    "label": "lm-eval 一行跑分·真实命令",
+    "lang": "bash"
+   },
+   "options": [
+    {
+     "desc": "EleutherAI 出品，pip install lm-eval",
+     "name": "lm-evaluation-harness",
+     "when": "给开源模型跑分、发论文、做选型对比"
+    },
+    {
+     "desc": "Hugging Face 官方排行榜背后的标准",
+     "name": "Open LLM Leaderboard",
+     "when": "直接看别人跑好的分数"
+    },
+    {
+     "desc": "接入 CI，每次更新模型自动跑回归",
+     "name": "评测进 CI",
+     "when": "防止新版本悄悄变差"
+    }
+   ],
+   "pitfalls": [
+    "任务版本不同分数不可比：mmlu v1 和 v2 是两张卷",
+    "few-shot 数量不同别硬比：5-shot 和 0-shot 差很多",
+    "用它测 RAG 管线/Agent 行为：水土不服，那是另一类 harness",
+    "只跑一个任务就下结论：至少看 3-5 个任务的组合"
+   ],
+   "steps": [
+    "选任务：mmlu、gsm8k…",
+    "harness 统一发卷",
+    "固定 few-shot 数和 prompt",
+    "收集模型输出",
+    "按同一指标打分",
+    "结果可复现、可发表"
+   ],
+   "heading": "🛠️ 开发者：应该如何接入",
+   "en": "INTEGRATION",
+   "short": "接入",
+   "num": "接"
+  }
+ },
+ {
+  "alias": [
+   "RAG",
+   "检索增强生成",
+   "Retrieval-Augmented Generation"
+  ],
+  "category": "ai",
+  "id": "ai-rag",
+  "name": "RAG：给大模型外挂知识库",
+  "principle": {
+   "detail": "预训练留下两个坑，其中之一是\"知识冻结\"：模型只知道训练截止日之前的事，更不懂你们公司的内部文档。重训一次几千万美元，就为了更新知识？RAG 说：别重训，给模型外挂一个知识库。\n\n流程像开卷考试：先把文档切成块，转成向量存进向量库；用户一提问，把问题也转成向量，去库里捞出最相关的几块，拼进 prompt 再让模型生成。因为答案是\"看着资料说的\"，还可以要求它标注引用来源，可审计、可追溯。换一批文档，模型的\"知识\"就换了——知识更新从\"重新训练\"降级成\"换个文件\"。\n\n在逻辑链上，RAG 承接预训练的\"知识冻结\"和\"不懂私有数据\"：它是\"外挂知识\"方案，与之相对的是 SFT/微调\"内化知识\"。分工口诀：行为用微调定，知识用 RAG 补。但别指望它根治幻觉——检索错了，模型会一本正经地引用错误资料继续编。",
+   "steps": [
+    "文档切块",
+    "转 embedding 存向量库",
+    "问题转向量",
+    "检索最相关的片段",
+    "片段拼进 prompt",
+    "基于片段生成，附引用"
+   ],
+   "summary": "先检索相关文档片段、拼进 prompt 再生成——换文档即换知识，不用重训，答案可引用可审计。"
+  },
+  "scene": "\"让 AI 回答公司内部文档\"\"AI 客服引用知识库回答\"——模型训练时没见过你们公司的规章制度，却能对答如流。知识不是长在权重里的，而是现场\"翻书\"翻出来的，这套机制就叫 RAG。",
+  "sources": [
+   {
+    "title": "RAG 奠基论文（Lewis et al. 2020, NeurIPS）",
+    "url": "https://arxiv.org/abs/2005.11401"
+   },
+   {
+    "title": "RAG 讲解（devtoolhub）",
+    "url": "https://devtoolhub.com/what-is-rag/"
+   }
+  ],
+  "tagline": "给大模型外挂一个知识库",
+  "guide": {
+   "code": {
+    "code": "from langchain_core.prompts import ChatPromptTemplate\nfrom langchain_community.vectorstores import Chroma\n\n# 1. 文档切块 → embedding → 存向量库（离线做一次）\n# 2. 在线：问题转向量，检索最相关的 3 块\nretriever = Chroma(...).as_retriever(k=3)\ndocs = retriever.invoke(\"退货政策是什么？\")\ncontext = \"\\n\".join(d.page_content for d in docs)\n\n# 3. 把检索片段拼进 prompt 再生成\nprompt = ChatPromptTemplate.from_messages([\n    (\"system\", \"只根据以下资料回答，引用资料编号：\\n{context}\"),\n    (\"human\", \"{question}\"),\n])\nchain = prompt | llm\nanswer = chain.invoke({\"context\": context, \"question\": \"退货政策是什么？\"})\n# 换文档即换知识，不用重新训练",
+    "label": "LangChain 简易 RAG·示意",
+    "lang": "python"
+   },
+   "options": [
+    {
+     "desc": "LCEL 链式编排，生态最全",
+     "name": "LangChain",
+     "when": "快速搭 RAG 应用，组件随手可换"
+    },
+    {
+     "desc": "以检索为中心的轻量框架",
+     "name": "LlamaIndex",
+     "when": "重心在文档索引与检索质量"
+    },
+    {
+     "desc": "Chroma / FAISS / pgvector",
+     "name": "向量数据库",
+     "when": "存百万级文档向量，毫秒级召回"
+    }
+   ],
+   "pitfalls": [
+    "切块太碎没上下文、太大噪音多：500～1000 字通常是甜点",
+    "检索错了，生成再强也白搭：先优化召回再调 prompt",
+    "以为 RAG 能根治幻觉：它只能缓解，引用也可能张冠李戴",
+    "把整个 PDF 一股脑塞进 prompt：又贵又吵，检索才是精髓"
+   ],
+   "steps": [
+    "文档切块",
+    "块转 embedding 存向量库",
+    "用户问题转向量",
+    "检索最相关的几块",
+    "片段拼进 prompt",
+    "模型基于片段生成并引用"
+   ],
+   "heading": "🛠️ 开发者：应该如何接入",
+   "en": "INTEGRATION",
+   "short": "接入",
+   "num": "接"
+  }
+ },
+ {
+  "alias": [
+   "Hallucination",
+   "AI 胡说八道"
+  ],
+  "category": "ai",
+  "id": "ai-hallucination",
+  "name": "AI 幻觉：一本正经地胡说八道",
+  "principle": {
+   "detail": "为什么 AI 会一本正经地胡说八道，甚至编出不存在的论文、煞有介事地引用？答案藏在训练目标里：预训练的目标是\"预测下一个词\"，奖励的是\"像人话\"，不是\"说真话\"。解码器的工作方式是永远输出一个 token——它没有\"我不知道\"这个按钮，不确定时也只能硬着头皮编一个最像人话的出来，而且编得越流畅越像真的。\n\n这是生成模型的内禀属性，不是 bug：流畅≠正确。理解了这一点，就理解了为什么 RAG、引用标注、拒答策略必须存在——它们都是在给\"只能流畅输出\"的模型外挂\"求真\"机制：RAG 让它看着资料说，引用让它每个论断可查，拒答策略给它一个\"不知道\"按钮。\n\n在逻辑链上，幻觉是 RAG 的\"立法理由\"：先讲为什么会错（这一环），再讲 RAG 怎么治（上一环在顺序上先出现，但逻辑上是为了解决这一环）。记住一句话：大模型是\"语言\"模型，不是\"真理\"模型。",
+   "steps": [
+    "训练目标奖励\"像人话\"",
+    "解码器永远输出一个 token",
+    "没有\"我不知道\"按钮",
+    "不确定也硬着头皮编",
+    "编得越流畅越像真的",
+    "只能缓解，无法根除"
+   ],
+   "summary": "训练目标是\"像人话\"不是\"说真话\"，采样器没有\"不知道\"按钮——流畅≠正确是生成模型的内禀属性。"
+  },
+  "scene": "\"AI 一本正经地胡说八道，还编出不存在的论文\"——它不是在骗你，它是真的不知道自己在胡说。理解了幻觉，才能理解 RAG、引用、拒答这些机制为什么必须存在，这就是本篇要拆开的东西。",
+  "sources": [
+   {
+    "title": "幻觉：采样机制讲解（generative-ai-explained）",
+    "url": "https://github.com/tonik173/generative-ai-explained/blob/HEAD/doc/docs/llm-inference/sample/hallucination.md"
+   },
+   {
+    "title": "为什么 AI 会产生幻觉（mindoxai）",
+    "url": "https://mindoxai.com/blog/artificial-intelligence/why-do-ai-models-hallucinate/"
+   }
+  ],
+  "tagline": "一本正经胡说八道，是出厂设置",
+  "guide": {
+   "options": [
+    {
+     "name": "要出处",
+     "desc": "让它每个关键论断标注来源，\"看着资料说\"",
+     "when": "查资料、写报告"
+    },
+    {
+     "name": "交叉验证",
+     "desc": "同一个问题换个问法、换个模型再问一遍",
+     "when": "答案很重要但你不确定"
+    },
+    {
+     "name": "人工核高风险项",
+     "desc": "人名、日期、数字、论文标题，逐条核实",
+     "when": "医疗、法律、投资等关键决策"
+    }
+   ],
+   "pitfalls": [
+    "越自信的语气越要查：自信是采样器的副产品，不是正确率的保证",
+    "它编的论文标题、链接看起来都像真的，点进去才知道",
+    "截图、引用格式都可能是编的：格式正确≠内容真实",
+    "你越不追问，它越敢编：沉默会被它当成默许"
+   ],
+   "steps": [
+    "先记住总原则：流畅≠正确，它的目标是\"像人话\"不是\"说真话\"",
+    "凡是人名、日期、数字、引用，先打个问号",
+    "让它给出来处：\"这个结论的来源是？\"——编不出来的会露馅",
+    "换个问法再问一次：前后矛盾的就是它在编",
+    "关键决策（吃药、签合同、投钱）永远找真人或官方渠道复核",
+    "允许它说\"不知道\"：提前告诉它\"不确定就直说，别编\""
+   ],
+   "heading": "🛡️ 如何不被 AI 骗",
+   "en": "STAY SAFE",
+   "short": "防范",
+   "num": "防"
+  }
+ },
+ {
+  "alias": [
+   "Agent",
+   "AI 智能体",
+   "Function Calling",
+   "Tool Use"
+  ],
+  "category": "ai",
+  "id": "ai-agent",
+  "name": "智能体 Agent",
+  "principle": {
+   "detail": "大语言模型有个根本局限：它只能\"说\"，不能\"做\"。它不知道今天天气，不知道你的数据库里有什么。Agent 的思路是：给模型配\"手\"（工具）和\"心跳\"（循环）。经典模式叫 ReAct：模型先思考（Thought）\"我需要查天气\"，再行动（Action）发出结构化的工具调用请求，外部编排器真正执行查询，把结果（Observation）喂回去，模型再决定下一步。\n\n关键细节：模型从不真正执行工具——它只输出一段 JSON 说\"请调用 get_weather，参数是上海\"，执行的是你的代码。这意味着工具的权限边界完全由你控制，也意味着 Agent 的能力上限取决于你给了它什么工具。Cursor、Claude Code 这类 AI 编程工具，本质就是\"代码版 Agent\"：模型规划、调终端、读文件、跑测试，循环到 bug 修好。\n\n在逻辑链上，Agent 承接\"LLM 只能说\"：RAG 给了它知识，Agent 给了它行动力。它是整条链从\"智能\"走向\"生产力\"的一跃——也是风险开始的地方：会行动的模型，才需要护栏。",
+   "steps": [
+    "用户给定目标",
+    "模型规划并拆解",
+    "选中工具，发出调用请求",
+    "外部执行，结果返回",
+    "模型观察再决策",
+    "循环直到目标完成"
+   ],
+   "summary": "LLM（脑）+工具（手）+循环（心跳）：ReAct 循环里模型自己决定下一步调什么工具，从\"说\"到\"做\"。"
+  },
+  "scene": "Cursor 自动写代码改 bug、\"AI 员工\"自己操作软件——模型什么时候学会\"动手\"的？答案是：它其实没动手，它只是学会了指挥你的代码动手。这套\"脑+手+心跳\"的系统，就叫智能体 Agent。",
+  "sources": [
+   {
+    "title": "Building Effective Agents（Anthropic 官方工程博客）",
+    "url": "https://www.anthropic.com/engineering/building-effective-agents"
+   },
+   {
+    "title": "Agent / 工具调用 / 编排速查（ds-cheatsheets）",
+    "url": "https://github.com/abugamil/ds-cheatsheets/blob/HEAD/07_agentic_ai_llm/03_agents_tool_use_orchestration.md"
+   }
+  ],
+  "tagline": "从只会说，到会动手做事",
+  "guide": {
+   "options": [
+    {
+     "name": "AI 编程工具",
+     "desc": "Cursor、Claude Code 这类：给目标，它自己读文件、改代码、跑测试",
+     "when": "修 bug、加小功能、重构，最成熟的 Agent 形态"
+    },
+    {
+     "name": "桌面/浏览器 Agent",
+     "desc": "能操作软件、填表格、逛网页的 Agent",
+     "when": "重复性电脑操作，如整理表格、批量处理"
+    },
+    {
+     "name": "工作流 Agent",
+     "desc": "把\"查资料→整理→发日报\"这类固定流程交给它定时跑",
+     "when": "流程固定、每周都要做的杂活"
+    }
+   ],
+   "pitfalls": [
+    "模型从不真正执行工具，它只发\"调用请求\"——权限边界完全由你给的工具决定",
+    "别一上来就让它碰生产数据、真实账号和钱，先在沙盒里玩熟",
+    "循环跑起来 token 烧得很快，设个步数/预算上限",
+    "它会一本正经地走错路：定期检查比事后救火便宜"
+   ],
+   "steps": [
+    "从一件具体的小事开始：比如\"把这个文件夹的截图按日期重命名\"",
+    "目标一次只给一个，边界讲清：能碰哪些文件、不能碰哪些",
+    "让它先说计划再动手，计划不对直接叫停改计划",
+    "每一步的结果都看一眼，别当甩手掌柜",
+    "删文件、花钱、发消息这类敏感操作，设成必须人工确认",
+    "复盘：哪次它理解偏了，就把那条要求写进以后的指令里"
+   ],
+   "heading": "🙋 我该怎么用它",
+   "en": "HANDS-ON",
+   "short": "使用",
+   "num": "用"
+  }
+ },
+ {
+  "alias": [
+   "Prompt Engineering",
+   "提示词工程"
+  ],
+  "category": "ai",
+  "id": "ai-prompt-engineering",
+  "name": "提示工程：和 AI 说话的技巧",
+  "principle": {
+   "detail": "SFT 和 RLHF 训好模型之后，普通人唯一能动的手就是输入——提示工程就是\"不改权重，只靠说话的艺术\"。为什么换个问法答案质量差很多？因为模型做的是条件概率：给定前文，预测后文。你给的指令、示例、格式，都是在缩小它的\"发挥空间\"，把它往想要的输出分布上引。\n\n几个经久不衰的技巧都有原理支撑：few-shot 示例是给模型看\"标准答案长这样\"；思维链（\"一步一步想\"）是让模型把推理过程外化，步子多了反而更准；分隔符是帮模型分清\"这是我的指令\"和\"这是用户给的资料\"（防提示注入）。掌握这三板斧，一大半提示词问题迎刃而解。\n\n在逻辑链上，提示工程是 SFT/RLHF 之后的\"最后一公里\"：训练决定了模型的上限，提示词决定了你这次能拿到几成功力。它和微调的分工是：长期、稳定的行为用微调固化；临时、灵活的需求用提示词解决。",
+   "steps": [
+    "明确角色与目标",
+    "写清任务和约束条件",
+    "给 few-shot 示例",
+    "用分隔符划清边界",
+    "要求分步推理",
+    "实测迭代，不断收紧"
+   ],
+   "summary": "不改权重，只设计输入：指令清晰、给示例、用分隔符、思维链——把模型往想要的输出上引。"
+  },
+  "scene": "\"写提示词也是技术活\"\"你让他一步一步想，答案立马变好\"——同样的模型，换个问法判若两人。这门手艺背后不是玄学，而是概率，叫提示工程，本篇讲清它为什么有效。理解原理，技巧自然就通了。",
+  "sources": [
+   {
+    "title": "OpenAI 官方提示工程指南",
+    "url": "https://platform.openai.com/docs/guides/prompt-engineering"
+   }
+  ],
+  "tagline": "不改权重，只靠说话的艺术",
+  "guide": {
+   "options": [
+    {
+     "name": "角色+任务+约束",
+     "desc": "\"你是XX。帮我做XX。要求：A、B、C。\"——最通用的三件套",
+     "when": "所有场景的起手式"
+    },
+    {
+     "name": "给一两个例子（few-shot）",
+     "desc": "直接甩一个\"输入长这样→输出长这样\"的例子，比讲一百句规则管用",
+     "when": "要固定格式输出时"
+    },
+    {
+     "name": "让它一步一步想",
+     "desc": "加一句\"请分步思考再作答\"，复杂问题正确率明显涨",
+     "when": "数学、推理、做决策这类题"
+    }
+   ],
+   "pitfalls": [
+    "问法决定下限：同样的模型，好问题和坏问题的差距比你想象大",
+    "提示词不是越长越好，堆废话会稀释关键指令",
+    "例子贵精不贵多，一个好例子胜过五个平庸的",
+    "换模型要重调：在 A 上好用的提示词，到 B 上可能水土不服"
+   ],
+   "steps": [
+    "先定角色：\"你是资深产品经理\"——一句话校准它的说话方式",
+    "任务一句话讲清：要什么，别绕弯子",
+    "列出硬约束：格式、长度、语气、\"不许编造\"这类红线",
+    "给 1～2 个好例子：输入和期望输出都摆出来",
+    "复杂问题加一句\"一步一步想\"，让它把推理过程写出来",
+    "一次不行就追问：\"刚才第 2 点太笼统，展开说\"——对话是迭代出来的"
+   ],
+   "heading": "🙋 我该怎么跟 AI 说话",
+   "en": "HANDS-ON",
+   "short": "使用",
+   "num": "用"
+  }
+ },
+ {
+  "alias": [
+   "Scaling Laws",
+   "规模法则"
+  ],
+  "category": "ai",
+  "id": "ai-scaling-law",
+  "name": "缩放定律：越大越强的烧钱公式",
+  "principle": {
+   "detail": "训练一次前沿模型烧几千万美元，总不能靠拍脑袋决定\"堆多大\"。2020 年 OpenAI 的 Kaplan 团队发现：模型的损失（loss）随参数量、数据量、算力呈幂律下降——在双对数坐标下是一条直线。这意味着用小模型做几次便宜实验拟合出曲线，就能预测大模型的效果，\"花多少钱、堆多大、喂多少数据\"第一次变得可计算。\n\n2022 年 DeepMind 的 Chinchilla 修正了 Kaplan：算力一定时，参数和数据应该等比扩展（约 20 token/参数）。按这个标准，GPT-3 是严重\"欠训练\"的反例——参数太大、数据太少。这也解释了 LLaMA 路线为什么火：小一点的模型、喂更多数据，推理时又便宜又强。\n\n在逻辑链上，缩放定律是预训练的\"预算表\"：预训练回答了\"怎么练\"，缩放定律回答\"练多大、花多少\"。它是整个大模型时代\"大力出奇迹\"的理论底座，也是下一环 RSI 的引子——当\"堆规模\"的公式被摸透，下一步就是让机器自己执行这套公式。",
+   "steps": [
+    "小规模实验，记录损失",
+    "拟合参数-损失幂律曲线",
+    "外推大模型的效果",
+    "按最优配比分配预算",
+    "Chinchilla：约 20 token/参数",
+    "一次训练到位"
+   ],
+   "summary": "损失随参数/数据/算力呈幂律下降、可预测；Chinchilla 修正：算力一定时参数与数据等比扩展最优。"
+  },
+  "scene": "\"模型越大越强，但也越贵\"\"70 亿参数够用吗\"——训练预算几千万美元，模型大小可不是拍脑袋定的。背后有一套\"烧钱公式\"，就叫缩放定律，本篇把它讲透。先看懂公式，再谈选型。",
+  "sources": [
+   {
+    "title": "Scaling Laws for Neural Language Models（Kaplan et al. 2020）",
+    "url": "https://arxiv.org/abs/2001.08361"
+   },
+   {
+    "title": "缩放定律讲解（synthadoc wiki）",
+    "url": "https://github.com/axoviq-ai/synthadoc/blob/HEAD/synthadoc/demos/ai-research/wiki/scaling-laws.md"
+   }
+  ],
+  "tagline": "烧多少钱、堆多大，都有公式",
+  "guide": {
+   "options": [
+    {
+     "name": "Kaplan 2020 论文",
+     "desc": "《Scaling Laws for Neural Language Models》：幂律的起点",
+     "when": "想看原始曲线长什么样"
+    },
+    {
+     "name": "Chinchilla 论文",
+     "desc": "DeepMind 的修正：约 20 token/参数的最优配比",
+     "when": "关心\"钱到底该怎么花\""
+    },
+    {
+     "name": "各家技术报告的训练章节",
+     "desc": "LLaMA、Qwen 报告里\"我们怎么定规模\"的部分",
+     "when": "看理论怎么指导真实决策"
+    }
+   ],
+   "pitfalls": [
+    "定律描述的是\"损失\"，不是\"智能\"：下游任务不完全跟损失走",
+    "外推有边界：差 100 倍的外推，误差可能大得离谱",
+    "别拿它当算命：它指导预算分配，不预测具体能力"
+   ],
+   "steps": [
+    "先建立幂律直觉：在双对数坐标下，损失随规模成直线下降",
+    "读 Kaplan：理解\"小实验拟合、大模型外推\"这套方法",
+    "读 Chinchilla：理解为什么 GPT-3 是\"欠训练\"的反例",
+    "记住 20 token/参数这个经验数：选型时判断模型\"训没训够\"",
+    "最后看争议：2024 年后有人讨论缩放定律是否放缓"
+   ],
+   "heading": "📚 想深入了解怎么办",
+   "en": "GO DEEPER",
+   "short": "深入",
+   "num": "学"
+  }
+ },
+ {
+  "alias": [
+   "Recursive Self-Improvement",
+   "递归自我提升",
+   "智能爆炸"
+  ],
+  "category": "ai",
+  "id": "ai-rsi",
+  "name": "RSI：当 AI 开始改进 AI 自己",
+  "principle": {
+   "detail": "整条逻辑链的终点，也是最大争议点。RSI（Recursive Self-Improvement，递归自我改进）指：AI 参与设计、训练下一代 AI。关键在\"递归\"二字——每次增强都让下一次增强更容易，形成复利循环。1965 年数学家 I. J. Good 就预言过\"智能爆炸\"：超智能机器能设计出更超智能的机器。\n\n必须区分强弱：强 RSI 指 AI 完全自主地重设计自身（包括改进\"改进机制\"本身），据公开报道，前沿实验室明确表示\"完全自主的 RSI 今天尚未发生\"；弱 RSI 指有界的自我精炼——AI 写训练代码、合成数据、当裁判（RLAIF）、自我对弈，这已经在研发管线里大规模发生。注意 2026 年出现了语义漂移：有人把一切\"AI 辅助研发\"都称作 RSI，讨论时要先对齐定义。\n\n在逻辑链上，RSI 是\"机器开始自己推进这条链\"：缩放定律让\"堆规模\"可计算，RSI 设想把执行这套公式的主体从人换成机器。它既是技术终局猜想，也是 AI 安全讨论的核心词——正因为它，才有了各实验室的安全框架与对齐研究。",
+   "steps": [
+    "AI 写训练代码",
+    "AI 合成训练数据",
+    "AI 当裁判（自奖励）",
+    "训出更强的下一代",
+    "下一代改进\"改进机制\"本身",
+    "循环加速（假想：智能爆炸）"
+   ],
+   "summary": "AI 参与设计训练下一代 AI，改进循环复利加速；强 RSI 尚未发生，弱 RSI 已在研发管线大规模发生。"
+  },
+  "scene": "新闻\"AI 开始自己改进自己\"\"智能爆炸\"\"前沿实验室谈 AI 安全\"——这到底是营销话术还是真事？答案是：弱版本已经在发生，强版本还没来。先分清强弱，再讨论。",
+  "sources": [
+   {
+    "title": "Recursive self-improvement（维基百科）",
+    "url": "https://en.wikipedia.org/wiki/Recursive_self-improvement"
+   },
+   {
+    "title": "什么是递归自我改进（ExplainX，2026）",
+    "url": "https://www.explainx.ai/blog/what-is-recursive-self-improvement-ai-explained-2026"
+   }
+  ],
+  "tagline": "当 AI 开始改进 AI 自己",
+  "guide": {
+   "options": [
+    {
+     "name": "I. J. Good 1965 年原文思想",
+     "desc": "\"智能爆炸\"概念的源头，半页纸的推理",
+     "when": "想理解这个想法最初是怎么来的"
+    },
+    {
+     "name": "前沿实验室安全博客",
+     "desc": "Anthropic、OpenAI、DeepMind 谈 RSI/自我改进的公开表态",
+     "when": "想知道业界真实进展到哪了"
+    },
+    {
+     "name": "弱 RSI 实例追踪",
+     "desc": "AI 写代码、合成数据、RLAIF 这些\"已经在发生\"的部分",
+     "when": "把讨论落到事实上"
+    }
+   ],
+   "pitfalls": [
+    "2026 年语义漂移严重：别把一切\"AI 辅助研发\"都叫 RSI",
+    "营销话术重灾区：看到\"智能爆炸\"先问\"强还是弱\"",
+    "这是猜想不是工程：强 RSI 没有路线图，只有推理"
+   ],
+   "steps": [
+    "第一步先对齐定义：强 RSI（完全自主重设计）和弱 RSI（有界自我精炼）是两回事",
+    "看 I. J. Good 的原始论证：理解\"递归\"为什么带来复利",
+    "盘点弱 RSI 现状：AI 写训练代码、合成数据、当裁判，哪些已在发生",
+    "看各实验室的公开表态：\"完全自主的 RSI 今天尚未发生\"",
+    "最后看安全讨论：为什么这个概念是 AI 安全的核心词"
+   ],
+   "heading": "📚 想深入了解怎么办",
+   "en": "GO DEEPER",
+   "short": "深入",
+   "num": "学"
+  }
+ },
+ {
+  "alias": [
+   "开放权重",
+   "Open Weights",
+   "Mistral Large 4",
+   "Le Chonk",
+   "开源模型"
+  ],
+  "category": "ai",
+  "guide": {
+   "code": null,
+   "en": "CHOOSE",
+   "heading": "🤔 开放权重、开源、API 到底怎么选",
+   "num": "选",
+   "options": [
+    {
+     "desc": "预览版 API 按量计费，开箱即用，不用管显卡",
+     "name": "只想用：调 API",
+     "when": "做产品、赶时间，先看 API 账单"
+    },
+    {
+     "desc": "权重放出后可下载到自己服务器部署、微调，数据不出境",
+     "name": "要可控：等开放权重",
+     "when": "企业/政务对数据主权敏感，怕供应商锁死"
+    },
+    {
+     "desc": "Apache 2.0 等宽松许可证才能放心商用魔改；有些\"开放\"只给看不给卖",
+     "name": "要商用：先读许可证",
+     "when": "商用前必读许可证，不是每个开放权重都能拿来赚钱"
+    },
+    {
+     "desc": "1T 参数看着唬人，激活的只有 49B；小模型本地跑更便宜",
+     "name": "要省钱：别盯最大",
+     "when": "预算有限，够用就行"
+    }
+   ],
+   "pitfalls": [
+    "开放权重≠开源：训练数据和代码通常不公开",
+    "预览期只有 API，\"10 月底放权重\"是计划不是承诺",
+    "1.05T 权重存下来，自己部署的显卡成本极高",
+    "厂商基准分数都是自报成绩，多看第三方实测"
+   ],
+   "short": "选型",
+   "steps": [
+    "先问自己：用一下、自己部署、还是研究原理",
+    "用一下→调 API，盯着价格表",
+    "自己部署→等权重放出，再读许可证",
+    "研究原理→找技术报告和第三方实测",
+    "别被参数量吓到：看激活参数和实测效果"
+   ]
+  },
+  "id": "ai-open-weights",
+  "name": "开放权重：Mistral Large 4 的 1T 参数到底\"开放\"了什么",
+  "principle": {
+   "detail": "2026 年 10 月 6 日，法国 Mistral 发布旗舰模型 Mistral Large 4（代号\"Le Chonk\"）：总参数约 1.05 万亿、每次只激活 490 亿的混合专家（MoE）架构，100 万 token 上下文，支持 160 多种语言。据官方称，它在网络安全基准 Cybench 上拿到 93%、CyberGym-E2E 上 82%，主打欧洲企业市场。\n\n但\"开放\"有个时间表：发布当天只能调 API（发布时报价：输入每百万 token 1.36 美元、输出 4.18 美元），权重文件计划 10 月底才放出。这正是理解\"开放权重\"的关键：开放的是训练好的参数文件——下载下来，你可以在自己的服务器上部署、微调，不用把数据送到别人家，也不怕供应商断供，这正是欧洲喊\"主权 AI\"想要的东西。\n\n但它不等于\"开源\"：训练代码、训练数据通常不公开，你能用、能改、能商用（看许可证），但复现不了训练过程。三档要分清：API 是租服务，开放权重是拿走模型自己跑，开源是连\"菜谱\"都公开。参数量也别被唬住：1.05T 里真正干活的只有 49B，MoE 的精髓就是\"备着多，上场少\"。",
+   "steps": [
+    "权重 = 模型的\"脑回路\"，一堆数字矩阵",
+    "API：黑盒服务，按 token 收费",
+    "开放权重：可下载，自己部署魔改",
+    "开源：代码数据全公开，门槛最高",
+    "ML4：先给 API，后放权重",
+    "1T 参数≠全干活：只激活 49B"
+   ],
+   "summary": "权重是训练好的参数文件（万亿级的数字矩阵）；\"开放\"有三档：API 只管用、开放权重可下载自己部署、开源连训练代码数据都公开。"
+  },
+  "scene": "10 月初新闻刷屏：Mistral 发布 1 万亿参数的 Mistral Large 4，号称开放权重。你心动了——顶级模型免费下载，本地跑岂不美滋滋？点进去一看：现在只能调 API，权重要\"10 月底才放\"。开放权重，怎么还有\"稍后\"？",
+  "sources": [
+   "https://tech-insider.org/mistral-large-4-le-chonk-1-05t-parameters-2026/",
+   "https://ai0.news/posts/2026-10-07-daily-digest/"
+  ],
+  "tagline": "开放权重≠开源，先看清三张不同的通行证"
+ },
+ {
+  "alias": [
+   "PAP",
+   "Personal Agent Protocol",
+   "智能体协议",
+   "AI 代理身份"
+  ],
+  "category": "ai",
+  "guide": {
+   "code": null,
+   "en": "HOW IT'S BUILT",
+   "heading": "🔧 商家怎么认出 AI 代理：三个核验动作",
+   "num": "秘",
+   "options": [
+    {
+     "desc": "代理出示基于 OAuth 的凭证，像出示\"授权书\"，商家能追溯到背后用户",
+     "name": "验身份：你是谁的代理",
+     "when": "第一步永远是先验明正身"
+    },
+    {
+     "desc": "买票还是只查价，意图声明在前，超出声明的动作直接拒绝",
+     "name": "审意图：你要干什么",
+     "when": "意图和权限必须匹配"
+    },
+    {
+     "desc": "用户授权时选定：能看不能买，还是能下单能付款",
+     "name": "查权限：只读还是可写",
+     "when": "敏感操作必须用户明确放行"
+    },
+    {
+     "desc": "商家声明\"我接受代理做这几件事\"，之外的请求一律挡回",
+     "name": "商家设白名单",
+     "when": "商家侧的最后一道闸"
+    }
+   ],
+   "pitfalls": [
+    "协议还是 v0.1 草案，OpenAI/Anthropic 尚未加入",
+    "身份能验，意图造假仍是攻防前线",
+    "授权别给永久：定期检查，及时收回",
+    "商家不接入，代理只能继续\"装人\""
+   ],
+   "short": "揭秘",
+   "steps": [
+    "用户授权代理，选定只读或可写",
+    "代理带着凭证访问商家网站",
+    "商家验身份、审意图、查权限",
+    "在白名单动作范围内执行",
+    "全程可审计，授权可随时撤销"
+   ]
+  },
+  "id": "network-agent-protocol",
+  "name": "个人智能体协议 PAP：AI 替你下单时，商家怎么认出它",
+  "principle": {
+   "detail": "2026 年 10 月 6 日，AI 公司 Sierra 联合 Meta 及 Shopify、Stripe、沃尔玛等企业，宣布制定开放标准\"个人智能体协议\"（Personal Agent Protocol，PAP），v0.1 规范计划 10 月内发布。它要解决一个正在变大的麻烦：AI 代理替你购物、订票、打电话，商家却分不清这是你的授权代理还是恶意爬虫——封杀误伤用户，放行又门户大开。\n\nPAP 的思路不新，但组合得巧：身份、意图、权限三件套。代理访问商家时先亮明\"我是替谁来的\"（基于 OAuth 的凭证——就是你熟悉的\"用微信登录\"授权机制，只是这次被授权的是 AI）；再声明\"我要干什么\"；用户事先决定给只读权限还是可写权限；商家则声明\"我允许代理做这几件事\"，超出的直接拒绝。\n\n关键在\"可收回\"：授权不是卖身契，用户随时能撤回，商家也能审计代理的每一步操作。不过先别急着欢呼：这还只是提案，据报道 OpenAI 和 Anthropic 尚未加入，标准之争才刚开始。",
+   "steps": [
+    "代理先亮身份：我是替谁来的",
+    "再声明意图：我要做什么",
+    "权限分级：只读还是可下单",
+    "商家定规矩：允许哪些动作",
+    "用户一键收回：授权可撤销",
+    "基于 OAuth：老熟人新用法"
+   ],
+   "summary": "PAP=给 AI 代理的\"前门协议\"：基于 OAuth，让代理亮明身份、声明意图、按授权范围办事，用户随时可收回权限。"
+  },
+  "scene": "你跟 AI 说\"帮我订一张周五去上海的机票\"，它打开航空公司网站一通操作，票订好了。你很爽，航空公司却很慌：这个\"访客\"是你的授权代理，还是伪装成你的爬虫？封了它，你的票订不成；放行了，恶意 bot 也能混进来。商家到底怎么分辨？",
+  "sources": [
+   "https://sunporchai.com/blog/ai-s-biggest-week-yet-math-breakthroughs-and-agent-standards-2026-10-10"
+  ],
+  "tagline": "给 AI 代理办一张\"身份证 + 授权书\""
+ }
+]
