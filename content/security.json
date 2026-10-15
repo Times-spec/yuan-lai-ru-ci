@@ -1,0 +1,1385 @@
+[
+  {
+    "alias": [
+      "传统 CAPTCHA"
+    ],
+    "category": "security",
+    "id": "security-image-captcha",
+    "name": "图形验证码",
+    "principle": {
+      "detail": "图形验证码玩的是一个简单的经济学：给机器人制造的识别成本必须高于它作恶的收益。服务端先随机生成一串字符（如 K7Xm2），然后用字体扭曲、字符粘连、背景噪声线、随机旋转等手法渲染成图片，同时把正确答案存进当前用户的会话（session）里——图片本身不包含答案，所以攻击者截获图片也没用。用户输入后，后端把输入和会话里的答案比对，一致就通过。这套机制在 2000 年代效果很好，因为那时的 OCR（光学字符识别）技术确实读不懂扭曲字。但现在深度学习模型识别这种图片的准确率已经超过人类，它更多是作为“降级手段”和心理门槛存在：拦不住专业攻击者，但能挡住最粗糙的脚本批量注册。所以现代网站通常只在高风险场景（如多次输错密码后）才弹出它，而不是每次登录都用。给开发者的一条经验法则：防批量注册，图形验证码配 IP 限流就够了；防薅羊毛黑产，直接上行为验证码——让专业工具干专业的事。",
+      "steps": [
+        "服务端随机生成一串字符",
+        "把字符扭曲、粘连、加噪声渲染成图",
+        "把正确答案存进用户会话",
+        "用户照着图输入字符提交",
+        "服务端比对会话里的答案",
+        "答对放行，答错刷新重来"
+      ],
+      "summary": "利用“人眼容易、机器难读”的认知难度差，拦住自动化脚本。"
+    },
+    "scene": "注册新账号或连续输错密码后，屏幕上弹出一张字母数字扭曲、粘连，还画着干扰线的图片，让你照着输入。你盯着看半天才认出来，心里嘀咕：这玩意儿到底在防谁？有时候你自己都认错了，气得直点换图。",
+    "sources": [
+      {
+        "title": "Google reCAPTCHA 官方 FAQ",
+        "url": "https://developers.google.com/recaptcha/docs/faq?hl=zh-tw"
+      }
+    ],
+    "tagline": "你看得懂、机器看不懂的那张扭曲图片",
+    "guide": {
+      "code": {
+        "code": "const svgCaptcha = require('svg-captcha');\n\n// 1. 生成验证码：服务端渲染图片，答案存 session\napp.get('/api/captcha', (req, res) => {\n  const c = svgCaptcha.create({ noise: 3, color: true });\n  req.session.captcha = c.text.toLowerCase(); // 答案只存服务端\n  req.session.captchaAt = Date.now();\n  res.type('svg').send(c.data);\n});\n\n// 2. 校验：比对后立即销毁，防止复用\napp.post('/api/login', (req, res) => {\n  const ok = req.body.captcha?.toLowerCase() === req.session.captcha\n    && Date.now() - req.session.captchaAt < 120000;\n  delete req.session.captcha;\n  if (!ok) return res.status(400).json({ msg: '验证码错误' });\n  // ... 继续登录逻辑\n});",
+        "label": "后端生成+校验图形验证码 · 示意（Node）",
+        "lang": "javascript"
+      },
+      "options": [
+        {
+          "desc": "Java 生态最常用的自研图形验证码库，开箱即用。",
+          "name": "Java Kaptcha / EasyCaptcha",
+          "when": "Java 后端、需要完全自研可控的场景"
+        },
+        {
+          "desc": "轻量 Python 库，可自定义字体、噪声和扭曲强度。",
+          "name": "Python captcha 库",
+          "when": "Python/Flask/Django 后端快速接入"
+        },
+        {
+          "desc": "纯前端生成展示，后端只负责校验答案。",
+          "name": "前端 Canvas 自绘",
+          "when": "想省后端图片渲染开销、追求样式自定义"
+        }
+      ],
+      "pitfalls": [
+        "答案存在前端或 URL 参数里等于没设防：答案只能存服务端会话。",
+        "校验通过后不销毁答案，攻击者可用同一个答案反复刷接口。",
+        "干扰做得太狠连人都看不清，会直接赶走真实用户，得不偿失。",
+        "把它当唯一防线：现代 AI 识别率已超人类，必须叠加限流和行为风控。"
+      ],
+      "steps": [
+        "后端生成随机字符串，用图片库渲染成带干扰的验证码图。",
+        "把正确答案存入用户 session（设置 2-5 分钟过期），图片以 base64 或接口返回给前端。",
+        "前端展示图片并提供“看不清换一张”按钮，换图时重新请求接口。",
+        "用户提交时，后端取出 session 中的答案做不区分大小写的比对。",
+        "校验通过后立即销毁该验证码，防止一次答案被重复利用。",
+        "配合 IP 限流使用，避免攻击者无限刷图做样本训练。"
+      ],
+      "heading": "🛠️ 网站该如何接入",
+      "en": "INTEGRATION",
+      "short": "接入",
+      "num": "接"
+    }
+  },
+  {
+    "alias": [
+      "滑块验证",
+      "拼图验证码"
+    ],
+    "category": "security",
+    "id": "security-slider-captcha",
+    "name": "滑块拼图验证",
+    "principle": {
+      "detail": "滑块验证的高明之处在于“一石二鸟”：拼图缺口给用户一个明确的任务，而真正的验证发生在后台。真人拖动滑块时，手指或鼠标的运动天然带有随机性——起步有加速、接近缺口会减速微调、偶尔还会抖一下；机器脚本的轨迹则往往过于平滑均匀，或者是简单的直线+固定时长。风控服务会采集几十维特征：拖动速度曲线、加速度变化、停顿次数、抖动幅度，再加上设备指纹、IP 信誉、请求时序等，用机器学习模型打出风险分。拼得准只是必要条件，轨迹像人才是充分条件。所以你偶尔会遇到“明明拼对了却说验证失败”的情况——那不是拼图的问题，是你的操作行为（比如用脚本、网络环境异常）被判定为高风险。服务端最后还会校验前端传回数据的签名，防止有人直接伪造“验证通过”的结果发给后端。这也解释了为什么手机上滑块更好过：触屏的压力和接触面积变化是模拟器最难伪造的信号之一，真人的手指自带“生物随机性”。",
+      "steps": [
+        "前端展示带缺口的拼图和滑块",
+        "记录拖动全过程：速度、加速度、停顿",
+        "采集设备环境：UA、分辨率、触屏参数",
+        "把轨迹特征发给风控服务打分",
+        "低风险直接通过，高风险加码挑战",
+        "服务端二次校验签名防伪造"
+      ],
+      "summary": "拼图只是幌子，真正的判决依据是拖动轨迹里的人类行为特征。"
+    },
+    "scene": "登录时页面弹出一个缺了一块的拼图，提示你“拖动滑块完成拼图”。你拖过去对准缺口，进度条一闪“验证通过”。你可能没意识到：拼得准不准只是顺带，它真正记录的是你拖动时手的轨迹。",
+    "sources": [
+      {
+        "title": "Cloudflare Turnstile 交互式验证说明",
+        "url": "https://www.cloudflare.com/zh-cn/application-services/products/turnstile/"
+      }
+    ],
+    "tagline": "拖一下滑块，它看的其实是你的手",
+    "guide": {
+      "code": {
+        "code": "// 前端提交：{ lot_number, captcha_output, pass_token, gen_time }\nconst crypto = require('crypto');\n\napp.post('/api/register', async (req, res) => {\n  const { lot_number, captcha_output, pass_token, gen_time } = req.body;\n  // 1. 本地先做签名校验（防篡改），再调服务商接口二次确认\n  const sign = crypto.createHmac('sha256', CAPTCHA_KEY)\n    .update(lot_number).digest('hex');\n  const verifyRes = await fetch('https://gcaptcha4.geetest.com/validate', {\n    method: 'POST',\n    body: JSON.stringify({ lot_number, captcha_output, pass_token, gen_time, sign })\n  }).then(r => r.json());\n  if (verifyRes.result !== 'success') {\n    return res.status(403).json({ msg: '人机验证未通过' });\n  }\n  // 2. 通过后再执行业务\n});",
+        "label": "后端二次验证滑块凭证 · 示意（以极验风格为例）",
+        "lang": "javascript"
+      },
+      "options": [
+        {
+          "desc": "国内行为验证的开创者，滑块/点选/无感全套方案。",
+          "name": "极验 GeeTest",
+          "when": "国内业务、需要成熟行为风控"
+        },
+        {
+          "desc": "网易旗下的内容安全与验证码服务。",
+          "name": "网易易盾",
+          "when": "已有网易云服务体系、看重内容安全联动"
+        },
+        {
+          "desc": "阿里云官方验证码，含滑块和无感验证。",
+          "name": "阿里云验证码",
+          "when": "业务跑在阿里云上、想统一结算"
+        },
+        {
+          "desc": "主打设备指纹+行为验证的风控厂商。",
+          "name": "顶象",
+          "when": "风控要求高、需要设备指纹联动"
+        }
+      ],
+      "pitfalls": [
+        "只做前端验证不做后端二次校验：攻击者可直接绕过前端调你的业务接口。",
+        "把服务商的 key 写进前端代码：等于把验证服务的“钥匙”公开给攻击者。",
+        "在海外用户场景用国内服务商：节点延迟和合规问题都要提前评估。",
+        "滑块挡住了无障碍用户：给键盘/读屏用户留一条备用验证通道。"
+      ],
+      "steps": [
+        "在服务商后台创建验证应用，拿到 id 和 key（key 只放后端）。",
+        "前端引入服务商 JS SDK，在登录/注册按钮处初始化滑块组件。",
+        "用户完成拖动后，SDK 返回验证凭证（challenge/validate/secrete 等）。",
+        "前端把凭证连同业务表单一起提交到自己后端。",
+        "后端用 key 调用服务商二次验证接口，确认凭证真实有效。",
+        "二次验证通过后再执行业务逻辑（发短信、建账号等）。"
+      ],
+      "heading": "🛠️ 网站该如何接入",
+      "en": "INTEGRATION",
+      "short": "接入",
+      "num": "接"
+    }
+  },
+  {
+    "alias": [
+      "九宫格验证",
+      "图像语义验证"
+    ],
+    "category": "security",
+    "id": "security-image-select-captcha",
+    "name": "点选/九宫格图像验证",
+    "principle": {
+      "detail": "九宫格验证的逻辑是：识别“这张图里有没有红绿灯”对人类是本能，对早期的机器却是难题——它需要语义理解，而不只是像素匹配。每道题的答案由服务端预先标注或众包（有意思的是，你答的题本身也在帮服务商标注训练数据，这就是 reCAPTCHA 当年顺带数字化书籍的思路）。除了答对，系统还会记录你的点选行为：点的顺序、每次点击的坐标落点、两题之间的间隔。真人点选会有犹豫和修正，脚本则往往是瞬间按固定坐标连点。现在图像识别 AI 进步很快，纯语义题的门槛在降低，所以这类验证越来越依赖“行为+语义”的组合拳：题目本身拦住简单脚本，行为分析拦住高级脚本，而持续换题、动态难度则让打码平台（雇真人代答的黑产）的成本居高不下。攻防的天平还在倾斜：随着多模态大模型普及，纯图片语义题的寿命越来越短，行业共识是把它退化为“二级挑战”，一线防御交给无感的行为评分。",
+      "steps": [
+        "服务端下发一组待识别图片",
+        "用户按语义要求点选目标图片",
+        "记录点选顺序、坐标和耗时",
+        "服务端比对答案并分析行为",
+        "答错或行为异常就换题重来",
+        "多次失败升级为更难的挑战"
+      ],
+      "summary": "用人类擅长、机器曾不擅长的图像语义理解做门槛，叠加点选行为分析。"
+    },
+    "scene": "勾选“我不是机器人”之后，弹出一组九宫格图片：“请点击所有包含红绿灯的图片”。你一张张点过去，点完它又换一批：“再选出所有斑马线”。三轮下来你开始怀疑人生——这到底在验证谁？",
+    "sources": [
+      {
+        "title": "reCAPTCHA v2 图像/音频挑战机制介绍",
+        "url": "https://blog.csdn.net/EzCaptchaTeam/article/details/152080492"
+      }
+    ],
+    "tagline": "“请点选所有红绿灯”，考的是语义理解",
+    "guide": {
+      "code": {
+        "code": "app.post('/api/login', async (req, res) => {\n  const { token } = req.body; // 前端点选完成后拿到的凭证\n  // 服务端用 secret key 向验证服务商二次确认\n  const params = new URLSearchParams({\n    secret: process.env.CAPTCHA_SECRET, // 只在后端出现\n    response: token,\n    remoteip: req.ip\n  });\n  const r = await fetch('https://www.recaptcha.net/recaptcha/api/siteverify',\n    { method: 'POST', body: params }).then(r => r.json());\n  if (!r.success) return res.status(403).json({ msg: '验证未通过，请重试' });\n  // ... 继续登录逻辑\n});",
+        "label": "后端校验图像验证 token · 示意（Node + reCAPTCHA 风格）",
+        "lang": "javascript"
+      },
+      "options": [
+        {
+          "desc": "v2 高风险时自动弹出的图片挑战，生态最成熟。",
+          "name": "Google reCAPTCHA v2 图片挑战",
+          "when": "海外用户为主、接受 Google 服务"
+        },
+        {
+          "desc": "隐私友好的 reCAPTCHA 替代品，同样有点选挑战。",
+          "name": "hCaptcha",
+          "when": "在意用户隐私合规、或想拿验证奖励"
+        },
+        {
+          "desc": "国内方案，中文语义题库更贴合国内用户。",
+          "name": "极验点选验证",
+          "when": "国内业务、中文语境点选题"
+        }
+      ],
+      "pitfalls": [
+        "token 只在前端判断“成功”就放行：必须后端二次校验，否则形同虚设。",
+        "secret key 泄露到前端或代码仓库：攻击者可伪造任意验证结果。",
+        "图片加载慢导致用户流失：给验证组件加 loading 态和超时重试。",
+        "无障碍缺失：纯视觉题目把视障用户挡在门外，准备语音/替代通道。"
+      ],
+      "steps": [
+        "选择服务商并在后台创建站点，获取 site key（前端用）和 secret key（后端用）。",
+        "前端加载服务商 SDK 并渲染验证组件，用户完成点选后拿到 token。",
+        "前端把 token 随表单提交到后端。",
+        "后端调用服务商的 siteverify 类接口，用 secret key 校验 token 真伪和时效。",
+        "校验通过后再放行登录/注册等业务动作。",
+        "记录验证失败率，异常升高时排查是否被针对性攻击。"
+      ],
+      "heading": "🛠️ 网站该如何接入",
+      "en": "INTEGRATION",
+      "short": "接入",
+      "num": "接"
+    }
+  },
+  {
+    "alias": [
+      "reCAPTCHA 复选框",
+      "I'm not a robot"
+    ],
+    "category": "security",
+    "id": "security-recaptcha-v2",
+    "name": "reCAPTCHA v2「我不是机器人」",
+    "principle": {
+      "detail": "那个复选框是个“诱饵”：真正的验证在点击发生的前后就已经完成了。reCAPTCHA 的 JS 在页面加载后会静默采集信号——鼠标在页面上的移动轨迹、浏览器指纹、时区语言、屏幕参数，以及最重要的：这个浏览器过去在 Google 生态里的 Cookie 历史（一个养了很久、行为正常的 Google 账号，天然就是低风险信号）。当你点击复选框时，系统分析点击的时序特征：真人从看到框到点击有反应延迟，点击位置落在框内随机处；脚本则是零延迟、坐标精准。综合评分低风险就直接通过；高风险才弹出图片挑战做二次确认。最后前端拿到的 token 必须由你的后端调用 siteverify 接口二次校验——因为前端的一切都可伪造，只有 Google 服务器说了算。国内站点注意把 google.com 换成 recaptcha.net 域名，否则国内用户根本加载不出来。",
+      "steps": [
+        "页面加载时 SDK 静默采集环境信号",
+        "用户点击复选框的瞬间记录行为",
+        "分析鼠标轨迹、时序、Cookie 历史",
+        "低风险：直接打勾通过",
+        "高风险：弹出图片/音频挑战",
+        "后端二次校验 token 才算数"
+      ],
+      "summary": "一次点击触发的风险评估：低风险直接放行，高风险才出图片题。"
+    },
+    "scene": "提交表单前，一个小方框写着“我不是机器人”，你点一下打上勾，页面直接通过了。但有时候点完勾，它却弹出一堆图片让你选。你不禁想：我就点了个勾，它凭什么断定我是人？",
+    "sources": [
+      {
+        "title": "Google reCAPTCHA 官方 FAQ（含测试密钥与 recaptcha.net 说明）",
+        "url": "https://developers.google.com/recaptcha/docs/faq?hl=zh-tw"
+      }
+    ],
+    "tagline": "勾一下的背后，是一整套行为审讯",
+    "guide": {
+      "code": {
+        "code": "// 前端：grecaptcha.render('box', { sitekey: 'SITE_KEY' })\n// 提交时把 grecaptcha.getResponse() 的 token 发给后端\napp.post('/api/submit', async (req, res) => {\n  const token = req.body['g-recaptcha-response'];\n  const params = new URLSearchParams({\n    secret: process.env.RECAPTCHA_SECRET,\n    response: token,\n    remoteip: req.ip\n  });\n  // 国内站点用 www.recaptcha.net 替代 www.google.com\n  const r = await fetch('https://www.recaptcha.net/recaptcha/api/siteverify',\n    { method: 'POST', body: params }).then(r => r.json());\n  if (!r.success) return res.status(403).json({ msg: '人机验证失败' });\n  // ... 业务逻辑\n});",
+        "label": "后端校验 reCAPTCHA v2 token · 示意",
+        "lang": "javascript"
+      },
+      "options": [
+        {
+          "desc": "最经典的复选框验证，文档和生态最全。",
+          "name": "Google reCAPTCHA v2 Checkbox",
+          "when": "海外用户为主的表单防护"
+        },
+        {
+          "desc": "Cloudflare 出品的无感/轻量替代，隐私更友好。",
+          "name": "Cloudflare Turnstile",
+          "when": "想要更轻的接入、不想用 Google 服务"
+        },
+        {
+          "desc": "功能对标的替代品，支持中文和奖励机制。",
+          "name": "hCaptcha",
+          "when": "隐私合规要求高、或面向欧洲用户"
+        }
+      ],
+      "pitfalls": [
+        "前端拿到 token 就算通过：token 必须后端二次校验，前端结果不可信。",
+        "国内直接引用 google.com 的 JS：会被墙导致组件加载失败，记得换 recaptcha.net。",
+        "token 复用：每个 token 只能校验一次，设计上要防止重放。",
+        "把 v2 当万能：打码平台可雇人过图，高价值业务要叠加 v3 评分或行为风控。"
+      ],
+      "steps": [
+        "在 Google reCAPTCHA 后台注册站点，拿到 site key 和 secret key。",
+        "前端引入 api.js，用 grecaptcha.render 渲染复选框组件。",
+        "用户通过验证后，前端拿到一次性 token（g-recaptcha-response）。",
+        "表单提交时把 token 一起发给自己后端。",
+        "后端用 secret key 调 siteverify 接口校验 token 的有效性和时间戳。",
+        "校验成功才执行业务；国内站点把接口域名换成 www.recaptcha.net。"
+      ],
+      "heading": "🛠️ 网站该如何接入",
+      "en": "INTEGRATION",
+      "short": "接入",
+      "num": "接"
+    }
+  },
+  {
+    "alias": [
+      "reCAPTCHA v3",
+      "无感验证评分"
+    ],
+    "category": "security",
+    "id": "security-recaptcha-v3",
+    "name": "reCAPTCHA v3 无感知评分",
+    "principle": {
+      "detail": "v3 把验证从“考试”变成了“监考”：页面一加载，JS 就开始记录你的行为——鼠标怎么动、滚轮怎么滑、在输入框停留多久、页面停留总时长。这些信号被发到 Google，结合这个浏览器/IP 的历史信誉，用模型打出一个 0.0（极可能是机器人）到 1.0（极可能是真人）的分数。关键设计是：Google 不替你决定，只给分数；阈值由网站自己定——登录可以设 0.5，支付可以设 0.7，低于阈值就触发短信验证或直接拦截。每次用户做关键操作（提交表单）时，前端调用 grecaptcha.execute 拿一个一次性 token，后端拿 token 去查分。分数是和具体动作（action）绑定的，比如 login 和 checkout 可以设不同阈值。这种设计的代价是误伤：行为古怪的真人（比如用无障碍工具、网速极慢）可能被打低分，所以阈值调优和降级方案是接入 v3 的核心功课。",
+      "steps": [
+        "页面加载即运行 JS 静默采集",
+        "监控鼠标、滚动、点击等交互",
+        "用户操作时生成一次性 token",
+        "token 随请求发给后端",
+        "后端调接口查询该 token 的评分",
+        "按业务阈值决定放行或加验"
+      ],
+      "summary": "不打扰用户，后台持续采集行为信号，为每次请求打出 0.0–1.0 的风险分。"
+    },
+    "scene": "有些网站登录注册全程没有任何验证码弹窗，你点提交就直接进去了。但你不知道的是：在你浏览页面的每一秒，都有个看不见的考官在观察你的行为，最后给你打了个 0 到 1 的分数，决定放不放你过。",
+    "sources": [
+      {
+        "title": "reCAPTCHA v3 评分机制与后端时序",
+        "url": "https://blog.csdn.net/EzCaptchaTeam/article/details/152080492"
+      }
+    ],
+    "tagline": "全程无弹窗，它在后台给你打了个分",
+    "guide": {
+      "code": {
+        "code": "// 前端：提交登录前先拿 token\nconst token = await grecaptcha.execute('SITE_KEY', { action: 'login' });\nfetch('/api/login', { method: 'POST',\n  body: JSON.stringify({ user, pass, token }) });\n\n// 后端：查分并按阈值决策\napp.post('/api/login', async (req, res) => {\n  const params = new URLSearchParams({\n    secret: process.env.RECAPTCHA_SECRET, response: req.body.token });\n  const r = await fetch('https://www.recaptcha.net/recaptcha/api/siteverify',\n    { method: 'POST', body: params }).then(r => r.json());\n  if (!r.success || r.action !== 'login')\n    return res.status(403).json({ msg: '验证异常' });\n  if (r.score < 0.5) // 阈值按业务自定\n    return res.status(403).json({ msg: '风险较高，请完成短信验证', stepUp: true });\n  // ... 正常登录\n});",
+        "label": "reCAPTCHA v3 打分与阈值判定 · 示意",
+        "lang": "javascript"
+      },
+      "options": [
+        {
+          "desc": "无感评分的鼻祖，按 action 区分场景打分。",
+          "name": "Google reCAPTCHA v3",
+          "when": "海外业务、想零打扰做风控分层"
+        },
+        {
+          "desc": "Cloudflare 的无交互模式，接入更轻。",
+          "name": "Cloudflare Turnstile（Non-Interactive）",
+          "when": "已用 Cloudflare、追求简单接入"
+        },
+        {
+          "desc": "hCaptcha 的无感评分能力。",
+          "name": "hCaptcha（被动模式）",
+          "when": "需要 reCAPTCHA 替代品"
+        }
+      ],
+      "pitfalls": [
+        "阈值拍脑袋定 0.5：不同业务风险不同，要看真实分数分布再调。",
+        "action 写死一个值：login、register、pay 应区分 action 分别设阈值。",
+        "低分直接粗暴拦截：误伤真人用户，要给“升级验证”（如短信）留出口。",
+        "token 过期：execute 拿到的 token 只有约两分钟有效期，超时要重新拿。"
+      ],
+      "steps": [
+        "在 reCAPTCHA 后台注册 v3 站点，拿到 site key 和 secret key。",
+        "前端引入 api.js，关键操作前调用 grecaptcha.execute(siteKey, {action: 'login'})。",
+        "把返回的 token 随业务请求发给后端（token 两分钟内有效）。",
+        "后端调 siteverify 接口，用 secret key 查询该 token 的 score 和 action。",
+        "核对 action 与当前业务一致，按预设阈值（如 login≥0.5）决定放行/加验/拦截。",
+        "上线后持续观察分数分布，逐步调优各 action 的阈值。"
+      ],
+      "heading": "🛠️ 网站该如何接入",
+      "en": "INTEGRATION",
+      "short": "接入",
+      "num": "接"
+    }
+  },
+  {
+    "alias": [
+      "无感验证",
+      "行为验证"
+    ],
+    "category": "security",
+    "id": "security-behavior-captcha",
+    "name": "行为验证码/无感验证",
+    "principle": {
+      "detail": "无感验证是把“考试”彻底取消，改为全程“行为侧写”。SDK 在后台采集的信号比你想象的多：鼠标移动的贝塞尔曲线特征、触屏的压力与接触面积变化、点击的时间间隔分布、页面滚动的惯性，甚至手机陀螺仪的轻微抖动——真人拿着手机时手永远在微微晃动，模拟器则稳得可怕。这些特征连同设备指纹、IP 画像、账号历史一起喂给风控模型，毫秒级输出风险分。低风险用户全程无感知；可疑的才会被“升级”要求拖滑块或点选。这种设计的核心 trade-off（权衡）是体验与安全的再平衡：把 95% 正常用户的验证成本降到零，把对抗火力集中在 5% 的可疑流量上。但它也意味着网站在收集相当多的行为数据，隐私合规（告知用户采集了什么）是开发者不能跳过的一环。对开发者来说，接入无感验证的最大工作量不在前端 SDK，而在后端：要为“低风险放行/中风险加验/高风险拦截”三档结果分别设计业务路径。",
+      "steps": [
+        "SDK 在页面静默采集行为数据",
+        "记录触屏轨迹、点击节奏、传感器",
+        "叠加设备指纹与 IP 信誉",
+        "AI 风控模型实时打分",
+        "低风险无感通过",
+        "高风险自动升级为滑块/点选"
+      ],
+      "summary": "采集鼠标、触屏、设备等多维行为信号，用 AI 风控模型实时判定是人是机。"
+    },
+    "scene": "在某些 App 登录时，按钮下方闪过一行小字“验证通过”，你什么都没点、没拖、没选图。它怎么知道我是人的？你甚至怀疑它到底验了没有。连个勾都没打，就这么水灵灵地通过了。",
+    "sources": [
+      {
+        "title": "Turnstile/hCaptcha 接入实践对比（含后端校验）",
+        "url": "https://github.com/yijiu2025/coreflow/commit/006ff8a71e8404ac0eea6bb9f3e765e22536054c"
+      }
+    ],
+    "tagline": "什么都不用点，“验证通过”一闪而过",
+    "guide": {
+      "code": {
+        "code": "app.post('/api/pay', async (req, res) => {\n  const { captchaId, lotNumber, captchaOutput } = req.body;\n  // 1. 向服务商二次验证，拿到风险判定\n  const result = await geetestValidate({\n    captchaId, lotNumber, captchaOutput, key: process.env.GEETEST_KEY });\n  // 2. 按风险等级分流：放行 / 升级验证 / 拦截\n  if (result.riskLevel === 'low') return doPay(req, res);\n  if (result.riskLevel === 'medium')\n    return res.status(403).json({ msg: '请完成短信验证', stepUp: 'sms' });\n  return res.status(403).json({ msg: '存在风险，交易已拦截' });\n});",
+        "label": "无感验证后端二次确认 · 示意",
+        "lang": "javascript"
+      },
+      "options": [
+        {
+          "desc": "国内无感验证代表，行为+设备指纹+AI 风控。",
+          "name": "极验 GeeTest（无感验证）",
+          "when": "国内 App/网站、追求零打扰体验"
+        },
+        {
+          "desc": "阿里云官方方案，与云上风控联动。",
+          "name": "阿里云验证码（无感模式）",
+          "when": "业务在阿里云生态内"
+        },
+        {
+          "desc": "网易系无感验证方案。",
+          "name": "网易易盾（智能无感）",
+          "when": "需要内容安全与验证联动"
+        },
+        {
+          "desc": "主打设备指纹联动的无感方案。",
+          "name": "顶象无感验证",
+          "when": "黑产对抗强度高的业务（如金融、电商大促）"
+        }
+      ],
+      "pitfalls": [
+        "策略阈值照搬默认：不同业务的流量构成不同，默认策略可能误伤或漏放。",
+        "只看“通过/不通过”：要利用好 riskLevel 做分级处置，而不是二选一。",
+        "隐私合规缺失：采集行为数据要在隐私政策里说明，App 还要过应用商店审核。",
+        "SDK 版本长期不升级：黑产会针对旧版 SDK 做绕过，保持更新是攻防基本功。"
+      ],
+      "steps": [
+        "在服务商后台开通无感验证，获取 id/key 并配置风险策略（通过率/拦截阈值）。",
+        "前端/客户端集成 SDK，SDK 自动静默采集行为数据并生成验证凭证。",
+        "关键业务请求把凭证带给后端。",
+        "后端调用服务商二次验证接口，拿到风险等级判定结果。",
+        "根据结果决策：直接放行、要求短信二次验证、或直接拦截。",
+        "定期复盘风控报表，调整策略阈值，平衡通过率与安全性。"
+      ],
+      "heading": "🛠️ 网站该如何接入",
+      "en": "INTEGRATION",
+      "short": "接入",
+      "num": "接"
+    }
+  },
+  {
+    "alias": [
+      "短信验证码",
+      "SMS OTP"
+    ],
+    "category": "security",
+    "id": "security-sms-otp",
+    "name": "短信 OTP 验证码",
+    "principle": {
+      "detail": "短信验证码的本质是“ possession 证明”（你拥有什么）：能收到发往这个手机号的短信，就证明你拥有这张 SIM 卡。流程里有三个关键设计：一是随机码必须服务端生成、服务端存，绝不能前端生成；二是码要和手机号、过期时间（通常 5–10 分钟）绑定，一次验证后立即作废，防止重放攻击；三是下发走运营商短信网关，网站只是调用短信服务商的 API。这套机制最大的敌人不是破解，而是“轰炸”——攻击者用你的接口给别人狂发短信（让你背短信费、骚扰用户），或者撞库试码。所以限流是标配：比如同一手机号 1 条/分钟、5 条/小时、10 条/天。另一个现实是安全性天花板：短信可能被劫持（SIM 卡被补办、短信嗅探设备），高安全场景（银行转账）会要求叠加别的因子，不能只靠短信。另外，验证码短信的文案也有讲究：必须带上网站名和“切勿转发”，否则用户被社工（社交工程诈骗）骗走验证码，等于亲手把钥匙递给攻击者。",
+      "steps": [
+        "用户输入手机号请求验证码",
+        "服务端生成随机 6 位数字",
+        "验证码与手机号绑定并设 5-10 分钟过期",
+        "经短信网关/运营商下发到手机",
+        "用户输入，后端比对并一次性核销",
+        "全程配合限流防短信轰炸"
+      ],
+      "summary": "服务端生成随机码绑定手机号+过期时间，经运营商短信网关下发核验。"
+    },
+    "scene": "注册账号点“获取验证码”，手机“叮”一声收到 6 位数字，输入就登录成功了。你可能没想过：这条短信走过了短信网关、运营商网络好几道手，而“能收到这条短信”这件事本身，就是对你身份的证明。",
+    "sources": [
+      {
+        "title": "Twilio Verify 串接 SMS OTP 实务",
+        "url": "https://medium.com/@pickeng2389002/twilio-verify-%E4%B8%B2%E6%8E%A5-sms-otp-%E5%AF%A6%E5%8B%99-d2448d1ab5b0"
+      },
+      {
+        "title": "阿里云短信服务介绍（含流控规则）",
+        "url": "http://docs-aliyun.cn-hangzhou.oss.aliyun-inc.com/pdf/Short-Message-Service-intro-cn-zh-2019-11-29.pdf"
+      }
+    ],
+    "tagline": "那条 6 位数短信，是运营商给你作的证",
+    "guide": {
+      "code": {
+        "code": "const redis = require('redis').createClient();\nconst code = String(Math.floor(100000 + Math.random() * 900000));\n\n// 发送：限流 + 存码（5 分钟过期）\napp.post('/api/sms/send', async (req, res) => {\n  const { phone } = req.body;\n  if (await redis.get(`sms:limit:${phone}`)) // 1条/分钟\n    return res.status(429).json({ msg: '操作频繁，请稍后再试' });\n  await redis.set(`sms:code:${phone}`, code, { EX: 300 });\n  await redis.set(`sms:limit:${phone}`, 1, { EX: 60 });\n  await smsProvider.send(phone, `您的验证码是${code}，5分钟内有效`);\n  res.json({ ok: true });\n});\n\n// 校验：比对一致立即核销\napp.post('/api/sms/verify', async (req, res) => {\n  const real = await redis.get(`sms:code:${req.body.phone}`);\n  if (real && real === req.body.code) {\n    await redis.del(`sms:code:${req.body.phone}`); // 一次性核销\n    return res.json({ ok: true });\n  }\n  res.status(400).json({ msg: '验证码错误或已过期' });\n});",
+        "label": "短信验证码发送+校验 · 示意（Redis 版）",
+        "lang": "javascript"
+      },
+      "options": [
+        {
+          "desc": "海外最常用的验证 API，verifications 接口一键下发。",
+          "name": "Twilio Verify",
+          "when": "海外用户、需要短信+语音多通道"
+        },
+        {
+          "desc": "国内短信三巨头之一，SendSms 接口成熟。",
+          "name": "阿里云短信",
+          "when": "国内业务、已在阿里云生态"
+        },
+        {
+          "desc": "国内短信服务，API 与控制台体验好。",
+          "name": "腾讯云短信",
+          "when": "国内业务、用腾讯云多"
+        },
+        {
+          "desc": "全球覆盖的通信云，Verify API 专做验证。",
+          "name": "Vonage（原 Nexmo）",
+          "when": "多国用户、需要全球号码覆盖"
+        }
+      ],
+      "pitfalls": [
+        "接口没做限流：攻击者刷你的接口轰炸别人手机号，短信费和投诉都算你的。",
+        "验证码不过期或可重复使用：截获一次就能反复登录，必须一次性核销。",
+        "返回信息太直白：“手机号未注册”这类提示会帮攻击者枚举用户。",
+        "把短信当唯一高安全凭证：SIM 卡可被补办，大额资金操作要叠加别的验证。"
+      ],
+      "steps": [
+        "在短信服务商后台申请签名和模板（如“您的验证码是 ${code}，5 分钟内有效”）。",
+        "后端收到“发送验证码”请求：先做 IP/手机号限流，再生成随机码。",
+        "把“手机号→验证码+过期时间+尝试次数”存入 Redis，设置 TTL（存活时间）。",
+        "调用服务商 SendSms 类接口下发短信，前端进入 60 秒倒计时。",
+        "用户提交验证码：后端从 Redis 取出比对，一致则核销（删除 key）。",
+        "连续输错 3-5 次就锁定该码，强制重新获取，防暴力试码。"
+      ],
+      "heading": "🛠️ 网站该如何接入",
+      "en": "INTEGRATION",
+      "short": "接入",
+      "num": "接"
+    }
+  },
+  {
+    "alias": [
+      "Magic Link",
+      "邮件验证码"
+    ],
+    "category": "security",
+    "id": "security-email-otp-magic-link",
+    "name": "邮箱验证码/魔法链接",
+    "principle": {
+      "detail": "邮箱验证码和短信验证码是“同构”的——同样的生成、绑定、过期、核销逻辑，只是下发通道从短信网关换成了 SMTP 邮件。魔法链接（Magic Link）是它的优雅变体：不再让用户手动输入 6 位数字，而是把一次性 token 直接嵌进 URL（比如 https://site.com/auth?token=abc123），用户点一下就完成验证，体验上“无密码登录”。安全设计上 token 必须满足三点：高熵随机（猜不出来）、一次性（用后即焚）、短有效期（通常 10–30 分钟）。和短信相比，邮件通道的优势是成本几乎为零、全球可达；劣势是送达不可靠（进垃圾箱、延迟），且邮箱本身也可能被盗——所以魔法链接通常只用于登录，不用于支付这类高风险操作。另外注意：token 放在 URL 里会被浏览器历史、代理日志记录，所以有效期一定要短、用完立即作废。",
+      "steps": [
+        "用户输入邮箱地址",
+        "服务端生成一次性 token 并绑定邮箱",
+        "token 设 10-30 分钟过期",
+        "经 SMTP 把含 token 的链接发到邮箱",
+        "用户点击链接回跳到网站",
+        "后端校验 token 有效即登录，用后作废"
+      ],
+      "summary": "与短信验证码同构，只是通道换成邮件；魔法链接把一次性 token 藏进 URL。"
+    },
+    "scene": "注册时填完邮箱，收到一封“点击此链接完成验证”的邮件；有些网站甚至没有密码框，输入邮箱后点邮件里的链接就直接登录了。你好奇过：一个链接，是怎么代替密码的？更神奇的是，这个链接点过一次就失效了。",
+    "sources": [
+      {
+        "title": "OTP 生成与核验链路（短信/邮件同构）",
+        "url": "https://blog.csdn.net/shirleyhuang1993/article/details/154445088"
+      }
+    ],
+    "tagline": "点一下邮件里的链接，直接登录不用输密码",
+    "guide": {
+      "code": {
+        "code": "const crypto = require('crypto');\n\n// 1. 生成一次性 token 并发送邮件\napp.post('/api/magic-link', async (req, res) => {\n  const { email } = req.body;\n  const token = crypto.randomBytes(32).toString('hex'); // 高熵随机\n  await redis.set(`magic:${token}`, email, { EX: 900 }); // 15分钟过期\n  const link = `https://mysite.com/auth/callback?token=${token}`;\n  await mailer.send(email, '点击登录', `请点击链接登录：${link}`);\n  res.json({ ok: true });\n});\n\n// 2. 用户点击链接回跳：校验一次即作废\napp.get('/auth/callback', async (req, res) => {\n  const email = await redis.get(`magic:${req.query.token}`);\n  if (!email) return res.status(400).send('链接无效或已过期');\n  await redis.del(`magic:${req.query.token}`); // 一次性核销\n  req.session.user = email; // 建立登录态\n  res.redirect('/dashboard');\n});",
+        "label": "魔法链接生成与校验 · 示意",
+        "lang": "javascript"
+      },
+      "options": [
+        {
+          "desc": "开发者体验最好的邮件 API，模板和送达率成熟。",
+          "name": "Resend / SendGrid",
+          "when": "海外用户、看重送达率和开发体验"
+        },
+        {
+          "desc": "AWS 的邮件服务，量大时成本极低。",
+          "name": "Amazon SES",
+          "when": "已有 AWS 体系、邮件量大"
+        },
+        {
+          "desc": "老牌邮件 API，验证邮件场景常用。",
+          "name": "Mailgun",
+          "when": "需要稳定的事务邮件通道"
+        },
+        {
+          "desc": "认证服务内置邮件 OTP/魔法链接，开箱即用。",
+          "name": "Auth0 / Supabase Auth",
+          "when": "不想自建整套登录体系"
+        }
+      ],
+      "pitfalls": [
+        "没配 SPF/DKIM/DMARC：邮件大概率进垃圾箱，用户收不到就以为功能坏了。",
+        "token 有效期设成 24 小时：URL 会进浏览器历史和日志，越长越危险。",
+        "链接可重复使用：必须一次性核销，否则转发邮件等于转让账号。",
+        "邮件内容把 token 明文写太多地方：只放链接，不要在正文重复贴 token。"
+      ],
+      "steps": [
+        "配置发件域名（SPF/DKIM/DMARC 三条 DNS 记录），否则邮件大概率进垃圾箱。",
+        "用户提交邮箱后，后端生成高熵随机 token，存入 Redis 并绑定邮箱、设 15 分钟过期。",
+        "调用邮件服务商 API 发送验证邮件，正文放上含 token 的链接。",
+        "用户点击链接回跳，后端取出 token 比对邮箱和有效期。",
+        "校验通过即建立登录会话，同时删除该 token 防重放。",
+        "同样要做发送限流，防止接口被用来轰炸别人的邮箱。"
+      ],
+      "heading": "🛠️ 网站该如何接入",
+      "en": "INTEGRATION",
+      "short": "接入",
+      "num": "接"
+    }
+  },
+  {
+    "alias": [
+      "动态口令",
+      "验证器 App"
+    ],
+    "category": "security",
+    "id": "security-totp",
+    "name": "TOTP：验证器 App 的动态密码",
+    "principle": {
+      "detail": "TOTP（基于时间的一次性密码）的优雅之处在于“约定代替通信”。绑定时，服务端生成一个随机密钥，通过二维码（otpauth://totp/...?secret=... 格式）一次性交给你的验证器 App，从此双方各持一份密钥。之后每一方都独立计算：取当前 Unix 时间戳除以 30 得到“窗口号”，用 HMAC-SHA1（一种带密钥的哈希算法）对“密钥+窗口号”做运算，再截断成 6 位数字。因为双方时钟基本一致、密钥相同，算出来的数字就相同——全程不需要任何网络，这就是飞行模式下也能用的原因。服务端校验时会前后多容忍 1 个窗口（±30 秒），防止手机和服务器时钟有偏差。它的安全根基是密钥不泄露：任何拿到密钥的人都能算出你的验证码，所以二维码只展示一次、密钥要加密存储。相比短信验证码，TOTP 不怕 SIM 卡被补办、没有短信费用，是 2FA（双因素认证）里最主流的形态。",
+      "steps": [
+        "注册时服务端生成随机密钥",
+        "密钥以二维码形式交给用户扫码绑定",
+        "双方约定：每 30 秒为一个时间窗口",
+        "用 HMAC(密钥, 当前窗口号) 算出 6 位数",
+        "用户输入，服务端用同一公式验算",
+        "前后容错 1 个窗口，防时钟偏差"
+      ],
+      "summary": "RFC 6238：双方共享密钥，用“密钥+时间”算出相同验证码，全程无需联网。"
+    },
+    "scene": "登录某个网站，输完密码还要打开 Google Authenticator，输入那 6 位每 30 秒就变一次的数字。奇怪的是：手机开着飞行模式，它照样能生成正确的码——它到底跟服务器说了什么悄悄话？",
+    "sources": [
+      {
+        "title": "TOTP 公式与时间窗口容错",
+        "url": "https://blog.csdn.net/openHiTLS/article/details/151608861"
+      },
+      {
+        "title": "otpauth URI 规范与 2FA 设计",
+        "url": "https://github.com/ice-juice/git-keymaster-app/blob/HEAD/docs/密码与2FA管理设计.md"
+      }
+    ],
+    "tagline": "每 30 秒一变的数字，断网也能算出来",
+    "guide": {
+      "code": null,
+      "options": [
+        {
+          "name": "Google Authenticator",
+          "desc": "最常见的免费验证器，扫码即用",
+          "when": "安卓 / iPhone 都能装，够用党首选"
+        },
+        {
+          "name": "Microsoft Authenticator",
+          "desc": "支持云备份，换手机后登录账号即恢复",
+          "when": "怕换手机丢码的人"
+        },
+        {
+          "name": "1Password / Bitwarden",
+          "desc": "密码管理器自带 TOTP，密码和动态码一处管理",
+          "when": "已经在用密码管理器的人"
+        }
+      ],
+      "pitfalls": [
+        "换手机前先在旧手机上把验证器数据迁移/导出，否则新手机扫不了",
+        "备用恢复码截图存手机相册：手机丢了等于一起丢，抄纸上最稳",
+        "验证码总提示错误：检查手机是否开了“自动确定日期和时间”",
+        "二维码只展示一次，别截图发给任何人——谁扫了它，谁就能生成你的码"
+      ],
+      "steps": [
+        "打开网站的“账号与安全”（或“两步验证”）设置页，点“开启”",
+        "打开验证器 App，点“+”扫页面上的二维码",
+        "把 App 上显示的 6 位数字填回网站，完成绑定确认",
+        "网站会给一组“备用恢复码”——抄在纸上，收好",
+        "以后登录：输完密码，再打开 App 输入当前 6 位数字"
+      ],
+      "heading": "🙋 我该怎么开启它",
+      "en": "HANDS-ON",
+      "short": "使用",
+      "num": "用"
+    }
+  },
+  {
+    "alias": [
+      "二维码登录"
+    ],
+    "category": "security",
+    "id": "security-qr-login",
+    "name": "扫码登录",
+    "principle": {
+      "detail": "扫码登录的本质是“借用手机上已有的登录态”。二维码里藏的不是账号密码，而是一个随机 UUID——一座一次性桥梁。服务端在 Redis 里为这个 UUID 维护一个状态机：待扫码 → 已扫码待确认 → 已确认（或过期作废）。PC 端页面用轮询（每 2 秒问一次）或 WebSocket 长连接盯着这个状态。你用已登录的手机 App 扫码时，App 把“UUID + 手机端的身份凭证”发给服务端；你在手机上点“确认”后，服务端把手机端的身份映射到这个 UUID 上。PC 端下一轮询就发现状态变成了“已确认”，于是用 UUID 换取正式的登录凭证（session/token），完成登录。二维码通常 2 分钟过期，且一人扫码后即锁定，防止被第二个人冒扫。整个过程 PC 端从没接触过密码，密码只活在手机那一端——这也是它比“在电脑上输密码”更安全的原因：键盘记录、钓鱼页面都偷不到 PC 端没有的东西。",
+      "steps": [
+        "PC 端请求登录，服务端生成 UUID",
+        "UUID 编成二维码展示，状态=待扫码",
+        "PC 端轮询或 WebSocket 等状态变化",
+        "手机（已登录）扫码并确认",
+        "服务端把手机身份绑定到该 UUID",
+        "PC 端拿到身份凭证，完成登录"
+      ],
+      "summary": "二维码=一次性 UUID 桥梁；服务端用状态机同步“手机已确认”的身份给 PC 端。"
+    },
+    "scene": "在电脑上打开微信网页版，屏幕上一个二维码；手机微信扫一下、点“确认登录”，电脑端瞬间就进去了。全程电脑上没输过密码——那台没输密码的电脑，是怎么被信任的？答案是：你手机里一直“藏”着登录态，它只是借用了一下。",
+    "sources": [
+      {
+        "title": "扫码登录 UUID+状态机+轮询完整链路",
+        "url": "https://blog.csdn.net/dandandeshangni/article/details/153137496"
+      }
+    ],
+    "tagline": "二维码只是一座一次性的桥，身份在手机那边",
+    "guide": {
+      "code": {
+        "code": "const { randomUUID } = require('crypto');\n\n// 1. PC 端：生成二维码（UUID 即桥梁）\napp.get('/api/qr-login', async (req, res) => {\n  const uuid = randomUUID();\n  await redis.set(`qr:${uuid}`, JSON.stringify({ status: 'waiting' }), { EX: 120 });\n  res.json({ uuid, qrUrl: `/qr/${uuid}.png` }); // 前端轮询 /api/qr-status?uuid=\n});\n\n// 2. 手机端：扫码确认，把身份绑到 UUID 上\napp.post('/api/qr-confirm', authPhone, async (req, res) => {\n  await redis.set(`qr:${req.body.uuid}`,\n    JSON.stringify({ status: 'confirmed', userId: req.user.id }), { EX: 60 });\n  res.json({ ok: true });\n});\n\n// 3. PC 端轮询到 confirmed 后，用 uuid 换取登录态\napp.get('/api/qr-status', async (req, res) => {\n  res.json(JSON.parse(await redis.get(`qr:${req.query.uuid}`) || '{}'));\n});",
+        "label": "扫码登录状态机 · 示意（Redis + 轮询）",
+        "lang": "javascript"
+      },
+      "options": [
+        {
+          "desc": "网站应用接入微信扫码，覆盖最广的国内方案。",
+          "name": "微信开放平台扫码登录",
+          "when": "国内 C 端产品、用户都有微信"
+        },
+        {
+          "desc": "各办公平台的组织内扫码登录。",
+          "name": "企业微信/钉钉/飞书扫码",
+          "when": "企业内部系统、组织架构已在这些平台"
+        },
+        {
+          "desc": "UUID 状态机 + 二维码生成 + 长连接推送。",
+          "name": "自研（Redis+WebSocket）",
+          "when": "已有 App 登录体系、想自建 PC 扫码"
+        }
+      ],
+      "pitfalls": [
+        "二维码长期有效：必须设 1-2 分钟过期，否则截屏可被异地冒扫。",
+        "一人扫码后不锁定：UUID 被多人扫会造成身份混乱，首扫即锁定。",
+        "轮询间隔太短：每秒一次的轮询在高并发下会打爆服务端，用 WebSocket 或 2 秒间隔。",
+        "确认页不展示登录设备信息：手机确认页要显示“XX 电脑请求登录”，防钓鱼误确认。"
+      ],
+      "steps": [
+        "PC 端请求 /api/qr-login，后端生成 UUID 存入 Redis（2 分钟过期，状态=待扫码）。",
+        "后端把 UUID 转成二维码图片（ZXing/qrcode.js）返回前端展示。",
+        "前端建立 WebSocket 或定时轮询，监听该 UUID 的状态变化。",
+        "手机端扫码后调用确认接口，携带手机端的登录凭证 + UUID。",
+        "后端校验手机凭证有效，把用户身份写入该 UUID 的状态=已确认。",
+        "PC 端收到“已确认”推送，用 UUID 换取正式登录 session，二维码立即作废。"
+      ],
+      "heading": "🛠️ 网站该如何实现",
+      "en": "INTEGRATION",
+      "short": "接入",
+      "num": "接"
+    }
+  },
+  {
+    "alias": [
+      "社交登录",
+      "OAuth 2.0 登录"
+    ],
+    "category": "security",
+    "id": "security-oauth-login",
+    "name": "第三方 OAuth 登录",
+    "principle": {
+      "detail": "OAuth 2.0 解决的核心问题是“委托而不交钥匙”：你想让 A 网站知道“我是微信用户张三”，但不想把微信密码告诉 A。标准授权码流程分四步：A 网站把你重定向到微信授权页（带上 client_id 和 redirect_uri）；你在微信的地盘登录并点“同意”；微信带一个一次性授权码（code）把你送回 A 网站的回调地址；A 网站的后端拿 code + 自己的 client_secret 去微信换 access_token（令牌），再用令牌拉取你的昵称头像。这里有两个安全关键：一是 code 只能用一次、几分钟过期，且换 token 必须走后端（secret 不能暴露给前端）；二是 redirect_uri 必须在第三方后台精确报备，防止授权码被发到攻击者的网站。整个流程里你的密码只在微信输入过一次，A 网站拿到的是“微信盖过章的身份证明”，这就是为什么注销 A 网站账号不影响微信账号——两者密码体系完全隔离。",
+      "steps": [
+        "网站把用户送往第三方授权页",
+        "用户在第三方站点登录并点同意",
+        "第三方带授权码 code 跳回网站",
+        "后端用 code 换取 access_token",
+        "用 token 向第三方拉取用户信息",
+        "网站据此创建/登录本地账号"
+      ],
+      "summary": "OAuth 2.0 授权码流程：网站拿“授权码”换“令牌”，全程不接触用户密码。"
+    },
+    "scene": "点“使用微信登录”，页面跳到微信、你点同意授权，再跳回原来的网站，直接就是登录态了。你输入密码了吗？没有。那这个网站是怎么确认“你就是你”的？整个过程里，它从头到尾没见过你的密码。",
+    "sources": [
+      {
+        "title": "OAuth 2.0 授权码流程四步详解",
+        "url": "https://www.cnblogs.com/Allen0910/p/8647935.html"
+      },
+      {
+        "title": "OAuth 2.0 四种授权模式",
+        "url": "https://www.cnblogs.com/zuier/p/10794917.html"
+      }
+    ],
+    "tagline": "“用微信登录”时，网站全程没碰过你的密码",
+    "guide": {
+      "code": {
+        "code": "const crypto = require('crypto');\n\n// 1. 跳转授权页：state 防 CSRF\napp.get('/auth/github', (req, res) => {\n  const state = crypto.randomBytes(16).toString('hex');\n  req.session.oauthState = state;\n  const url = `https://github.com/login/oauth/authorize?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&state=${state}`;\n  res.redirect(url);\n});\n\n// 2. 回调：校验 state → code 换 token → 拉用户信息\napp.get('/auth/github/callback', async (req, res) => {\n  if (req.query.state !== req.session.oauthState)\n    return res.status(403).send('state 校验失败');\n  const t = await fetch('https://github.com/login/oauth/access_token', {\n    method: 'POST', headers: { Accept: 'application/json' },\n    body: JSON.stringify({ client_id: CLIENT_ID,\n      client_secret: CLIENT_SECRET, code: req.query.code })\n  }).then(r => r.json());\n  const user = await fetch('https://api.github.com/user',\n    { headers: { Authorization: `Bearer ${t.access_token}` } }).then(r => r.json());\n  req.session.user = { id: `github:${user.id}`, name: user.login };\n  res.redirect('/');\n});",
+        "label": "OAuth 2.0 授权码流程 · 示意（GitHub 风格）",
+        "lang": "javascript"
+      },
+      "options": [
+        {
+          "desc": "国内最刚需的第三方登录，需申请网站应用资质。",
+          "name": "微信开放平台（网站应用）",
+          "when": "国内 C 端产品"
+        },
+        {
+          "desc": "苹果和谷歌的官方登录，海外合规友好。",
+          "name": "Sign in with Apple / Google Identity",
+          "when": "海外/iOS 用户为主"
+        },
+        {
+          "desc": "开发者社区标配，接入文档极简。",
+          "name": "GitHub OAuth",
+          "when": "开发者工具类产品"
+        },
+        {
+          "desc": "统一聚合多种登录方式的身份中台。",
+          "name": "Auth0 / Keycloak",
+          "when": "要同时接多个渠道、不想逐个对接"
+        }
+      ],
+      "pitfalls": [
+        "不用 state 参数：攻击者可把自己的授权码塞给受害者，劫持账号绑定。",
+        "redirect_uri 校验不严：授权码可能被发到攻击者域名，直接丢账号。",
+        "在前端用 secret 换 token：secret 一旦进前端就等于公开，换 token 必须走后端。",
+        "只存昵称不存 openid：昵称可改，只有 openid 这类唯一标识能当账号主键。"
+      ],
+      "steps": [
+        "在第三方开放平台创建应用，配置授权回调域 redirect_uri，拿到 client_id/secret。",
+        "前端“用 XX 登录”按钮跳转到第三方授权地址，带上 state 防 CSRF（随机串存 session）。",
+        "用户同意后跳回你的回调地址，带回 code 和 state。",
+        "后端先校验 state 一致，再用 code+client_secret 调 token 接口换 access_token。",
+        "用 access_token 拉取用户唯一标识（如 openid）和基本资料。",
+        "按 openid 查找或创建本地账号，写入自己站点的登录会话。"
+      ],
+      "heading": "🛠️ 网站该如何实现",
+      "en": "INTEGRATION",
+      "short": "接入",
+      "num": "接"
+    }
+  },
+  {
+    "alias": [
+      "Passkey",
+      "无密码登录"
+    ],
+    "category": "security",
+    "id": "security-webauthn-passkey",
+    "name": "WebAuthn/指纹面容登录",
+    "principle": {
+      "detail": "WebAuthn（FIDO2 协议族）的设计哲学是“没有密码可偷”。注册时，你的手机/电脑在安全芯片里生成一对公私钥：私钥永不出设备，公钥传给网站存着。登录时网站发一个随机挑战串（challenge），设备要求你用指纹或面容在“本地”解锁——注意，指纹数据从不出设备，它只是开锁的钥匙。解锁后设备用私钥给挑战串签名，把签名发回网站；网站用存着的公钥验签，验过即登录。这里有三重精妙：一是每个网站的密钥对都不同，A 站数据泄露不影响 B 站；二是签名里绑定了网站域名，钓鱼网站拿到的签名在真站上验不过——这是 Passkey 天生防钓鱼的原因；三是苹果/谷歌现在支持把私钥加密同步到 iCloud/谷歌账号（即 Passkey），换手机也能无缝迁移，解决了“丢设备=丢账号”的老大难问题。它的普及只差临门一脚：主流浏览器和手机系统都已内置支持，剩下的主要是网站的接入意愿和用户教育。",
+      "steps": [
+        "注册时设备生成一对公私钥",
+        "私钥锁在设备安全芯片里，公钥存服务端",
+        "登录时服务端下发随机挑战串",
+        "用户指纹/面容在本地解锁私钥",
+        "设备用私钥对挑战串签名返回",
+        "服务端用公钥验签，防钓鱼"
+      ],
+      "summary": "FIDO2 公私钥挑战应答：私钥永不出设备，指纹只在本地解锁私钥。"
+    },
+    "scene": "在手机上打开某个网站，点登录后直接弹出“请验证指纹”，按一下就进去了——全程没输过密码。你不禁疑惑：网站又没见过我的指纹，它怎么知道按指纹的是我？而你的指纹数据，其实从来没离开过手机。",
+    "sources": [
+      {
+        "title": "Passkey 公私钥与防钓鱼原理",
+        "url": "https://www.gate.com/zh/crypto-wiki/article/passkey-the-passwordless-authentication-revolution-enhancing-digital-security"
+      }
+    ],
+    "tagline": "按一下指纹就登录，密码从此可以消失",
+    "guide": {
+      "code": null,
+      "options": [
+        {
+          "name": "iCloud 钥匙串",
+          "desc": "苹果生态自动同步，iPhone 上创建、Mac 上直接用",
+          "when": "iPhone / Mac 用户"
+        },
+        {
+          "name": "Google 密码管理工具",
+          "desc": "安卓手机和 Chrome 之间同步通行密钥",
+          "when": "安卓 / Chrome 用户"
+        },
+        {
+          "name": "YubiKey 硬件密钥",
+          "desc": "插 USB 或碰一下 NFC 完成验证，物理隔离最放心",
+          "when": "资金账号、管理员账号等高安全场景"
+        }
+      ],
+      "pitfalls": [
+        "云同步没打开就换手机：存在旧手机安全芯片里的密钥跟不来，等于丢钥匙",
+        "不是所有网站都支持：先在账号设置里找有没有“通行密钥”选项，没有就是还没上",
+        "别在公用电脑上创建通行密钥，删起来麻烦还容易忘",
+        "指纹只是本地开锁的钥匙：网站从没见过你的指纹，别信任何索要指纹数据的页面"
+      ],
+      "steps": [
+        "在网站的“账号安全”设置里找到“通行密钥 / Passkey”，点“添加”",
+        "按提示用指纹或面容确认一次——这一步只在你的设备本地完成",
+        "给这个密钥起个名字（如“我的 iPhone”），方便以后管理",
+        "下次登录时选“使用通行密钥”，指纹按一下就进去了，不用输密码",
+        "换手机时登录原来的云账号（Apple ID / Google 账号），密钥会自动同步过来"
+      ],
+      "heading": "🙋 我该怎么用它",
+      "en": "HANDS-ON",
+      "short": "使用",
+      "num": "用"
+    }
+  },
+  {
+    "alias": [
+      "两步验证",
+      "Two-Factor Authentication"
+    ],
+    "category": "security",
+    "id": "security-2fa",
+    "name": "双因素认证 2FA",
+    "principle": {
+      "detail": "2FA 的思想来自纵深防御：把“证明你是谁”拆成两个独立通道——知识因子（密码）、持有因子（手机/硬件密钥）、生物因子（指纹）中任选其二。攻击者即使通过钓鱼或撞库拿到你的密码，没有第二因子也进不来；反过来，捡到你手机的人不知道密码同样白搭。工程实现上有个细节：登录会话要分阶段——密码通过后只给一个“半登录态”（能访问 2FA 验证页，不能访问业务），第二因子通过后才升级为完整登录态，否则攻击者可绕过第二步直接调业务接口。第二因子的形态决定了安全等级：短信 OTP 最方便但怕 SIM 卡补办；TOTP App（见 TOTP 条）离线安全；FIDO2 硬件密钥/指纹最强且防钓鱼。大厂通常做“风险自适应”：常用设备只验密码，新设备才触发 2FA，在安全和体验间找平衡。一个冷知识：很多大厂的“新设备登录提醒”本质就是弱化版 2FA——用邮件/短信通知代替强制验证，在安全和打扰之间取了个折中。",
+      "steps": [
+        "第一因素：验证密码（你知道的）",
+        "密码通过后进入第二因素环节",
+        "第二因素：手机动态码/推送/硬件密钥",
+        "后端分别校验两个因素",
+        "都通过才建立完整登录态",
+        "任一失败都拒绝且不透露哪步错"
+      ],
+      "summary": "“你知道的（密码）+ 你拥有的（手机/密钥）”双因子叠加，单点泄露不致命。"
+    },
+    "scene": "输完账号密码，网站还要你输入手机上 6 位动态数字，或者手机 App 弹出“是否本人登录”。多这一步很烦，但安全工程师会告诉你：正是这一步，让撞库攻击的成功率断崖式下跌。",
+    "sources": [
+      {
+        "title": "TOTP 作为 2FA 主流形态",
+        "url": "https://blog.csdn.net/openHiTLS/article/details/151608861"
+      }
+    ],
+    "tagline": "密码泄露了，攻击者还是进不来",
+    "guide": {
+      "code": null,
+      "options": [
+        {
+          "name": "验证器 App（最推荐）",
+          "desc": "Google Authenticator 这类 App，离线生成动态码，不怕 SIM 卡被补办",
+          "when": "所有重要账号的首选"
+        },
+        {
+          "name": "短信验证码（有总比没有强）",
+          "desc": "零学习成本，但可能被 SIM 卡补办攻击绕过",
+          "when": "长辈的账号，或网站只支持短信时"
+        },
+        {
+          "name": "硬件密钥 / 指纹（最高级）",
+          "desc": "YubiKey 或手机通行密钥，还能防钓鱼",
+          "when": "资金、管理员等高价值账号"
+        }
+      ],
+      "pitfalls": [
+        "只给不重要的号开了 2FA，真正值钱的大号反而裸奔——按“丢了有多惨”排优先级",
+        "恢复码截图存在手机相册里：手机和码一起丢，等于没备",
+        "以为开了 2FA 密码就可以设简单了：钓鱼网站照样能骗走你的密码+实时验证码",
+        "客服“人工重置 2FA”是最弱一环：有人冒充你打客服电话，提前准备好身份验证"
+      ],
+      "steps": [
+        "先给邮箱开 2FA：邮箱是所有“找回密码”的总钥匙，它被盗等于全军覆没",
+        "再给支付、银行、社交大号逐一开启，别只给小号开",
+        "能选验证器 App 就别选短信：App 的码离线生成，短信可能被半路截走",
+        "开启时保存好“备用恢复码”，抄纸上——这是你换手机后的救命绳",
+        "换手机前，先把验证器 App 的数据迁移到新手机，再抹掉旧手机"
+      ],
+      "heading": "🛡️ 我该如何保护自己",
+      "en": "STAY SAFE",
+      "short": "防范",
+      "num": "防"
+    }
+  },
+  {
+    "alias": [
+      "浏览器指纹",
+      "风控指纹"
+    ],
+    "category": "security",
+    "id": "security-device-fingerprint",
+    "name": "设备指纹",
+    "principle": {
+      "detail": "设备指纹玩的是“无状态识别”：不靠存在你设备上的任何东西（Cookie、localStorage 都可以清掉），而是靠设备“与生俱来”的特征组合。浏览器会暴露大量信号：User-Agent、屏幕分辨率、时区、系统语言、已安装字体列表、Canvas 画布渲染的像素差异（同一张图在不同显卡驱动下渲染出的像素有细微差别）、WebGL 渲染器字符串、音频指纹等。单个信号都不唯一，但几十维组合起来，EFF（电子前哨基金会）实测能达到约 18.1 比特的熵——意味着在几十万台设备里基本能精准定位一台。移动端还能用加速度计/陀螺仪的硬件偏差、IDFV（苹果）/AAID（安卓）增强。攻防的关键在于：指纹是“概率性识别”而非“确定性 ID”，浏览器升级、换显卡都会让指纹漂移，所以风控系统用的是相似度匹配而非精确匹配；对抗方则用指纹浏览器（批量伪造环境）来反制。这也是为什么它主要用于风控（识别羊毛党、撞库），而不是当登录凭证用。",
+      "steps": [
+        "JS 采集 UA、分辨率、时区、语言",
+        "采集字体列表、插件、Canvas 渲染特征",
+        "WebGL 指纹：显卡渲染的像素级差异",
+        "数十维信号拼接后哈希成指纹 ID",
+        "服务端比对历史指纹库做风控",
+        "移动端叠加传感器偏差、系统 ID"
+      ],
+      "summary": "采集数十维软硬件特征哈希成唯一 ID，无状态识别设备，Cookie 清了也认得。"
+    },
+    "scene": "换了个新手机登录银行 App，立刻被要求额外验证；某平台薅羊毛被封号，换账号、清缓存、开无痕都没用，平台还是认出了“这是同一台设备”。它到底靠什么认出你的？——靠的根本不是 Cookie，而是一组你删不掉的设备特征。",
+    "sources": [
+      {
+        "title": "浏览器指纹原理、熵与攻防（维基百科）",
+        "url": "https://zh.wikipedia.org/wiki/%E6%B5%8F%E8%A7%88%E5%99%A8%E6%8C%87%E7%BA%B9"
+      }
+    ],
+    "tagline": "清掉 Cookie 也甩不掉的隐形身份证",
+    "guide": {
+      "code": {
+        "lang": "javascript",
+        "label": "设备指纹采集上报 · 示意",
+        "code": "// 前端：静默采集，生成指纹 ID（以 FingerprintJS 风格为例）\nimport FingerprintJS from '@fingerprintjs/fingerprintjs';\nconst fp = await FingerprintJS.load();\nconst { visitorId } = await fp.get();   // 数十维特征哈希出的 ID\n// 随登录请求上报，后端做“同一设备多账号”关联分析\nawait fetch('/api/login', { method: 'POST',\n  body: JSON.stringify({ user, pass, visitorId }) });"
+      },
+      "options": [
+        {
+          "name": "浏览器端信号采集",
+          "desc": "用 JS 静默收集几十维特征：分辨率、字体、Canvas 渲染差异等",
+          "when": "理解“怎么做”的第一步：信号从哪来"
+        },
+        {
+          "name": "服务端关联分析",
+          "desc": "把指纹和账号、IP、行为拼成“设备-账号”关系图谱",
+          "when": "理解风控怎么用这些信号做判断"
+        },
+        {
+          "name": "第三方风控服务",
+          "desc": "数美、同盾这类厂商把指纹采集+风险画像打包成服务",
+          "when": "不想自研的中大型业务"
+        }
+      ],
+      "pitfalls": [
+        "指纹是概率性识别：浏览器小版本升级就会变，只能做相似度匹配，不能当精确 ID",
+        "把指纹当登录凭证用：可伪造、可漂移，只能做风控信号，不能当身份依据",
+        "采集了不告知用户：隐私法规下可能违法，隐私政策里要写清楚",
+        "对抗升级：指纹浏览器批量伪造环境，旧算法会集体失明，要持续迭代"
+      ],
+      "steps": [
+        "用户打开登录/注册页，前端 JS 在后台静默采集设备特征",
+        "几十维特征哈希成一个指纹 ID，随登录请求一起发给服务端",
+        "服务端把“指纹-账号-IP-时间”存成关联记录，攒成设备画像",
+        "新账号用同一指纹短时间注册/登录多个账号→标记羊毛党",
+        "老账号突然换指纹+异地→触发升级验证（短信/人脸）",
+        "定期更新采集算法：浏览器一升级指纹就漂移，算法要跟上"
+      ],
+      "heading": "🔧 网站是怎么做到的",
+      "en": "HOW IT'S BUILT",
+      "short": "揭秘",
+      "num": "秘"
+    }
+  },
+  {
+    "alias": [
+      "接口频率控制",
+      "Rate Limiting"
+    ],
+    "category": "security",
+    "id": "security-ip-rate-limit",
+    "name": "IP 限流",
+    "principle": {
+      "detail": "限流的本质是“用规则区分正常人和脚本”：正常人点“获取验证码”一分钟点一次，脚本一秒点十次。常用算法有三种：固定窗口（每分钟最多 N 次，简单但边界有毛刺）、滑动窗口（精确统计过去 60 秒，更平滑）、令牌桶（桶里有 N 个令牌，请求消耗令牌、令牌按速率补充，能容忍短暂突发）。工程上一般用 Redis + Lua 脚本做原子计数，保证高并发下计数准确。限流的维度是门学问：只限 IP 会误伤公司/学校出口同 IP 的正常用户，只限账号防不住换号攻击，所以成熟做法是 IP、账号、接口三级叠加，超了先上验证码挑战而不是直接封禁——把“可疑”变成“去证明你是人”，而不是一棍子打死。短信接口是限流的重灾区：阿里云默认就是 1 条/分钟、5 条/小时、10 条/天，不配限流的短信接口等于给黑产送钱的提款机。",
+      "steps": [
+        "每个请求按 IP/用户/接口维度计数",
+        "令牌桶或滑动窗口算法判定频率",
+        "正常频率：直接放行",
+        "超阈值：拒绝或要求人机验证",
+        "计数器随时间自动衰减恢复",
+        "多维度叠加：IP+账号+接口三级"
+      ],
+      "summary": "令牌桶/滑动窗口算法按 IP·账号维度计数，超阈值直接拒绝或加验证。"
+    },
+    "scene": "连续点好几次“获取验证码”，页面弹出“操作频繁，请 60 秒后再试”。抢购时疯狂刷新，突然被请去“排队”。这些“不让点”的时刻，背后都站着同一个看门人。它不看你是谁，只看你点的有多快。",
+    "sources": [
+      {
+        "title": "阿里云短信服务介绍（含短信场景流控实例）",
+        "url": "http://docs-aliyun.cn-hangzhou.oss.aliyun-inc.com/pdf/Short-Message-Service-intro-cn-zh-2019-11-29.pdf"
+      }
+    ],
+    "tagline": "“操作频繁请稍后再试”背后的看门人",
+    "guide": {
+      "code": {
+        "code": "const lua = `\nlocal key, now, window, limit = KEYS[1], tonumber(ARGV[1]), tonumber(ARGV[2]), tonumber(ARGV[3])\nredis.call('ZREMRANGEBYSCORE', key, 0, now - window) -- 清掉窗口外记录\nlocal count = redis.call('ZCARD', key)\nif count >= limit then return 0 end -- 超限：拒绝\nredis.call('ZADD', key, now, now .. math.random())\nredis.call('EXPIRE', key, window)\nreturn 1`;\napp.post('/api/sms/send', async (req, res) => {\n  const ok = await redis.eval(lua, 1, `rl:${req.body.phone}`,\n    Date.now(), 60000, 1); // 同一手机号 60 秒 1 次\n  if (!ok) return res.status(429).json({ msg: '操作频繁，请 60 秒后再试' });\n  // ... 发送短信逻辑\n});",
+        "label": "Redis + Lua 滑动窗口限流 · 示意",
+        "lang": "javascript"
+      },
+      "options": [
+        {
+          "desc": "网关层限流，一行配置挡住大部分粗糙攻击。",
+          "name": "Nginx limit_req",
+          "when": "有 Nginx/OpenResty 网关，一把梭"
+        },
+        {
+          "desc": "应用层精细限流，原子操作防并发穿透。",
+          "name": "Redis + Lua 计数",
+          "when": "需要按用户/接口多维度精细控制"
+        },
+        {
+          "desc": "CDN 边缘限流，攻击流量到不了源站。",
+          "name": "Cloudflare Rate Limiting",
+          "when": "网站套了 Cloudflare、想边缘拦截"
+        },
+        {
+          "desc": "API 网关原生限流插件，可视化配置。",
+          "name": "Kong / APISIX 限流插件",
+          "when": "微服务架构、统一网关治理"
+        }
+      ],
+      "pitfalls": [
+        "只在前端做倒计时：后端不限流等于没设防，攻击者直接调接口。",
+        "非原子计数：高并发下 INCR 和 EXPIRE 分开执行会漏计，必须用 Lua 一次完成。",
+        "阈值一刀切：登录接口和短信接口的风险完全不同，要分接口定阈值。",
+        "超限直接永久封 IP：误伤 NAT 出口后的正常用户，优先用“加验证”代替“封禁”。"
+      ],
+      "steps": [
+        "确定限流维度：短信/登录接口按“手机号+IP”双维度，其他接口按 IP 或用户。",
+        "选算法：防轰炸用滑动窗口，允许突发用令牌桶，通过压测定阈值。",
+        "用 Redis + Lua 实现原子计数（INCR+EXPIRE 一次完成），key 设 TTL 自动过期。",
+        "超限时返回 429 状态码 + Retry-After 头，前端据此做倒计时提示。",
+        "高风险接口超限后不直接封，加一道人机验证（滑块/短信）做缓冲。",
+        "限流日志进监控，阈值随业务增长定期复盘调整。"
+      ],
+      "heading": "🛠️ 开发者：应该如何接入",
+      "en": "INTEGRATION",
+      "short": "接入",
+      "num": "接"
+    }
+  },
+  {
+    "alias": [
+      "跨站请求伪造防御",
+      "同步令牌模式"
+    ],
+    "category": "security",
+    "id": "security-csrf-token",
+    "name": "CSRF Token：表单里的防伪暗记",
+    "principle": {
+      "detail": "CSRF（跨站请求伪造）攻击利用了一个浏览器的“热心肠”：你登录银行后，浏览器会自动在每个发往银行的请求里带上 Cookie。攻击者于是诱导你访问他的恶意页面，页面里藏着一个自动提交的表单，指向银行的转账接口——浏览器很“热心”地带上了你的登录 Cookie，银行以为是你本人在操作。CSRF Token 破解这个局的关键是同源策略：恶意页面虽然能“替你发请求”，但它读不到银行页面的内容，也就拿不到藏在银行表单里的那个随机 token。服务端在你登录时生成一个高熵随机串，和你的会话绑定，每次渲染表单时塞进隐藏字段；收到请求时检查 token 是否存在且匹配，不匹配直接拒绝。现代纵深防御还叠了三层：Cookie 设 SameSite=Lax/Strict（跨站默认不带 Cookie）、校验 Origin/Referer 头、检查 Sec-Fetch-Site 头。注意 CSRF Token 防的是“跨站伪造”，防不住 XSS——如果攻击者能在你的页面里执行脚本，他就能直接读 token，所以两类漏洞要分别修。",
+      "steps": [
+        "用户登录后服务端生成随机 token",
+        "token 与用户会话绑定存服务端",
+        "随表单隐藏字段或响应头下发",
+        "前端提交时把 token 带回",
+        "服务端比对：缺 token 或对不上就拒绝",
+        "攻击者跨站读不到 token，伪造失败"
+      ],
+      "summary": "服务端发高熵随机 token 与会话绑定；攻击者能“替你发请求”，但读不到你页面的 token。"
+    },
+    "scene": "你登录着银行网站，又手贱点开一封陌生邮件里的链接，页面一闪而过。还好钱没少——因为那个恶意页面偷偷替你提交的转账请求，缺了一个它永远拿不到的东西。而你压根没察觉，这场攻防其实已经发生过了。",
+    "sources": [
+      {
+        "title": "CSRF 防御体系全景",
+        "url": "https://github.com/yufeifeio/tgsec-qtzuuz/blob/HEAD/domains/web-attack/EXP-CSRF.md"
+      },
+      {
+        "title": "同步令牌模式实现",
+        "url": "https://jjj117.blog.csdn.net/article/details/166371487"
+      }
+    ],
+    "tagline": "表单里那个看不见的隐藏字段，是防“被代表”的",
+    "guide": {
+      "code": {
+        "code": "const crypto = require('crypto');\n\n// 下发：每个会话一个随机 token\napp.use((req, res, next) => {\n  req.session.csrfToken ||= crypto.randomBytes(32).toString('hex');\n  next();\n});\napp.get('/api/csrf-token', (req, res) => res.json({ token: req.session.csrfToken }));\n\n// 校验：变更加请求必须携带匹配的 token\napp.use('/api', (req, res, next) => {\n  if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) return next();\n  const sent = req.headers['x-csrf-token'];\n  // 攻击者跨站读不到受害者页面的 token（同源策略），伪造的请求必然缺 token\n  if (!sent || sent !== req.session.csrfToken)\n    return res.status(403).json({ msg: 'CSRF 校验失败' });\n  next();\n});",
+        "label": "Express 自研 CSRF Token 中间件 · 示意",
+        "lang": "javascript"
+      },
+      "options": [
+        {
+          "desc": "框架自带，开箱即用的同步令牌模式。",
+          "name": "Django / Rails 内置 CSRF 中间件",
+          "when": "用这些全栈框架，直接开启即可"
+        },
+        {
+          "desc": "各自生态的 CSRF 防护组件。",
+          "name": "Flask-WTF / Spring Security",
+          "when": "Flask 或 Java Spring 项目"
+        },
+        {
+          "desc": "纵深防御层，配合 token 使用。",
+          "name": "SameSite Cookie + 头校验",
+          "when": "所有项目都应顺手配上"
+        },
+        {
+          "desc": "token 放 Cookie，前端读出来再放进自定义头。",
+          "name": "前后端分离：双提交 Cookie",
+          "when": "SPA + API 架构、无服务端渲染表单"
+        }
+      ],
+      "pitfalls": [
+        "只防 POST 不防 GET：有副作用的操作（转账、删数据）绝不能用 GET 实现。",
+        "token 全站固定不变：泄露一次永久有效，要绑定会话并定期轮换。",
+        "以为有了 token 就高枕无忧：XSS 漏洞能直接读 token，两类漏洞要分别修。",
+        "前后端分离项目漏了这层：以为“有 JWT 就安全”，JWT 存在 Cookie 里同样会被 CSRF。"
+      ],
+      "steps": [
+        "开启框架的 CSRF 中间件，或自研：登录后生成随机 token 存 session。",
+        "服务端渲染的每个表单里加入隐藏字段 <input type=\"hidden\" name=\"csrf_token\" value=\"...\">。",
+        "前后端分离项目：后端把 token 写进 Cookie，前端 JS 读出后放进 X-CSRF-Token 请求头。",
+        "后端中间件校验：请求中的 token 与 session 中的比对，不一致返回 403。",
+        "登录态 Cookie 设置 SameSite=Lax，关键操作接口再校验 Origin/Referer。",
+        "token 随会话生命周期轮换，登出即销毁，不搞全局固定 token。"
+      ],
+      "heading": "🛠️ 开发者：应该如何接入",
+      "en": "INTEGRATION",
+      "short": "接入",
+      "num": "接"
+    }
+  },
+  {
+    "alias": [
+      "闪验",
+      "一键登录"
+    ],
+    "category": "security",
+    "id": "security-carrier-one-tap-login",
+    "name": "本机号码一键登录",
+    "principle": {
+      "detail": "一键登录的魔法来自运营商的一个特权：当手机走蜂窝数据（关闭 Wi-Fi）访问运营商网关时，运营商能直接识别出这张 SIM 卡对应的手机号——这是网络层的能力，不需要 App 做任何事。流程是：App 集成取号 SDK，用户点击一键登录后，SDK 通过数据网络向运营商网关发起取号请求，运营商确认 SIM 卡身份后，返回一个加密的 token（注意：明文号码不会经过 App 前端）；App 把 token 发给自己的后端，后端再调用运营商/服务商的接口，用 token 换取真实手机号，然后完成登录或注册。为什么必须关 Wi-Fi？因为取号依赖的是运营商数据通道的身份识别，走 Wi-Fi 时运营商看不到你的 SIM 卡。这项能力的本质是“运营商为你的手机号背书”，安全性和短信验证码相当，但体验是秒级的，还省了短信费用。缺点是只认“本机+数据网络”：双卡手机、平板、Wi-Fi 环境都会降级回短信验证。",
+      "steps": [
+        "App 初始化时向取号 SDK 注册",
+        "用户点一键登录（需关闭 Wi-Fi 走蜂窝数据）",
+        "SDK 经运营商网关发起取号请求",
+        "运营商识别 SIM 卡对应的手机号",
+        "返回加密的号码凭证 token",
+        "App 后端用 token 换取真实号码完成登录"
+      ],
+      "summary": "走数据网络经运营商网关“取号”：运营商认 SIM 卡，把加密后的号码回传给 App。"
+    },
+    "scene": "打开某个 App，登录页一个大按钮“本机号码一键登录”，下面已经自动填好了你的手机号（138****8888），点一下直接进去了。你没收短信、没输密码——它怎么知道这个号码是你的？",
+    "sources": [
+      {
+        "title": "阿里云号码认证 PNVS 产品体系",
+        "url": "https://blog.csdn.net/shirleyhuang1993/article/details/154445088"
+      }
+    ],
+    "tagline": "点一下就登录，连短信都不用等",
+    "guide": {
+      "code": {
+        "code": "// App 端拿到 token 后发给后端（以阿里云 PNVS 风格为例）\napp.post('/api/one-tap-login', async (req, res) => {\n  const { token } = req.body;\n  // 1. 用 token 向服务商换取真实手机号（token 一次性）\n  const r = await fetch('https://dypnsapi.aliyuncs.com/', {\n    method: 'POST', headers: { 'Content-Type': 'application/json' },\n    body: JSON.stringify({ Action: 'GetMobile', AccessToken: token,\n      /* + 阿里云 AK 签名参数，略 */ })\n  }).then(r => r.json());\n  if (r.Code !== 'OK') {\n    return res.status(400).json({ msg: '取号失败，请用短信验证码登录', fallback: 'sms' });\n  }\n  // 2. 按手机号登录/注册\n  const user = await findOrCreateUserByPhone(r.GetMobileResultDTO.Mobile);\n  finishLogin(req, res, user);\n});",
+        "label": "后端 token 换手机号 · 示意",
+        "lang": "javascript"
+      },
+      "options": [
+        {
+          "desc": "阿里云官方一键登录/号码认证产品。",
+          "name": "阿里云号码认证 PNVS",
+          "when": "国内 App、已在阿里云生态"
+        },
+        {
+          "desc": "极光的一键登录方案，覆盖三网。",
+          "name": "极光认证",
+          "when": "需要快速接入、看重推送联动"
+        },
+        {
+          "desc": "推送厂商附带的一键登录能力。",
+          "name": "个推 / 友盟一键登录",
+          "when": "已用其推送服务、顺手接入"
+        },
+        {
+          "desc": "移动/联通/电信各自的直连接口。",
+          "name": "运营商能力开放平台",
+          "when": "超大体量、自建对接三网"
+        }
+      ],
+      "pitfalls": [
+        "没做降级：Wi-Fi 环境、双卡、物联卡都会取号失败，必须能切短信验证。",
+        "前端直接拿明文号码：token 换号码必须走后端，前端经手明文等于裸奔。",
+        "授权页被自定义得面目全非：运营商要求明示号码和运营商标识，乱改会被下架。",
+        "预取号时机太晚：点击按钮才开始取号会有 1-2 秒延迟，App 启动时就该预取。"
+      ],
+      "steps": [
+        "在服务商后台开通一键登录，配置 App 包名、签名和应用信息。",
+        "App 集成 SDK，启动时做预取号（预先向网关拿 token，缩短点击后等待）。",
+        "登录页展示“一键登录”按钮，调用 SDK 拉起运营商授权页（含号码明示）。",
+        "用户点同意后，SDK 返回 token，App 把 token 发给自己后端。",
+        "后端调用服务商“token 换手机号”接口，拿到明文号码。",
+        "按号码查找/创建账号并建立登录态；取号失败时降级为短信验证码。"
+      ],
+      "heading": "🛠️ 网站该如何实现",
+      "en": "INTEGRATION",
+      "short": "接入",
+      "num": "接"
+    }
+  },
+  {
+    "alias": [
+      "自动登录",
+      "持久化会话"
+    ],
+    "category": "security",
+    "id": "security-remember-me",
+    "name": "「记住我」持久登录",
+    "principle": {
+      "detail": "“记住我”的本质是把“登录”这件事的有效期拉长。普通会话 Cookie 关闭浏览器就失效，而勾选记住我后，服务端会签发一张长期凭证（有效期几天到几个月），存在 HttpOnly（JS 读不到，防 XSS 偷）+ Secure（只走 HTTPS）+ SameSite 的 Cookie 里。下次你打开网站，后端校验这张凭证有效，就直接恢复登录态——“记住”记的是服务端发的凭证，不是你的密码。安全设计的核心是“刷新令牌轮换”（refresh token rotation）：长期凭证设计成“用一次就换新的”，每次用旧 token 换新 token，旧的立即作废。这样即使 token 被偷走，攻击者和你会形成“竞速”——谁先用旧 token 换新，另一个手里的就作废，而服务端能检测到“同一个旧 token 被用了两次”，立刻判定被盗并吊销整条 token 链，强制重新登录。这就是现代持久登录“被盗可止损”的关键。JWT 方案里通常拆成短命的 access_token（几分钟）和长命的 refresh_token（几天），兼顾安全和体验。",
+      "steps": [
+        "用户勾选记住我并登录成功",
+        "服务端签发长期凭证（数天~数月）",
+        "长期凭证存于 HttpOnly Cookie",
+        "每次访问后端校验凭证有效性",
+        "刷新令牌轮换：旧 token 用一次即废",
+        "发现 token 被盗用时吊销整条链"
+      ],
+      "summary": "服务端签发长期有效的 HttpOnly Cookie；靠“刷新令牌轮换”机制，被盗能止损。"
+    },
+    "scene": "登录时勾选“记住我”或“两周内自动登录”，之后每次打开网站都是登录好的，连密码都不用输。你换过浏览器却发现要重新登录——这个“记住”到底记在了哪里？答案是：记在浏览器里的一块“免死金牌”Cookie 上。",
+    "sources": [
+      {
+        "title": "OWASP 会话管理速查表（持久 Cookie 与会话过期）",
+        "url": "https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html"
+      }
+    ],
+    "tagline": "勾一下，下次打开直接是登录态",
+    "guide": {
+      "code": null,
+      "options": [
+        {
+          "name": "私人设备：放心勾",
+          "desc": "只有你能解锁的手机和电脑，勾上省去每天输密码",
+          "when": "你的手机、你的笔记本"
+        },
+        {
+          "name": "公共/他人设备：绝不勾",
+          "desc": "网吧、公司公用机、朋友电脑——勾了等于把账号送人",
+          "when": "任何不是你独占的设备"
+        },
+        {
+          "name": "拿不准时：不勾 + 用密码管理器",
+          "desc": "让密码管理器替你填账号密码，省事和安全兼得",
+          "when": "想省事又怕风险的折中方案"
+        }
+      ],
+      "pitfalls": [
+        "“记住我”记住的不是密码，而是一张长期有效的“免死金牌”，偷走它等于偷走登录态",
+        "只关浏览器标签页不算退出：下次打开还是登录状态，公用电脑上这就是裸奔",
+        "旧手机卖掉/送修前，先退出所有账号的登录，光恢复出厂设置不够保险",
+        "勾了记住我的设备丢了：立刻改密码，大部分网站改密码会让旧凭证失效"
+      ],
+      "steps": [
+        "先判断：这台设备离开你的视线后，别人能直接打开用吗？",
+        "只有你能用的设备→勾；否则→不勾，就这么简单",
+        "在网吧或朋友电脑登录过，走之前务必点“退出登录”（只关页面不算）",
+        "定期去账号设置的“已登录设备”里看看，把不认识的设备踢下线",
+        "手机丢了：第一时间用“查找设备”远程锁定，并去重要网站改密码"
+      ],
+      "heading": "🙋 “记住我”该不该勾",
+      "en": "HANDS-ON",
+      "short": "使用",
+      "num": "用"
+    }
+  },
+  {
+    "alias": [
+      "监控式定价",
+      "Surveillance Pricing",
+      "大数据杀熟",
+      "个性化定价",
+      "价格歧视"
+    ],
+    "category": "security",
+    "guide": {
+      "code": null,
+      "en": "STAY SAFE",
+      "heading": "🛡️ 避开价格歧视：四个自保动作",
+      "num": "防",
+      "options": [
+        {
+          "desc": "同一商品换设备/账号/无痕模式各看一眼，差价一目了然",
+          "name": "货比三家再下单",
+          "when": "买机票酒店等大额消费前"
+        },
+        {
+          "desc": "无痕模式、清 Cookie、关个性化广告，减少画像素材",
+          "name": "无痕 + 清痕迹",
+          "when": "不想被\"看人下菜碟\"时"
+        },
+        {
+          "desc": "把商品放购物车晾一晾，急单往往是高价重灾区",
+          "name": "别急着下单",
+          "when": "不赶时间就多等两天"
+        },
+        {
+          "desc": "截图保存不同账号的差价，违规营销可向消协/市监投诉",
+          "name": "留证据、走投诉",
+          "when": "差价离谱、怀疑被针对时"
+        }
+      ],
+      "pitfalls": [
+        "无痕模式防的是本地画像，IP 和定位还看得见",
+        "会员价≠杀熟：公开的会员体系是明码标价",
+        "优惠券\"因人而异\"也可能是定价策略",
+        "别为省几块钱泄露更多个人信息，得不偿失"
+      ],
+      "short": "防范",
+      "steps": [
+        "大额消费先比价：多设备多账号",
+        "无痕模式看一眼\"裸价\"",
+        "关掉 App 的个性化推荐/广告",
+        "不急就晾几天再买",
+        "保留差价证据，必要时投诉"
+      ]
+    },
+    "id": "security-surveillance-pricing",
+    "name": "监控式定价：为什么你和我看到不一样的价格",
+    "principle": {
+      "detail": "同一件商品，朋友 89 元你 129 元——这不是运气，可能是算法在\"看人下菜碟\"。商家手里有你的画像：设备型号、定位、历史订单、浏览习惯，据此预测你的\"支付意愿\"：猜你不在乎这点差价，就给你标高价；猜你是价格敏感型，就给你发优惠券\"留住你\"。和\"供需调价\"不同，它调的不是货，是人。\n\n它和正当的动态定价有条分界线：机票随余票涨价，调的是供需，人人可见；监控式定价按人头标价，过程不透明，你永远不知道\"原价\"是多少。这种隐蔽性让它极难举证——商家总能说\"这是个性化优惠\"。更棘手的是取证：你看到的价格只存在于你的屏幕上，刷新一下可能就变了。\n\n2026 年 10 月，美国西雅图成为首个立法禁止商家用个人数据加 AI 算法做\"量身定价\"的城市，据当地媒体报道，禁令直指\"监控式定价\"。名字有了，规则正在路上；在那之前，消费者只能先靠自己多留个心眼。",
+      "steps": [
+        "画像：设备型号、位置、购买史",
+        "预测：你最高愿意付多少",
+        "定价：愿意付多的，看到更贵",
+        "区别：调的是\"人\"，不是\"货\"",
+        "隐蔽：没人告诉你被区别对待",
+        "监管：西雅图 2026 年 10 月首禁"
+      ],
+      "summary": "商家用你的画像（设备、位置、消费习惯）预测\"支付意愿\"，支付意愿高的看到更高的价；和\"供需调价\"不同，它调的是\"人\"不是\"货\"。"
+    },
+    "scene": "同一家外卖店，朋友满减后 23 元，你的 31 元；同一张机票，昨天 800 今天 950。你以为是运气，其实是算法\"看人下菜碟\"。2026 年 10 月，美国西雅图立法禁止商家用个人数据加 AI 算法\"量身定价\"。",
+    "sources": [
+      "https://sunmedia.tw/news/finance/1791734817-《商傳媒｜AI產業一週大事》AI發展的雙面刃：投資競逐與風險管控的急迫性"
+    ],
+    "tagline": "同一件商品，算法给每个人标不同的价"
+  }
+]
