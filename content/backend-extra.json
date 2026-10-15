@@ -1,0 +1,142 @@
+[
+  {
+    "alias": [
+      "Operating System"
+    ],
+    "category": "backend",
+    "id": "backend-os",
+    "name": "操作系统（OS）",
+    "principle": {
+      "detail": "操作系统分三层：硬件（CPU、内存、磁盘、网卡）、内核（kernel）、应用程序。内核是软硬件之间的唯一中介——程序想干任何事（读写文件、发网络包、申请内存），都不能直接碰硬件，必须通过“系统调用”（syscall）向内核申请。\n\n内核干四件事：进程管理（分配 CPU 时间片，营造“同时运行”的假象）、内存管理（分页加虚拟内存，每个进程看到独立地址空间）、文件系统（把磁盘块抽象成文件和目录）、设备与网络（统一调度 IO）。用户态和内核态的隔离是关键：应用跑在用户态权限受限，只有内核能执行特权指令。\n\n为什么服务器都用 Linux？免费开源、可裁剪、极度稳定、包管理器一条命令装软件、云原生生态全围绕它生长。\n\n容器和虚拟机的区别也在这里：容器共享宿主机内核，只用 namespace（视角隔离）加 cgroup（资源配额）造出“独立机器”的假象，所以轻、秒级启动；虚拟机自带完整内核，所以重、隔离更彻底。选操作系统，本质上是在选生态。",
+      "steps": [
+        "程序发起系统调用申请资源",
+        "内核分配 CPU 时间片调度",
+        "内存分页隔离各个进程",
+        "磁盘与网络 IO 统一调度",
+        "一个进程崩溃不影响其他",
+        "用户态与内核态权限隔离"
+      ],
+      "summary": "内核是硬件与软件之间的唯一中介：CPU、内存、磁盘、网络全由它分配，程序通过系统调用向它申请资源。"
+    },
+    "scene": "买云服务器要选系统：Ubuntu、Debian 还是 Windows？都说“生产环境用 Linux”；Docker 号称“比虚拟机轻得多”。这些选择背后都是操作系统在起作用——它是所有软件脚下的大地，程序想干任何事，都得先经过它批准。",
+    "sources": [],
+    "tagline": "所有软件脚下的大地",
+    "guide": {
+      "code": null,
+      "options": [
+        {
+          "name": "Ubuntu Server LTS",
+          "desc": "资料最多、云厂商默认选项，遇到问题一搜就有答案",
+          "when": "通用 Web 服务，团队里有新手"
+        },
+        {
+          "name": "Debian",
+          "desc": "极简、稳定、不折腾，装好能跑十年",
+          "when": "长期运行的基础服务，求稳不求新"
+        },
+        {
+          "name": "Alpine Linux",
+          "desc": "只有几 MB，容器镜像专用",
+          "when": "打 Docker 镜像，越小越好"
+        },
+        {
+          "name": "Windows Server",
+          "desc": "跑老 .NET Framework 应用或必须图形界面的场景",
+          "when": "除此之外的场景都不推荐（授权费+资源占用）"
+        }
+      ],
+      "pitfalls": [
+        "生产服务器装桌面版：几百 MB 内存打水漂，攻击面还更大",
+        "用 root 跑应用：一个漏洞就是最高权限",
+        "选了个生僻发行版：出问题搜不到答案，云厂商镜像都没得选",
+        "镜像架构下错：ARM 的机器装了 x86 的包，起都起不来"
+      ],
+      "steps": [
+        "先看跑什么：Web/数据库/容器→Linux；老旧 .NET 应用→Windows Server",
+        "再看团队：大家熟哪个就用哪个，深夜排障时熟悉度就是生命",
+        "容器场景直接 Alpine；物理机/虚拟机长期跑选 Ubuntu LTS 或 Debian",
+        "只装 Server/最小化版本：桌面环境是浪费资源+扩大攻击面",
+        "建普通用户、配 SSH 密钥登录，禁用 root 远程登录",
+        "把自动安全更新打开：“能跑就别动”迟早变成肉鸡"
+      ],
+      "heading": "🤔 该怎么选系统",
+      "en": "CHOOSE",
+      "short": "选型",
+      "num": "选"
+    }
+  },
+  {
+    "alias": [
+      "Roots Trellis"
+    ],
+    "category": "backend",
+    "id": "backend-trellis",
+    "name": "Trellis：一键配出生产服务器",
+    "principle": {
+      "detail": "Trellis 是 Roots 团队开源的 WordPress DevOps 工具链，底层是一套写好的 Ansible playbook（Ansible：用 SSH 批量管服务器的自动化工具，用 YAML 写“剧本”）。它分开两件事：provision（配服务器）和 deploy（发代码）。server.yml 把裸 Ubuntu 装成生产级 LEMP 栈：Nginx、PHP、MariaDB、Let's Encrypt 自动 SSL、fail2ban；deploy.yml 每次建带时间戳的发布目录，原子切换软链接——网站全程在线，还自带回滚。\n\n配置按三套环境存放，密码用 Ansible Vault 加密后进 Git；一般搭配 Bedrock（Composer 管理的 WP 结构）使用。\n\n核心价值：环境一致性——开发、预演、生产用同一套剧本配出来，消灭“在我机器上是好的”；可重复——服务器挂了，换一台 provision 就回来。局限：只认裸 Ubuntu VPS，虚拟主机用不了；Windows 宿主机不支持。",
+      "steps": [
+        "trellis new 生成项目骨架",
+        "填好站点配置 YAML",
+        "trellis provision 配服务器",
+        "Ansible 经 SSH 自动装 LEMP",
+        "Let's Encrypt 自动签发 SSL",
+        "trellis deploy 零停机发布"
+      ],
+      "summary": "基于 Ansible 的 WordPress 服务器自动化方案：把“装什么、配成什么样”写成 YAML 剧本，一键把裸 Ubuntu 变成生产级 LEMP 服务器。"
+    },
+    "scene": "接了个 WordPress 建站单：买台 VPS，装 Nginx、PHP、MySQL，配 HTTPS、防火墙……手动搞一下午还容易配错。Trellis 终结这种重复劳动：一份配置加两条命令，裸服务器自动变成生产级 WordPress 环境。",
+    "sources": [
+      {
+        "title": "Trellis 官网（Roots）",
+        "url": "https://roots.io/trellis/"
+      },
+      {
+        "title": "Trellis 安装文档",
+        "url": "https://roots.io/trellis/docs/installation/"
+      }
+    ],
+    "tagline": "一条命令，WordPress 服务器全自动上线",
+    "guide": {
+      "code": {
+        "code": "# 新建项目（得到 trellis/ + site/ 两个目录）\ntrellis new example.com\n\n# 配好站点 YAML 后，一键配服务器\ncd example.com/trellis\ntrellis provision production\n# ✓ Ubuntu 24.04 configured\n# ✓ Nginx + PHP 8.3 + MariaDB installed\n# ✓ Let's Encrypt SSL certificate generated\n\n# 发版：零停机，原子切换\ntrellis deploy production",
+        "label": "Trellis 标准工作流·示意",
+        "lang": "shell"
+      },
+      "options": [
+        {
+          "desc": "WordPress 专用，配服务器+发版一条龙",
+          "name": "Trellis",
+          "when": "专做 WordPress 建站/外包"
+        },
+        {
+          "desc": "通用，不限 WordPress",
+          "name": "手写 Ansible playbook",
+          "when": "非 WP 项目、已有运维体系"
+        },
+        {
+          "desc": "点鼠标配环境，零命令行",
+          "name": "宝塔面板",
+          "when": "个人小站，不想学命令行"
+        }
+      ],
+      "pitfalls": [
+        "Trellis 只吃裸 Ubuntu VPS，虚拟主机/面板机用不了",
+        "Windows 不支持，得用 macOS/Linux 或 WSL",
+        "Ansible Vault 密码丢了，加密的配置谁也解不开",
+        "服务器上手工魔改后，Trellis 再跑 provision 可能覆盖改动——改配置要进剧本"
+      ],
+      "steps": [
+        "brew 安装 trellis-cli 命令行工具",
+        "trellis new example.com 生成项目骨架",
+        "填写 group_vars/production/wordpress_sites.yml（域名、仓库地址）",
+        "准备一台裸 Ubuntu 24.04，配好 SSH 密钥登录",
+        "trellis provision production，一键配好生产栈",
+        "trellis deploy production 发布，以后发版同一条命令"
+      ],
+      "heading": "🛠️ 开发者：应该如何接入",
+      "en": "INTEGRATION",
+      "short": "接入",
+      "num": "接"
+    }
+  }
+]
