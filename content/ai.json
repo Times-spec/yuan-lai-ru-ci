@@ -1345,71 +1345,133 @@
   "tagline": "给 AI 代理办一张\"身份证 + 授权书\""
  },
  {
- "alias": [
-  "python-docx 中文字体",
-  "Word 字体分裂",
-  "w:eastAsia"
- ],
- "category": "ai",
- "guide": {
-  "code": {
-   "code": "from docx.oxml.ns import qn\nfrom docx.oxml import OxmlElement\n\ndef set_east_asia(run, font_name):\n    \"\"\"python-docx 的 font.name 管不到中文，这里手动补上\"\"\"\n    rPr = run._element.get_or_add_rPr()\n    rFonts = rPr.find(qn('w:rFonts'))\n    if rFonts is None:\n        rFonts = OxmlElement('w:rFonts')\n        rPr.append(rFonts)\n    rFonts.set(qn('w:eastAsia'), font_name)\n\nfor p in doc.paragraphs:\n    for run in p.runs:\n        set_east_asia(run, '宋体')",
-   "label": "给 run 补上中文字体通道",
-   "lang": "python"
+  "alias": [
+   "python-docx 中文字体",
+   "Word 字体分裂",
+   "w:eastAsia"
+  ],
+  "category": "ai",
+  "guide": {
+   "code": {
+    "code": "from docx.oxml.ns import qn\nfrom docx.oxml import OxmlElement\n\ndef set_east_asia(run, font_name):\n    \"\"\"python-docx 的 font.name 管不到中文，这里手动补上\"\"\"\n    rPr = run._element.get_or_add_rPr()\n    rFonts = rPr.find(qn('w:rFonts'))\n    if rFonts is None:\n        rFonts = OxmlElement('w:rFonts')\n        rPr.append(rFonts)\n    rFonts.set(qn('w:eastAsia'), font_name)\n\nfor p in doc.paragraphs:\n    for run in p.runs:\n        set_east_asia(run, '宋体')",
+    "label": "给 run 补上中文字体通道",
+    "lang": "python"
+   },
+   "en": "FIX IT",
+   "heading": "🛠️ 开发者：让 python-docx 写出统一的中文字体",
+   "num": "修",
+   "options": [
+    {
+     "desc": "生成后遍历所有 run，手动补上 w:eastAsia 属性，一段小函数搞定",
+     "name": "事后补 eastAsia",
+     "when": "已经有一套生成代码，不想大改"
+    },
+    {
+     "desc": "在 Word 里做好带完整中文字体的模板，Document('模板.docx')",
+     "name": "自备模板",
+     "when": "长期、批量生成中文文档，一劳永逸"
+    },
+    {
+     "desc": "比如 docx-template（基于占位符），字体在模板里定好，代码只填内容",
+     "name": "换个思路",
+     "when": "文档结构固定，只是填空"
+    }
+   ],
+   "pitfalls": [
+    "run.font.name 能搞定中文：不能，它只写 ascii/hAnsi 两个通道，中文走 eastAsia，十年老坑",
+    "默认模板就是对的：python-docx 的默认模板是英文世界的模板，标题中文回退到宋体符合它的默认主题，不是 bug",
+    "在我电脑上看着正常就行：换台没装该字体的电脑，阅读器会自己做字体替换，重要文档要嵌入字体或直接转 PDF"
+   ],
+   "short": "修复",
+   "steps": [
+    "把 .docx 后缀改成 .zip 解压，打开 word/document.xml，找到标题那段 <w:r>，看 <w:rFonts> 里有没有 w:eastAsia",
+    "打开 word/styles.xml，看标题样式的字体是不是主题引用（属性名里带 Theme 的那种）",
+    "打开 word/theme/theme1.xml，搜 script=\"Hans\"，看简体中文被映射到了哪个字体",
+    "用下面的代码给每个 run 补上 eastAsia，重新生成后打开对比"
+   ]
   },
-  "en": "FIX IT",
-  "heading": "🛠️ 开发者：让 python-docx 写出统一的中文字体",
-  "num": "修",
-  "options": [
+  "id": "ai-docx-font-split",
+  "name": "AI 写的 Word 文档：数字和中文为什么像两种字体",
+  "principle": {
+   "detail": "先说结论：你的眼睛没骗你。那行标题确实被两种字体渲染了——“2.3”用的是 Calibri（圆润的无衬线体），“差异化定位与核心竞争优势”用的是宋体（带衬线的衬线体）。我把 python-docx 的默认模板拆开看过，又亲手复现渲染了一遍，证据确凿。\n\n关键的第一步：Word 里“这段文字用什么字体”不是一句话，而是一套“按字符种类查表”的机制。OOXML 规范里，每个文字片段（run）的字体由 <w:rFonts> 标签的四个属性分别指定：ascii 管数字和英文字母，hAnsi 管扩展西文，eastAsia 管中日韩文字，cs 管复杂文字。Word 在画出每个字符之前，先看它落在哪个 Unicode 区间，再去查对应的那张表。\n\n而 python-docx 默认模板里的标题样式，玩的是“间接引用”：它不写死“宋体”或“Calibri”，写的是“主题字体”——西文用主题的大标题西文字体（majorHAnsi → Calibri），中文用主题的大标题东亚字体（majorEastAsia）。主题文件 word/theme/theme1.xml 里，给每种文字都指定了默认字体，其中简体中文（Hans）对应的正是“宋体”。两条引用一分叉，字形就裂开了。\n\n还有个十年老坑：很多人（包括 AI 生成的代码）会写 run.font.name = '微软雅黑' 来设字体，但这行代码只改 ascii 和 hAnsi 两个通道，生成的 XML 里根本没有 w:eastAsia——中文部分完全不受影响，继续走样式和主题的回退。你以为设置了字体，其实只设置了一半。\n\n顺着这条线，就能回答“agent 写 Word 文档的底层原理是什么”：agent 从头到尾没有调用 Word，也没有排版引擎。它做的事分三步：生成 Python 代码 → 代码在内存里拼出 XML 树 → 打包成 zip（把 .docx 后缀改成 .zip 解压，里面就是 word/document.xml 这些文件）。“用什么字体画出来”的决定，是在你双击打开文档的那一刻，由 Word / WPS / LibreOffice 各自的渲染引擎做出的——同一份文档在不同电脑上打开，字形还可能不一样，因为“缺字体时用什么代替”是每个阅读器自己的选择。\n\n那为什么你删掉重打就“正常”了？因为你打字时，编辑器会按你输入法的语言给新文字配好“成对”的字体：中文输入法下敲出的中文，eastAsia 通道会被明确指定，整行字于是统一。而 agent 生成的 XML 里，中文走的是“主题回退”的间接路径。两条路径，两种结果～\n\n还有个更隐蔽的：不光数字和中文是两种字体，汉字和汉字之间看起来也可能怪怪的——AI 写的文档里，“与”字底下那一横拉得老长、出了头，自己打就不会。这不是 AI 写错了字：中文被回退到宋体后，“与”用的是宋体传承下来的老写法，底横出头；你平时用的黑体系字体里，底横是收住的。同一个字换个字体就换副长相，详见《同一个“与”字，为什么换个字体底横就出头了》。",
+   "steps": [
+    "agent 写文档 = 拼 XML：docx 本质是个 ZIP，里面装着 XML，python-docx 只是在组装文本",
+    "标题样式不写具体字体名，写的是“主题字体”这种间接引用",
+    "主题文件里写死映射：西文 → Calibri，简体中文 → 宋体",
+    "Word 渲染时按字符种类查表：数字走西文字体，中文走中文字体",
+    "于是同一行标题裂成两种字形：2.3 是 Calibri，差异化是宋体"
+   ],
+   "summary": "Word 给每个字符选字体时，会按“中英文”查两张不同的表；AI 生成的文档里，中文走的那张表指向了宋体。"
+  },
+  "scene": "你让 AI 帮你写了份 Word 文档，打开一看标题不对劲：“2.3”这几个数字圆润现代，后面的“差异化定位”却带着宋体的衬线——像两种字体硬拼在一起。你把字删掉自己重打一遍，字形又统一了。是 AI 写错了字吗？不是。它写对了每一个字，只是“用什么字体画出来”这件事，在 Word 里比你想象的复杂。",
+  "sources": [
    {
-    "desc": "生成后遍历所有 run，手动补上 w:eastAsia 属性，一段小函数搞定",
-    "name": "事后补 eastAsia",
-    "when": "已经有一套生成代码，不想大改"
-   },
-   {
-    "desc": "在 Word 里做好带完整中文字体的模板，Document('模板.docx')",
-    "name": "自备模板",
-    "when": "长期、批量生成中文文档，一劳永逸"
-   },
-   {
-    "desc": "比如 docx-template（基于占位符），字体在模板里定好，代码只填内容",
-    "name": "换个思路",
-    "when": "文档结构固定，只是填空"
+    "title": "Microsoft Learn：w:eastAsia 属性说明",
+    "url": "https://learn.microsoft.com/en-us/dotnet/api/documentformat.openxml.linq.w.eastasia?view=openxml-2.20.0"
    }
   ],
-  "pitfalls": [
-   "run.font.name 能搞定中文：不能，它只写 ascii/hAnsi 两个通道，中文走 eastAsia，十年老坑",
-   "默认模板就是对的：python-docx 的默认模板是英文世界的模板，标题中文回退到宋体符合它的默认主题，不是 bug",
-   "在我电脑上看着正常就行：换台没装该字体的电脑，阅读器会自己做字体替换，重要文档要嵌入字体或直接转 PDF"
-  ],
-  "short": "修复",
-  "steps": [
-   "把 .docx 后缀改成 .zip 解压，打开 word/document.xml，找到标题那段 <w:r>，看 <w:rFonts> 里有没有 w:eastAsia",
-   "打开 word/styles.xml，看标题样式的字体是不是主题引用（属性名里带 Theme 的那种）",
-   "打开 word/theme/theme1.xml，搜 script=\"Hans\"，看简体中文被映射到了哪个字体",
-   "用下面的代码给每个 run 补上 eastAsia，重新生成后打开对比"
-  ]
+  "tagline": "同一行标题里，数字是 Calibri，中文是宋体"
  },
- "id": "ai-docx-font-split",
- "name": "AI 写的 Word 文档：数字和中文为什么像两种字体",
- "principle": {
-  "detail": "先说结论：你的眼睛没骗你。那行标题确实被两种字体渲染了——“2.3”用的是 Calibri（圆润的无衬线体），“差异化定位与核心竞争优势”用的是宋体（带衬线的衬线体）。我把 python-docx 的默认模板拆开看过，又亲手复现渲染了一遍，证据确凿。\n\n关键的第一步：Word 里“这段文字用什么字体”不是一句话，而是一套“按字符种类查表”的机制。OOXML 规范里，每个文字片段（run）的字体由 <w:rFonts> 标签的四个属性分别指定：ascii 管数字和英文字母，hAnsi 管扩展西文，eastAsia 管中日韩文字，cs 管复杂文字。Word 在画出每个字符之前，先看它落在哪个 Unicode 区间，再去查对应的那张表。\n\n而 python-docx 默认模板里的标题样式，玩的是“间接引用”：它不写死“宋体”或“Calibri”，写的是“主题字体”——西文用主题的大标题西文字体（majorHAnsi → Calibri），中文用主题的大标题东亚字体（majorEastAsia）。主题文件 word/theme/theme1.xml 里，给每种文字都指定了默认字体，其中简体中文（Hans）对应的正是“宋体”。两条引用一分叉，字形就裂开了。\n\n还有个十年老坑：很多人（包括 AI 生成的代码）会写 run.font.name = '微软雅黑' 来设字体，但这行代码只改 ascii 和 hAnsi 两个通道，生成的 XML 里根本没有 w:eastAsia——中文部分完全不受影响，继续走样式和主题的回退。你以为设置了字体，其实只设置了一半。\n\n顺着这条线，就能回答“agent 写 Word 文档的底层原理是什么”：agent 从头到尾没有调用 Word，也没有排版引擎。它做的事分三步：生成 Python 代码 → 代码在内存里拼出 XML 树 → 打包成 zip（把 .docx 后缀改成 .zip 解压，里面就是 word/document.xml 这些文件）。“用什么字体画出来”的决定，是在你双击打开文档的那一刻，由 Word / WPS / LibreOffice 各自的渲染引擎做出的——同一份文档在不同电脑上打开，字形还可能不一样，因为“缺字体时用什么代替”是每个阅读器自己的选择。\n\n那为什么你删掉重打就“正常”了？因为你打字时，编辑器会按你输入法的语言给新文字配好“成对”的字体：中文输入法下敲出的中文，eastAsia 通道会被明确指定，整行字于是统一。而 agent 生成的 XML 里，中文走的是“主题回退”的间接路径。两条路径，两种结果～",
-  "steps": [
-   "agent 写文档 = 拼 XML：docx 本质是个 ZIP，里面装着 XML，python-docx 只是在组装文本",
-   "标题样式不写具体字体名，写的是“主题字体”这种间接引用",
-   "主题文件里写死映射：西文 → Calibri，简体中文 → 宋体",
-   "Word 渲染时按字符种类查表：数字走西文字体，中文走中文字体",
-   "于是同一行标题裂成两种字形：2.3 是 Calibri，差异化是宋体"
+ {
+  "alias": [
+   "与字出头",
+   "宋体黑体字形差异",
+   "中文字形"
   ],
-  "summary": "Word 给每个字符选字体时，会按“中英文”查两张不同的表；AI 生成的文档里，中文走的那张表指向了宋体。"
- },
- "scene": "你让 AI 帮你写了份 Word 文档，打开一看标题不对劲：“2.3”这几个数字圆润现代，后面的“差异化定位”却带着宋体的衬线——像两种字体硬拼在一起。你把字删掉自己重打一遍，字形又统一了。是 AI 写错了字吗？不是。它写对了每一个字，只是“用什么字体画出来”这件事，在 Word 里比你想象的复杂。",
- "sources": [
-  {
-   "title": "Microsoft Learn：w:eastAsia 属性说明",
-   "url": "https://learn.microsoft.com/en-us/dotnet/api/documentformat.openxml.linq.w.eastasia?view=openxml-2.20.0"
-  }
- ],
- "tagline": "同一行标题里，数字是 Calibri，中文是宋体"
-}
+  "category": "ai",
+  "guide": {
+   "en": "STAY CALM",
+   "heading": "🛠️ 写作者：别让字形吓到你",
+   "num": "应",
+   "options": [
+    {
+     "desc": "在 Word 里做好模板，把中文字体定死，Document('模板.docx')，从源头统一",
+     "name": "自备模板",
+     "when": "长期批量生成中文文档"
+    },
+    {
+     "desc": "对外发送、定稿归档都用 PDF，字形被'冻'住，到哪台电脑打开都长一个样",
+     "name": "转 PDF 定稿",
+     "when": "文档要发给别人看"
+    },
+    {
+     "desc": "公文、论文里宋体是正统，出头是传统写法不是错，把心放回肚子里",
+     "name": "接受它",
+     "when": "发现只是虚惊一场"
+    }
+   ],
+   "pitfalls": [
+    "以为是错字或乱码：Unicode 码位相同就不是错字，是字形设计差异",
+    "换个阅读器能'修复'：字形跟着字体走，换阅读器不换字体没有用",
+    "全角半角背锅：这次真不怪全角半角，是两套字体设计传统不同"
+   ],
+   "short": "应对",
+   "steps": [
+    "在 Word 里敲一个'与'，逐个切换字体（宋体 / 黑体 / 微软雅黑 / 等线），放大看底横",
+    "把 AI 生成的 docx 后缀改成 zip，查 word/document.xml 里中文 run 的 eastAsia 通道是什么",
+    "对比同一份文档在 Windows 和 Mac / 手机上打开的字形，体会'字随字体走'"
+   ]
+  },
+  "id": "ai-font-glyph-yu",
+  "name": "同一个“与”字，为什么换个字体底横就出头了",
+  "principle": {
+   "detail": "先说结论：你的眼睛又对了。我把“与”字分别用宋体风格和黑体风格渲染放大，底横确实一个出头、一个不出头——而两个字的 Unicode 码位完全相同（U+4E0E），笔画数量也一模一样。这不是错字，不是乱码，是“字形”层面的差异。\n\n这里要分清三个概念：字符（character，Unicode 码位，回答“你是哪个字”）、字形（glyph，字体里的具体画法）、字体（font，一整套字形的设计）。“与”永远是 U+4E0E，但宋体设计师和黑体设计师画出来的“与”可以不一样——就像同一个人，证件照和写真是两种画法，认得出是同一个人，但观感完全不同。\n\n为什么偏偏是“出头”还是“不出头”？这是两套设计传统的分歧。宋体（明朝体）直接继承自宋代雕版印刷，讲究横细竖粗、笔画带装饰，很多写法是几百年前的老样子：“与”的底横向右探出竖钩，就是传下来的写法。黑体是 20 世纪为现代印刷和屏幕显示设计的，追求横平竖直、干净利落，底横就收住了。两边都没错，只是普通话和方言的区别。\n\n串回上一篇：为什么偏偏是 AI 写的文档里“与”出头？因为上一篇讲的那个坑——agent 生成的 docx 没有给中文指定字体，中文一路回退到主题默认的“宋体”；而你平时在 Word 里打字，默认中文字体是等线 / 微软雅黑这类黑体系。同一份文档里中文字体一切换，“与”的底横就“出头”了。顺带一提：骨、直、具、令这些字，宋体和黑体的写法也各不相同，你可以自己放大找找～\n\n再往深想一层：这意味着“同一份文档在不同电脑上打开”，看到的字形可能不一样——Mac 默认苹方，Windows 默认微软雅黑，Linux 可能回退到别的字体。字还是那个字，但“长相”跟着字体走。所以重要文档定稿前，要么嵌入字体，要么转 PDF 把字形“冻”住。",
+   "steps": [
+    "电脑里没有“汉字”，只有每套字体的笔画设计",
+    "同一个码位 U+4E0E，每套字体各自画一遍",
+    "宋体继承雕版印刷：底横出头是传下来的老写法",
+    "黑体是现代设计：横平竖直，底横收住",
+    "AI 文档的中文回退到宋体 → 出头；你平时用黑体系字体 → 不出头"
+   ],
+   "summary": "同一个 Unicode 汉字，在不同字体里是两套独立的设计；宋体“与”的底横出头，是雕版印刷传下来的传统写法。"
+  },
+  "scene": "AI 帮你写的 Word 文档里，“与”字底下那一横拉得老长，超出了竖钩一大截，怎么看怎么别扭。你自己敲出来的“与”，底横却老老实实收在里面。是 AI 写错字了吗？把两个“与”放大并排一看：笔画数一模一样，只是长短不同——这不是错别字，是同一个字被“画”成了两种样子。",
+  "sources": [
+   {
+    "title": "Why do some characters look different in different fonts?",
+    "url": "https://talkpal.ai/culture/why-do-some-characters-look-different-in-different-fonts/"
+   }
+  ],
+  "tagline": "不是错字，是宋体传下来的老写法"
+ }
 ]

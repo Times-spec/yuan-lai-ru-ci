@@ -1557,5 +1557,99 @@
    "short": "接入",
    "num": "接"
   }
- }
+ },
+ {
+ "alias": [
+  "打开方式",
+  "分享面板",
+  "Open With",
+  "intent-filter"
+ ],
+ "category": "features",
+ "id": "features-open-with-apps",
+ "name": "「用其他应用打开」：推荐名单是怎么算出来的",
+ "tagline": "不是系统随便排的，是每个 App 自己「报名」的结果",
+ "scene": "在微信里收到一个 PDF，点右上角更多，选「用其他应用打开」——WPS、Adobe Reader 都在，偏偏你想用的那个 App 不在。你明明装了它，系统却像没看见一样。更迷的是：有的 App 里还能「添加」打开方式，有的 App 里列表就那么几个，死活加不上。这份名单到底谁定的？",
+ "principle": {
+  "summary": "系统维护一张「谁能打开什么」的报名表：App 安装时申报自己能处理的文件类型；你点「用其他应用打开」时，系统按文件类型查表匹配，能对上的才上榜。",
+  "steps": [
+   "App 安装时「报名」：在安装包里声明自己能打开哪些类型的文件",
+   "系统收进一张大表：所有 App 的报名信息汇总成内部目录",
+   "你点「用其他应用打开」：当前 App 告诉系统「我要打开一个 PDF」",
+   "系统按类型查表：把报了名、且类型对得上的 App 挑出来",
+   "排序展示：常用的置顶、可固定的固定，其余按规则排",
+   "没报名的 App：再合适也不会出现——它不在表里"
+  ],
+  "detail": "先说结论：那份名单不是系统「推荐」的，是各个 App 自己「报名」的结果。Android 上叫 intent-filter，iOS 上叫 UTI 声明，Windows 上叫文件关联注册——名字不同，干的都是同一件事：App 在安装时告诉系统「我能打开 PDF / 图片 / 视频」。\n\nAndroid 的机制最透明。每个 App 的安装包里有一份「简历」（AndroidManifest.xml），里面用 <intent-filter> 写清楚：我响应「查看」（ACTION_VIEW）这个动作，接受 application/pdf 这种数据类型。App 装好的那一刻，系统就把这份简历收进一个内部目录。等你在某个 App 里点「用其他应用打开」，它会发一个「隐式 Intent」——相当于喊一嗓子「我有个 PDF 要打开，谁能接？」系统拿着这嗓子去目录里按「动作 + 文件类型」匹配，对上的 App 才有资格上榜。官方文档里负责这件事的就叫 PackageManager.queryIntentActivities：查表，不是算命。\n\n那「文件类型」又是谁定的？是分享文件的那个 App 在分享时「报」的。Android 里文件以 content:// 链接的形式递过去，附带一个 MIME 类型（比如 application/pdf）；提供文件的 App 通常按文件扩展名判定类型（官方的 FileProvider 默认就是这么干的）。这里埋着第一个坑：如果分享方没给对类型——比如扩展名丢了、类型写成了含糊的通配——匹配就乱了，你想要的 App 可能因此落榜。\n\n第二个坑在 Android 11 之后。Google 以隐私为由加了「包可见性」限制：App 自己查表（调 queryIntentActivities）时，默认只能看到系统允许它看到的那部分应用，得在安装包里用 <queries> 额外申报。注意，系统自带的分享面板是系统进程查的，不受这个限制；受影响的是那些「自己组装名单」的 App。对普通用户来说，更常见的落榜原因其实是这几个：目标 App 根本没报名这种文件类型（最常见）；App 被停用了；公司配的工作资料和个人资料是隔离的，工作区的 App 不会出现在个人区的名单里。\n\niOS 是另一套话语，同一个逻辑。苹果不用 MIME 表，用 UTI（Uniform Type Identifier）：PDF 叫 com.adobe.pdf，PNG 叫 public.png。App 在 Info.plist 里用 CFBundleDocumentTypes 声明「我支持这些 UTI」，还能用 LSHandlerRank 说自己是「主人」（Owner）还是「备选」（Alternate）。你点分享，系统按 UTI 查表列出「Open In」名单。文件还会先被拷贝一份到目标 App 的「收件箱」（Inbox）目录再交接——这就是 iOS 沙盒的规矩：App 之间不直接碰文件，全靠系统转交。所以 iOS 上你没法「指定任意 App 打开」：目标 App 没报名，系统根本不会把它列出来，也没有 Windows 那样的「浏览 exe」入口。\n\nWindows 则是完全相反的哲学：文件关联写在注册表 HKEY_CLASSES_ROOT 里，扩展名 .pdf 对应哪个程序，一查便知。「打开方式」对话框列出的是注册了该扩展名的应用——但关键来了：对话框底下有「在这台电脑上查找其他应用」，可以直接浏览选中任意 exe。为什么手机不行、电脑行？因为手机 App 活在沙盒里，用户根本没有「可执行文件路径」这个概念可以选；Windows 上你是机器的主人，exe 文件就躺在磁盘上，系统允许你直接点名。自由度不同，入口自然不同。\n\n终于可以回答「为什么有时能自定义添加，有时不行」。系统级的分享面板（Android 的分享列表、iOS 的分享页）——名单由系统查表生成，用户加不了，能做的只有装更多「报了名」的 App，或者长按把常用的固定到前面。而有些 App（比如文件管理器、WPS）里的「打开方式」是它们自己做的选择器：开发者自己列个单子，甚至允许你从已装应用里任选——那是这个 App 的私活，不是系统能力。看起来「能添加」，其实是换了个实现。认出「这是系统的还是 App 自己做的」，困惑就解开一半～\n\n排序也值得一说。Android 的分享面板分三层：最上面是「直接分享」——微信、短信这些 App 主动上报的「常用联系人 / 常用目标」，由系统按你的使用习惯预测排序；中间是你长按固定📌的应用；下面才是全部候选，一般按字母顺序排。所以「你常用的怎么总在上面」——一是系统学了你的习惯，二是你亲手钉上去的。"
+ },
+ "guide": {
+  "heading": "🛠️ 名单里没有你想要的 App，怎么办",
+  "en": "FIX IT",
+  "short": "解决",
+  "num": "解",
+  "options": [
+   {
+    "name": "先确认它真能打开",
+    "desc": "去应用商店看介绍，或问开发者：这个 App 到底支不支持这种文件类型。没报名，装了也白搭",
+    "when": "怀疑是 App 本身就不支持"
+   },
+   {
+    "name": "Android：查三处",
+    "desc": "应用是否被停用（设置→应用→启用）；是不是装在工作资料里；清除该文件类型的「默认打开」设置",
+    "when": "App 明明支持，名单里却没有"
+   },
+   {
+    "name": "Windows：直接点名",
+    "desc": "右键→打开方式→选择其他应用→「在这台电脑上查找其他应用」，选中 exe；或重装软件修复关联",
+    "when": "在电脑上，名单里没有就自己加"
+   },
+   {
+    "name": "iOS：换条路",
+    "desc": "iOS 加不了名单。先把文件存到「文件」App，再从那里用其他应用打开；或换个声明了该类型的 App",
+    "when": "iPhone 上死活找不到"
+   }
+  ],
+  "steps": [
+   "复现一次：记下是在哪个 App 里、打开什么类型的文件时找不到目标",
+   "去应用商店看目标 App 的介绍，确认它声明支持这种文件类型",
+   "Android：设置→应用→找到目标 App，确认没有被停用；看它在个人资料还是工作资料",
+   "Android：设置→应用→默认应用，检查并清除相关文件类型的默认设置",
+   "Windows：右键文件→打开方式→选择其他应用，「更多应用」里找，没有就「在这台电脑上查找其他应用」",
+   "还不行：卸载重装目标 App（重装会重新「报名」），或换个同类 App"
+  ],
+  "code": {
+   "lang": "xml",
+   "label": "让你的 App 上榜：Android 篇",
+   "code": "<!-- 想让你的 App 出现在「用其他应用打开」里？在 AndroidManifest.xml 里「报名」 -->\n<activity android:name=\".PdfViewerActivity\">\n    <intent-filter>\n        <action android:name=\"android.intent.action.VIEW\" />\n        <category android:name=\"android.intent.category.DEFAULT\" />\n        <data android:mimeType=\"application/pdf\" />\n    </intent-filter>\n</activity>"
+  },
+  "pitfalls": [
+   "系统是故意不给我看的：不是。系统只负责查表，落榜 99% 是因为目标 App 没报名该类型，或报名信息对不上",
+   "重启手机能刷新名单：基本没用。名单是安装时生成的目录，不是缓存；重装目标 App 才会重新报名",
+   "iOS 上就没办法了：名单确实加不了，但可以先把文件存到「文件」App 再转手，或直接换个支持的 App",
+   "Windows 上随便指定 exe 都行：行，但指定一个根本打不开这类文件的 exe，只会得到报错，「能上榜」不等于「能打开」"
+  ]
+ },
+ "sources": [
+  {
+   "title": "Android Developers：让其他应用启动你的 Activity（intent-filter）",
+   "url": "https://developer.android.com/training/basics/intents/filters"
+  },
+  {
+   "title": "Android Developers：声明包可见性需求（Android 11+）",
+   "url": "https://developer.android.com/training/package-visibility/declaring"
+  },
+  {
+   "title": "Android Developers：提供直接分享目标（Sharesheet 排序）",
+   "url": "https://developer.android.com/develop/ui/compose/sharing/direct-share-targets"
+  },
+  {
+   "title": "Chariot Solutions：iOS 自定义文件类型与 UTI",
+   "url": "https://chariotsolutions.com/blog/post/importing-data-via-custom-file-types-in/"
+  },
+  {
+   "title": "Personal Knowbase：手动设置 Windows 文件关联",
+   "url": "https://www.bitsmithsoft.com/pkblog/fixing-lost-windows-file-associations.htm"
+  }
+ ]
+}
 ]
