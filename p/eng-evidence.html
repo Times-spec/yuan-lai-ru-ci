@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>证据：发布要留“案底” · 原来如此</title>
+<meta name="description" content="出了事，能说清每一步。发布证据=构建产物哈希+审批记录+测试报告+变更清单，打包存档；出事时用来还原真相，平时用来证明合规。">
+<link rel="canonical" href="https://www.aha.voyager06.tech/p/eng-evidence.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="证据：发布要留“案底” · 原来如此">
+<meta property="og:description" content="出了事，能说清每一步。发布证据=构建产物哈希+审批记录+测试报告+变更清单，打包存档；出事时用来还原真相，平时用来证明合规。">
+<meta property="og:url" content="https://www.aha.voyager06.tech/p/eng-evidence.html">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>">
+<style>
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;max-width:760px;margin:0 auto;padding:24px 20px 60px;color:#1c2b3a;line-height:1.8;background:#FDFCF9}
+a{color:#2563EB;text-decoration:none} a:hover{text-decoration:underline}
+.crumb{font-size:13px;color:#8A8A93;margin-bottom:18px}
+h1{font-size:30px;line-height:1.35;margin:6px 0 8px}
+.tagline{color:#5B6470;font-size:16px;margin-bottom:20px}
+.kick{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.1em;background:#EEF3F8;color:#31597F;border-radius:999px;padding:4px 12px}
+.scene{background:#FFF8EC;border:1px solid #F0E2C4;border-radius:12px;padding:16px 20px}
+.sum{background:#EEF4FF;border:1px solid #C9DBF5;border-radius:12px;padding:16px 20px;font-weight:600}
+h2{font-size:20px;margin:34px 0 12px}
+.steps li,.rel li{margin:6px 0}
+.cf{background:#F5F3FF;border:1px dashed #C4B5FD;border-radius:12px;padding:14px 20px;margin-top:22px}
+.mis{background:#FFF5F5;border:1px solid #F3C2C2;border-radius:12px;padding:14px 20px;margin-top:14px}
+.cf h3,.mis h3,.conf h3{margin:0 0 6px;font-size:16px}
+.cf p,.mis p{margin:0}
+.conf{border:1px solid #E3E0D8;border-radius:12px;padding:14px 20px;margin-top:22px}
+.conf p{margin:6px 0} .conf span,.rel span{color:#8A8A93;font-size:13.5px}
+.cap{color:#8A8A93;font-size:14px}
+.pn{display:flex;justify-content:space-between;gap:16px;margin-top:40px;border-top:1px solid #E3E0D8;padding-top:18px;font-size:14.5px}
+.spa{display:block;text-align:center;margin-top:28px;background:#1c2b3a;color:#fff;border-radius:12px;padding:12px}
+footer{margin-top:34px;color:#8A8A93;font-size:13px;text-align:center}
+</style>
+</head>
+<body>
+<div class="crumb"><a href="https://www.aha.voyager06.tech/">原来如此</a> / 工程与协作 / 证据：发布要留“案底”</div>
+<span class="kick">工程与协作</span>
+<h1>证据：发布要留“案底”</h1>
+<div class="tagline">出了事，能说清每一步</div>
+<div class="scene"><b>👀 日常场景</b><p>线上出故障了，老板问三个问题：这次发的是什么版本？谁批准上线的？上线前测试过了吗？你翻聊天记录翻了半小时，拼凑出个大概。如果每次发布都自动留下一套“证据”，这三个问题 10 秒钟就有答案。</p></div>
+
+<h2>原理：它是怎么运作的</h2>
+<div class="sum">💡 发布证据=构建产物哈希+审批记录+测试报告+变更清单，打包存档；出事时用来还原真相，平时用来证明合规。</div>
+<h2>先看全过程</h2><ol class="steps"><li>证据=发布过程的案底</li><li>存什么：版本、审批、测试、产物</li><li>产物哈希：证明“发的是这个”</li><li>审批链：证明“有人点头”</li><li>出事时按图索骥</li></ol>
+<p>证据不是不信任团队，而是给未来留一台“时间机器”。一套完整的发布证据通常包括：基线是什么（版本号/tag）、构建产物的哈希值（证明线上跑的就是构建出来的那个）、谁在什么时候批准了发布（审批链）、测试报告（冒烟过了、门禁过了）、变更清单（这次改了什么）。</p><p>很多行业（金融、医疗）是法规强制要求；普通团队则是为了“复盘不靠回忆”。证据和监控的区别：监控告诉你“现在怎么了”，证据告诉你“当时发生了什么”。</p><p>证据要有效，得满足三性：真实（自动采集，不靠手工填）、完整（版本、审批、测试、产物缺一不可）、不可篡改（存进只读归档，事后改不了）。很多团队的做法是流水线自动打包：构建结束自动归档产物和哈希，审批自动记录人和时间，测试报告自动上传——人只负责点按钮，证据自己长出来。</p><p>记住：证据的价值不在“留”，在“用”。定期抽查、故障复盘时调阅，它才是活的；躺在硬盘里没人看的证据，和没留没有区别。</p>
+
+<h2>发布证据该留哪些</h2><ul><li><b>版本与产物</b>：基线 tag、构建产物、产物哈希值</li><li><b>审批链</b>：谁在什么时候点了发布</li><li><b>测试报告</b>：冒烟结果、门禁报告、dry-run 记录</li></ul><ol><li>CI 构建时：自动记录版本和产物哈希</li><li>发布审批时：记录审批人和时间</li><li>测试完成后：归档冒烟和门禁报告</li><li>上线后：校验哈希并记录比对结果</li><li>打包存档：和基线 tag 关联保存</li></ol>
+
+<h2>相关条目</h2><ul class="rel"><li><a href="https://www.aha.voyager06.tech/p/eng-baseline.html">基线：发布的“唯一真相”</a> <span>所有人都对着同一份清单干活</span></li></ul>
+
+<a class="spa" href="https://www.aha.voyager06.tech/#/p/eng-evidence">在站内打开本篇（完整交互版）→</a>
+<div class="pn"><a href="https://www.aha.voyager06.tech/p/eng-snapshot.html">← 上一个：快照：给系统拍张“定格照”</a><a href="https://www.aha.voyager06.tech/p/eng-quality-gate.html">下一个：门禁：89 道检查一道不能少 →</a></div>
+<footer>原来如此 · 把听说过的技术讲透 · 内容为科普解读，具体接入请以各服务官方文档为准</footer>
+</body>
+</html>

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>复制链接 · 原来如此</title>
+<meta name="description" content="点一下，链接就进了剪贴板。调用 Clipboard API 的 writeText 把文本写入系统剪贴板，需 HTTPS 且由用户点击触发，老浏览器用 execCommand 降级。">
+<link rel="canonical" href="https://www.aha.voyager06.tech/p/feat-copy-link.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="复制链接 · 原来如此">
+<meta property="og:description" content="点一下，链接就进了剪贴板。调用 Clipboard API 的 writeText 把文本写入系统剪贴板，需 HTTPS 且由用户点击触发，老浏览器用 execCommand 降级。">
+<meta property="og:url" content="https://www.aha.voyager06.tech/p/feat-copy-link.html">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>">
+<style>
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;max-width:760px;margin:0 auto;padding:24px 20px 60px;color:#1c2b3a;line-height:1.8;background:#FDFCF9}
+a{color:#2563EB;text-decoration:none} a:hover{text-decoration:underline}
+.crumb{font-size:13px;color:#8A8A93;margin-bottom:18px}
+h1{font-size:30px;line-height:1.35;margin:6px 0 8px}
+.tagline{color:#5B6470;font-size:16px;margin-bottom:20px}
+.kick{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.1em;background:#EEF3F8;color:#31597F;border-radius:999px;padding:4px 12px}
+.scene{background:#FFF8EC;border:1px solid #F0E2C4;border-radius:12px;padding:16px 20px}
+.sum{background:#EEF4FF;border:1px solid #C9DBF5;border-radius:12px;padding:16px 20px;font-weight:600}
+h2{font-size:20px;margin:34px 0 12px}
+.steps li,.rel li{margin:6px 0}
+.cf{background:#F5F3FF;border:1px dashed #C4B5FD;border-radius:12px;padding:14px 20px;margin-top:22px}
+.mis{background:#FFF5F5;border:1px solid #F3C2C2;border-radius:12px;padding:14px 20px;margin-top:14px}
+.cf h3,.mis h3,.conf h3{margin:0 0 6px;font-size:16px}
+.cf p,.mis p{margin:0}
+.conf{border:1px solid #E3E0D8;border-radius:12px;padding:14px 20px;margin-top:22px}
+.conf p{margin:6px 0} .conf span,.rel span{color:#8A8A93;font-size:13.5px}
+.cap{color:#8A8A93;font-size:14px}
+.pn{display:flex;justify-content:space-between;gap:16px;margin-top:40px;border-top:1px solid #E3E0D8;padding-top:18px;font-size:14.5px}
+.spa{display:block;text-align:center;margin-top:28px;background:#1c2b3a;color:#fff;border-radius:12px;padding:12px}
+footer{margin-top:34px;color:#8A8A93;font-size:13px;text-align:center}
+</style>
+</head>
+<body>
+<div class="crumb"><a href="https://www.aha.voyager06.tech/">原来如此</a> / 小功能大智慧 / 复制链接</div>
+<span class="kick">小功能大智慧</span>
+<h1>复制链接</h1>
+<div class="tagline">点一下，链接就进了剪贴板</div>
+<div class="scene"><b>👀 日常场景</b><p>点“复制链接”按钮，页面弹出“已复制”，切到微信里粘贴，链接就发出去了——全程不用手动选中网址、不用按 Ctrl+C。优惠券口令、邀请链接、收货地址，处处都是这个小按钮。</p></div>
+
+<h2>原理：它是怎么运作的</h2>
+<div class="sum">💡 调用 Clipboard API 的 writeText 把文本写入系统剪贴板，需 HTTPS 且由用户点击触发，老浏览器用 execCommand 降级。</div>
+<h2>先看全过程</h2><ol class="steps"><li>用户点击复制按钮</li><li>调用 Clipboard API 写文本</li><li>浏览器校验安全上下文</li><li>文本进入系统剪贴板</li><li>页面 toast 提示复制成功</li><li>失败时降级为手动复制</li></ol>
+<p>复制功能的核心是 Clipboard API：navigator.clipboard.writeText(&#x27;文本&#x27;)，一行代码把字符串写进系统剪贴板。但浏览器对此管得很严：必须是 HTTPS（或 localhost），且必须在用户手势（点击）中调用——这是为了防止恶意网站在你没察觉时偷偷改剪贴板（比如把你复制的收款地址换掉，这种攻击真实存在）。老浏览器的降级方案很“土”但有效：创建一个看不见的 textarea，把文本塞进去，全选，再调 document.execCommand(&#x27;copy&#x27;)，靠“模拟用户复制选中内容”蒙混过关。还有个细节：writeText 是异步的，返回 Promise，成功就弹个 toast“已复制”，失败（比如权限被拒）就降级或提示用户手动复制。移动端要注意，iOS 的 Safari 对 execCommand 支持一向挑剔，尽量走 Clipboard API。为什么有些网站点复制没反应？八成是页面不是 HTTPS，导致 navigator.clipboard 是 undefined，代码又没写降级。</p>
+
+<h2>网站是怎么做到的</h2><ul><li><b>Clipboard API：一行代码写剪贴板</b>：navigator.clipboard.writeText(&#x27;文本&#x27;)，就这么一行，字符串就进了系统剪贴板。</li><li><b>双重门禁：HTTPS + 用户手势</b>：必须是 HTTPS 页面，且必须在“点击”这个动作里调用。防止恶意网站在你没察觉时偷换剪贴板（比如把你复制的收款地址掉包）。</li><li><b>土法降级：看不见的 textarea</b>：老浏览器没有 Clipboard API，就建一个看不见的文本框，把文字塞进去全选，再调 execCommand(&#x27;copy&#x27;)模拟“用户复制”。</li><li><b>异步 + toast：成功才报喜</b>：writeText 返回 Promise，成功了弹“已复制”，失败了降级或提示手动复制。</li></ul><ol><li>你点击“复制链接”按钮——注意，必须是你亲手点的</li><li>页面调用 clipboard.writeText，把链接字符串交给浏览器</li><li>浏览器检查：是 HTTPS 吗？是用户手势触发的吗？都通过才放行</li><li>文本写入系统剪贴板</li><li>页面弹出“已复制”toast</li><li>你切到微信粘贴，链接发出去了；如果失败，页面会降级提示你手动复制</li></ol>
+<h2>延伸阅读</h2><ul><li><a href="https://blog.csdn.net/gitblog_01189/article/details/152768387" rel="noopener">网页复制/剪贴板相关实践（CSDN）</a></li></ul>
+<h2>相关条目</h2><ul class="rel"><li><a href="https://www.aha.voyager06.tech/p/security-email-otp-magic-link.html">邮箱验证码/魔法链接</a> <span>点一下邮件里的链接，直接登录不用输密码</span></li><li><a href="https://www.aha.voyager06.tech/p/security-carrier-one-tap-login.html">本机号码一键登录</a> <span>点一下就登录，连短信都不用等</span></li><li><a href="https://www.aha.voyager06.tech/p/feat-qr-code.html">网页二维码生成</a> <span>一行链接，变成手机能扫的码</span></li></ul>
+
+<a class="spa" href="https://www.aha.voyager06.tech/#/p/feat-copy-link">在站内打开本篇（完整交互版）→</a>
+<div class="pn"><a href="https://www.aha.voyager06.tech/p/feat-social-share.html">← 上一个：社交分享</a><a href="https://www.aha.voyager06.tech/p/feat-back-to-top.html">下一个：回到顶部 →</a></div>
+<footer>原来如此 · 把听说过的技术讲透 · 内容为科普解读，具体接入请以各服务官方文档为准</footer>
+</body>
+</html>

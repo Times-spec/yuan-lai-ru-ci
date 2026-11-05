@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>暗黑模式 · 原来如此</title>
+<meta name="description" content="一键换肤，深夜刷手机不刺眼。用 CSS 变量定义两套配色，切换 html 上的 dark 类，用户偏好存 localStorage，并跟随系统主题。">
+<link rel="canonical" href="https://www.aha.voyager06.tech/p/feat-dark-mode.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="暗黑模式 · 原来如此">
+<meta property="og:description" content="一键换肤，深夜刷手机不刺眼。用 CSS 变量定义两套配色，切换 html 上的 dark 类，用户偏好存 localStorage，并跟随系统主题。">
+<meta property="og:url" content="https://www.aha.voyager06.tech/p/feat-dark-mode.html">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>">
+<style>
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;max-width:760px;margin:0 auto;padding:24px 20px 60px;color:#1c2b3a;line-height:1.8;background:#FDFCF9}
+a{color:#2563EB;text-decoration:none} a:hover{text-decoration:underline}
+.crumb{font-size:13px;color:#8A8A93;margin-bottom:18px}
+h1{font-size:30px;line-height:1.35;margin:6px 0 8px}
+.tagline{color:#5B6470;font-size:16px;margin-bottom:20px}
+.kick{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.1em;background:#EEF3F8;color:#31597F;border-radius:999px;padding:4px 12px}
+.scene{background:#FFF8EC;border:1px solid #F0E2C4;border-radius:12px;padding:16px 20px}
+.sum{background:#EEF4FF;border:1px solid #C9DBF5;border-radius:12px;padding:16px 20px;font-weight:600}
+h2{font-size:20px;margin:34px 0 12px}
+.steps li,.rel li{margin:6px 0}
+.cf{background:#F5F3FF;border:1px dashed #C4B5FD;border-radius:12px;padding:14px 20px;margin-top:22px}
+.mis{background:#FFF5F5;border:1px solid #F3C2C2;border-radius:12px;padding:14px 20px;margin-top:14px}
+.cf h3,.mis h3,.conf h3{margin:0 0 6px;font-size:16px}
+.cf p,.mis p{margin:0}
+.conf{border:1px solid #E3E0D8;border-radius:12px;padding:14px 20px;margin-top:22px}
+.conf p{margin:6px 0} .conf span,.rel span{color:#8A8A93;font-size:13.5px}
+.cap{color:#8A8A93;font-size:14px}
+.pn{display:flex;justify-content:space-between;gap:16px;margin-top:40px;border-top:1px solid #E3E0D8;padding-top:18px;font-size:14.5px}
+.spa{display:block;text-align:center;margin-top:28px;background:#1c2b3a;color:#fff;border-radius:12px;padding:12px}
+footer{margin-top:34px;color:#8A8A93;font-size:13px;text-align:center}
+</style>
+</head>
+<body>
+<div class="crumb"><a href="https://www.aha.voyager06.tech/">原来如此</a> / 小功能大智慧 / 暗黑模式</div>
+<span class="kick">小功能大智慧</span>
+<h1>暗黑模式</h1>
+<div class="tagline">一键换肤，深夜刷手机不刺眼</div>
+<div class="scene"><b>👀 日常场景</b><p>晚上关灯刷手机，打开 App 点一下月亮图标，整个界面“唰”地变成深色，眼睛瞬间舒服了。更贴心的是，下次打开它还记得你的选择——不用每天调一遍，深夜党狂喜，从此告别被亮瞎眼。</p></div>
+
+<h2>原理：它是怎么运作的</h2>
+<div class="sum">💡 用 CSS 变量定义两套配色，切换 html 上的 dark 类，用户偏好存 localStorage，并跟随系统主题。</div>
+<h2>先看全过程</h2><ol class="steps"><li>用 CSS 变量定义全部配色</li><li>准备深浅两套变量值</li><li>切换 html 上的 dark 类</li><li>用户偏好存入本地</li><li>首次按系统主题初始化</li><li>监听系统主题变化跟随</li></ol>
+<p>暗黑模式的本质是“换肤”，现代做法靠 CSS 变量。先把所有颜色抽成变量（--bg、--text、--card），浅色主题给一组值，深色主题给另一组；切换时只改 html 元素上的一个类（.dark）或 data-theme 属性，整站颜色瞬间全换，不用碰任何组件代码。用户的选择存在 localStorage 里，下次打开直接读；首次访问则读系统的 prefers-color-scheme 媒体查询（跟着手机系统的深浅走）。进阶做法是“三态”：跟随系统 / 强制浅色 / 强制深色。坑主要在三处：一是“漏网之鱼”：某处颜色写死了色值没走变量，切深色后那一块亮得刺眼；二是“首屏闪烁”：主题初始化脚本放太晚，页面先以浅色闪一下才变黑，解决办法是把一小段内联脚本放在 head 最前面；三是图片和第三方组件：纯白底图片在深色下会像“补丁”，可以用滤镜压暗或准备深色版图。Tailwind 这类框架用 dark: 前缀，本质也是类切换，只是写法更顺。</p>
+
+<h2>深色模式跟我有什么关系</h2><ul><li><b>晚上刷手机眼睛更舒服</b>：暗光下深色界面对比度低，不刺眼。睡前刷手机党、夜猫子的刚需。</li><li><b>OLED 屏幕更省电</b>：OLED 屏的黑色像素是不发光的，深色界面直接省电。LCD 屏没这个效果（背光一直亮着）。</li><li><b>跟随系统最省心</b>：设一次“跟随系统”，手机切深色 App 就跟切，不用每个 App 单独调。</li></ul><ol><li>在 App 或网站的设置里找到“深色模式”/“外观”</li><li>选“跟随系统”（推荐）：手机深色它就深色</li><li>或者手动固定深色 / 浅色，不随系统变</li><li>选完立即生效，下次打开还记得你的选择</li></ol>
+<h2>延伸阅读</h2><ul><li><a href="https://blog.csdn.net/gitblog_00027/article/details/153853659" rel="noopener">暗黑模式实现方案（CSDN）</a></li><li><a href="https://blog.csdn.net/Nan_Shu_614/article/details/155267049" rel="noopener">深色主题切换实践（CSDN）</a></li></ul>
+<h2>相关条目</h2><ul class="rel"><li><a href="https://www.aha.voyager06.tech/p/feat-qr-code.html">网页二维码生成</a> <span>一行链接，变成手机能扫的码</span></li><li><a href="https://www.aha.voyager06.tech/p/feat-social-share.html">社交分享</a> <span>一键把页面发到微信、微博</span></li><li><a href="https://www.aha.voyager06.tech/p/feat-copy-link.html">复制链接</a> <span>点一下，链接就进了剪贴板</span></li></ul>
+
+<a class="spa" href="https://www.aha.voyager06.tech/#/p/feat-dark-mode">在站内打开本篇（完整交互版）→</a>
+<div class="pn"><a href="https://www.aha.voyager06.tech/p/feat-skeleton-screen.html">← 上一个：骨架屏</a><a href="https://www.aha.voyager06.tech/p/feat-form-draft-autosave.html">下一个：表单草稿自动保存 →</a></div>
+<footer>原来如此 · 把听说过的技术讲透 · 内容为科普解读，具体接入请以各服务官方文档为准</footer>
+</body>
+</html>

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>双因素认证 2FA · 原来如此</title>
+<meta name="description" content="密码泄露了，攻击者还是进不来。“你知道的（密码）+ 你拥有的（手机/密钥）”双因子叠加，单点泄露不致命。">
+<link rel="canonical" href="https://www.aha.voyager06.tech/p/security-2fa.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="双因素认证 2FA · 原来如此">
+<meta property="og:description" content="密码泄露了，攻击者还是进不来。“你知道的（密码）+ 你拥有的（手机/密钥）”双因子叠加，单点泄露不致命。">
+<meta property="og:url" content="https://www.aha.voyager06.tech/p/security-2fa.html">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>">
+<style>
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;max-width:760px;margin:0 auto;padding:24px 20px 60px;color:#1c2b3a;line-height:1.8;background:#FDFCF9}
+a{color:#2563EB;text-decoration:none} a:hover{text-decoration:underline}
+.crumb{font-size:13px;color:#8A8A93;margin-bottom:18px}
+h1{font-size:30px;line-height:1.35;margin:6px 0 8px}
+.tagline{color:#5B6470;font-size:16px;margin-bottom:20px}
+.kick{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.1em;background:#EEF3F8;color:#31597F;border-radius:999px;padding:4px 12px}
+.scene{background:#FFF8EC;border:1px solid #F0E2C4;border-radius:12px;padding:16px 20px}
+.sum{background:#EEF4FF;border:1px solid #C9DBF5;border-radius:12px;padding:16px 20px;font-weight:600}
+h2{font-size:20px;margin:34px 0 12px}
+.steps li,.rel li{margin:6px 0}
+.cf{background:#F5F3FF;border:1px dashed #C4B5FD;border-radius:12px;padding:14px 20px;margin-top:22px}
+.mis{background:#FFF5F5;border:1px solid #F3C2C2;border-radius:12px;padding:14px 20px;margin-top:14px}
+.cf h3,.mis h3,.conf h3{margin:0 0 6px;font-size:16px}
+.cf p,.mis p{margin:0}
+.conf{border:1px solid #E3E0D8;border-radius:12px;padding:14px 20px;margin-top:22px}
+.conf p{margin:6px 0} .conf span,.rel span{color:#8A8A93;font-size:13.5px}
+.cap{color:#8A8A93;font-size:14px}
+.pn{display:flex;justify-content:space-between;gap:16px;margin-top:40px;border-top:1px solid #E3E0D8;padding-top:18px;font-size:14.5px}
+.spa{display:block;text-align:center;margin-top:28px;background:#1c2b3a;color:#fff;border-radius:12px;padding:12px}
+footer{margin-top:34px;color:#8A8A93;font-size:13px;text-align:center}
+</style>
+</head>
+<body>
+<div class="crumb"><a href="https://www.aha.voyager06.tech/">原来如此</a> / 验证与安全 / 双因素认证 2FA</div>
+<span class="kick">验证与安全</span>
+<h1>双因素认证 2FA</h1>
+<div class="tagline">密码泄露了，攻击者还是进不来</div>
+<div class="scene"><b>👀 日常场景</b><p>输完账号密码，网站还要你输入手机上 6 位动态数字，或者手机 App 弹出“是否本人登录”。多这一步很烦，但安全工程师会告诉你：正是这一步，让撞库攻击的成功率断崖式下跌。</p></div>
+
+<h2>原理：它是怎么运作的</h2>
+<div class="sum">💡 “你知道的（密码）+ 你拥有的（手机/密钥）”双因子叠加，单点泄露不致命。</div>
+<h2>先看全过程</h2><ol class="steps"><li>第一因素：验证密码（你知道的）</li><li>密码通过后进入第二因素环节</li><li>第二因素：手机动态码/推送/硬件密钥</li><li>后端分别校验两个因素</li><li>都通过才建立完整登录态</li><li>任一失败都拒绝且不透露哪步错</li></ol>
+<p>2FA 的思想来自纵深防御：把“证明你是谁”拆成两个独立通道——知识因子（密码）、持有因子（手机/硬件密钥）、生物因子（指纹）中任选其二。攻击者即使通过钓鱼或撞库拿到你的密码，没有第二因子也进不来；反过来，捡到你手机的人不知道密码同样白搭。工程实现上有个细节：登录会话要分阶段——密码通过后只给一个“半登录态”（能访问 2FA 验证页，不能访问业务），第二因子通过后才升级为完整登录态，否则攻击者可绕过第二步直接调业务接口。第二因子的形态决定了安全等级：短信 OTP 最方便但怕 SIM 卡补办；TOTP App（见 TOTP 条）离线安全；FIDO2 硬件密钥/指纹最强且防钓鱼。大厂通常做“风险自适应”：常用设备只验密码，新设备才触发 2FA，在安全和体验间找平衡。一个冷知识：很多大厂的“新设备登录提醒”本质就是弱化版 2FA——用邮件/短信通知代替强制验证，在安全和打扰之间取了个折中。</p>
+
+<h2>我该如何保护自己</h2><ul><li><b>验证器 App（最推荐）</b>：Google Authenticator 这类 App，离线生成动态码，不怕 SIM 卡被补办</li><li><b>短信验证码（有总比没有强）</b>：零学习成本，但可能被 SIM 卡补办攻击绕过</li><li><b>硬件密钥 / 指纹（最高级）</b>：YubiKey 或手机通行密钥，还能防钓鱼</li></ul><ol><li>先给邮箱开 2FA：邮箱是所有“找回密码”的总钥匙，它被盗等于全军覆没</li><li>再给支付、银行、社交大号逐一开启，别只给小号开</li><li>能选验证器 App 就别选短信：App 的码离线生成，短信可能被半路截走</li><li>开启时保存好“备用恢复码”，抄纸上——这是你换手机后的救命绳</li><li>换手机前，先把验证器 App 的数据迁移到新手机，再抹掉旧手机</li></ol>
+<h2>延伸阅读</h2><ul><li><a href="https://blog.csdn.net/openHiTLS/article/details/151608861" rel="noopener">TOTP 作为 2FA 主流形态</a></li></ul>
+<h2>相关条目</h2><ul class="rel"><li><a href="https://www.aha.voyager06.tech/p/ai-transformer.html">注意力机制与 Transformer</a> <span>每个词同时看所有词，大模型的心脏</span></li><li><a href="https://www.aha.voyager06.tech/p/ai-agent.html">智能体 Agent</a> <span>从只会说，到会动手做事</span></li><li><a href="https://www.aha.voyager06.tech/p/ai-rag.html">RAG：给大模型外挂知识库</a> <span>给大模型外挂一个知识库</span></li></ul>
+
+<a class="spa" href="https://www.aha.voyager06.tech/#/p/security-2fa">在站内打开本篇（完整交互版）→</a>
+<div class="pn"><a href="https://www.aha.voyager06.tech/p/security-webauthn-passkey.html">← 上一个：WebAuthn/指纹面容登录</a><a href="https://www.aha.voyager06.tech/p/security-device-fingerprint.html">下一个：设备指纹 →</a></div>
+<footer>原来如此 · 把听说过的技术讲透 · 内容为科普解读，具体接入请以各服务官方文档为准</footer>
+</body>
+</html>

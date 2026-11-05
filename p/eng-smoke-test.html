@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>冒烟测试：先点火看看冒不冒烟 · 原来如此</title>
+<meta name="description" content="主流程不通，别谈细节。冒烟测试是版本验证的第一道关：只测最核心的主流程，全过才值得投入全面测试；不过就直接打回，不浪费时间。">
+<link rel="canonical" href="https://www.aha.voyager06.tech/p/eng-smoke-test.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="冒烟测试：先点火看看冒不冒烟 · 原来如此">
+<meta property="og:description" content="主流程不通，别谈细节。冒烟测试是版本验证的第一道关：只测最核心的主流程，全过才值得投入全面测试；不过就直接打回，不浪费时间。">
+<meta property="og:url" content="https://www.aha.voyager06.tech/p/eng-smoke-test.html">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>">
+<style>
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;max-width:760px;margin:0 auto;padding:24px 20px 60px;color:#1c2b3a;line-height:1.8;background:#FDFCF9}
+a{color:#2563EB;text-decoration:none} a:hover{text-decoration:underline}
+.crumb{font-size:13px;color:#8A8A93;margin-bottom:18px}
+h1{font-size:30px;line-height:1.35;margin:6px 0 8px}
+.tagline{color:#5B6470;font-size:16px;margin-bottom:20px}
+.kick{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.1em;background:#EEF3F8;color:#31597F;border-radius:999px;padding:4px 12px}
+.scene{background:#FFF8EC;border:1px solid #F0E2C4;border-radius:12px;padding:16px 20px}
+.sum{background:#EEF4FF;border:1px solid #C9DBF5;border-radius:12px;padding:16px 20px;font-weight:600}
+h2{font-size:20px;margin:34px 0 12px}
+.steps li,.rel li{margin:6px 0}
+.cf{background:#F5F3FF;border:1px dashed #C4B5FD;border-radius:12px;padding:14px 20px;margin-top:22px}
+.mis{background:#FFF5F5;border:1px solid #F3C2C2;border-radius:12px;padding:14px 20px;margin-top:14px}
+.cf h3,.mis h3,.conf h3{margin:0 0 6px;font-size:16px}
+.cf p,.mis p{margin:0}
+.conf{border:1px solid #E3E0D8;border-radius:12px;padding:14px 20px;margin-top:22px}
+.conf p{margin:6px 0} .conf span,.rel span{color:#8A8A93;font-size:13.5px}
+.cap{color:#8A8A93;font-size:14px}
+.pn{display:flex;justify-content:space-between;gap:16px;margin-top:40px;border-top:1px solid #E3E0D8;padding-top:18px;font-size:14.5px}
+.spa{display:block;text-align:center;margin-top:28px;background:#1c2b3a;color:#fff;border-radius:12px;padding:12px}
+footer{margin-top:34px;color:#8A8A93;font-size:13px;text-align:center}
+</style>
+</head>
+<body>
+<div class="crumb"><a href="https://www.aha.voyager06.tech/">原来如此</a> / 工程与协作 / 冒烟测试：先点火看看冒不冒烟</div>
+<span class="kick">工程与协作</span>
+<h1>冒烟测试：先点火看看冒不冒烟</h1>
+<div class="tagline">主流程不通，别谈细节</div>
+<div class="scene"><b>👀 日常场景</b><p>新版本上线前，测试同学花 10 分钟走了一遍：能登录吗？能下单吗？能付款吗？——全过，才开始测 200 个细节用例。这 10 分钟就是冒烟测试：先确认“主流程没着火”，再谈别的。</p></div>
+
+<h2>原理：它是怎么运作的</h2>
+<div class="sum">💡 冒烟测试是版本验证的第一道关：只测最核心的主流程，全过才值得投入全面测试；不过就直接打回，不浪费时间。</div>
+<h2>先看全过程</h2><ol class="steps"><li>冒烟=点火看冒不冒烟</li><li>只测核心主流程</li><li>10 分钟出结论</li><li>不过就打回，不测细节</li><li>名字来自硬件：通电冒烟就废了</li></ol>
+<p>“冒烟”这个名字来自硬件行业：电路板焊好先通电，冒烟了就说明板子废了，不用再测。软件借了这个词：新版本先跑一遍最核心的流程——能打开吗、能登录吗、核心功能走得通吗。</p><p>冒烟测试有三个特点：一是快，10 分钟左右出结论；二是粗，只覆盖主流程，不抠细节；三是“一票否决”，冒烟不过，版本直接打回，不值得投入几百个用例的全面测试。它和全面回归的关系：冒烟回答“值不值得测”，回归回答“测得全不全”。</p><p>冒烟用例怎么挑？三条标准：核心流程（登录、下单、支付这种）、上次出事的地方（历史故障点）、金主流程（直接产生收入的链路）。每条只走正常路径，异常分支留给全量回归。另外别忘了：测试环境冒烟过了，上线后在生产环境也要来一轮“生产冒烟”——环境不一样，照样可能着火。</p><p>在你的流程里，“先进行一轮烟测”就是这个意思：基线定好、最小改动做完，先点火——冒烟了，89 个门禁都不用跑，直接打回，省下所有人的时间。</p>
+
+<h2>冒烟用例该怎么挑</h2><ul><li><b>登录→核心→退出</b>：每个产品都有的骨架流程</li><li><b>上次出事的地方</b>：历史故障点优先</li><li><b>金主流程</b>：直接产生收入/核心价值的链路</li></ul><ol><li>列出产品的 3~5 条核心流程</li><li>每条只走正常路径（happy path）</li><li>10 分钟内跑完，不过即打回</li><li>冒烟用例固化：每次发布都跑同一套</li><li>冒烟过了，再跑全量回归</li></ol>
+
+<h2>相关条目</h2><ul class="rel"><li><a href="https://www.aha.voyager06.tech/p/eng-tdd.html">TDD：先写测试再写代码</a> <span>先写考卷，再写答案</span></li><li><a href="https://www.aha.voyager06.tech/p/eng-e2e.html">端到端：全流程测试与加密</a> <span>一词两义：全流程测试，和谁都看不懂的加密</span></li><li><a href="https://www.aha.voyager06.tech/p/network-policy-groups.html">策略组：自动选最快节点</a> <span>手动挡、自动挡、四驱，任你挑选</span></li></ul>
+
+<a class="spa" href="https://www.aha.voyager06.tech/#/p/eng-smoke-test">在站内打开本篇（完整交互版）→</a>
+<div class="pn"><a href="https://www.aha.voyager06.tech/p/eng-hash-verify.html">← 上一个：哈希：给文件办“身份证”</a><a href="https://www.aha.voyager06.tech/p/eng-linear-jira.html">下一个：Linear/Jira：需求的任务看板 →</a></div>
+<footer>原来如此 · 把听说过的技术讲透 · 内容为科普解读，具体接入请以各服务官方文档为准</footer>
+</body>
+</html>

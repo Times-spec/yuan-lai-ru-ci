@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>验证码倒计时 · 原来如此</title>
+<meta name="description" content="点完“获取验证码”，按钮变成 60 秒。前端用定时器做 60 秒倒计时禁用按钮，同时服务端按手机号限流，前后端配合防刷。">
+<link rel="canonical" href="https://www.aha.voyager06.tech/p/feat-otp-countdown.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="验证码倒计时 · 原来如此">
+<meta property="og:description" content="点完“获取验证码”，按钮变成 60 秒。前端用定时器做 60 秒倒计时禁用按钮，同时服务端按手机号限流，前后端配合防刷。">
+<meta property="og:url" content="https://www.aha.voyager06.tech/p/feat-otp-countdown.html">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>">
+<style>
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;max-width:760px;margin:0 auto;padding:24px 20px 60px;color:#1c2b3a;line-height:1.8;background:#FDFCF9}
+a{color:#2563EB;text-decoration:none} a:hover{text-decoration:underline}
+.crumb{font-size:13px;color:#8A8A93;margin-bottom:18px}
+h1{font-size:30px;line-height:1.35;margin:6px 0 8px}
+.tagline{color:#5B6470;font-size:16px;margin-bottom:20px}
+.kick{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.1em;background:#EEF3F8;color:#31597F;border-radius:999px;padding:4px 12px}
+.scene{background:#FFF8EC;border:1px solid #F0E2C4;border-radius:12px;padding:16px 20px}
+.sum{background:#EEF4FF;border:1px solid #C9DBF5;border-radius:12px;padding:16px 20px;font-weight:600}
+h2{font-size:20px;margin:34px 0 12px}
+.steps li,.rel li{margin:6px 0}
+.cf{background:#F5F3FF;border:1px dashed #C4B5FD;border-radius:12px;padding:14px 20px;margin-top:22px}
+.mis{background:#FFF5F5;border:1px solid #F3C2C2;border-radius:12px;padding:14px 20px;margin-top:14px}
+.cf h3,.mis h3,.conf h3{margin:0 0 6px;font-size:16px}
+.cf p,.mis p{margin:0}
+.conf{border:1px solid #E3E0D8;border-radius:12px;padding:14px 20px;margin-top:22px}
+.conf p{margin:6px 0} .conf span,.rel span{color:#8A8A93;font-size:13.5px}
+.cap{color:#8A8A93;font-size:14px}
+.pn{display:flex;justify-content:space-between;gap:16px;margin-top:40px;border-top:1px solid #E3E0D8;padding-top:18px;font-size:14.5px}
+.spa{display:block;text-align:center;margin-top:28px;background:#1c2b3a;color:#fff;border-radius:12px;padding:12px}
+footer{margin-top:34px;color:#8A8A93;font-size:13px;text-align:center}
+</style>
+</head>
+<body>
+<div class="crumb"><a href="https://www.aha.voyager06.tech/">原来如此</a> / 小功能大智慧 / 验证码倒计时</div>
+<span class="kick">小功能大智慧</span>
+<h1>验证码倒计时</h1>
+<div class="tagline">点完“获取验证码”，按钮变成 60 秒</div>
+<div class="scene"><b>👀 日常场景</b><p>注册时点“获取验证码”，按钮立刻变灰，文案变成“59 秒后重发”，一秒一秒往下走，倒计时结束才能再点。你可能觉得这只是个动画——其实它背后连着一套防短信轰炸的机制。</p></div>
+
+<h2>原理：它是怎么运作的</h2>
+<div class="sum">💡 前端用定时器做 60 秒倒计时禁用按钮，同时服务端按手机号限流，前后端配合防刷。</div>
+<h2>先看全过程</h2><ol class="steps"><li>用户点击获取验证码</li><li>请求接口发送验证码</li><li>按钮禁用并开始倒计时</li><li>每秒更新剩余秒数文案</li><li>倒计时结束恢复可点击</li><li>刷新页面用存储恢复倒计时</li></ol>
+<p>这个按钮的倒计时只是“面子”，真正的防刷在服务端。前端逻辑很简单：点“获取验证码”→请求发送接口→成功后按钮禁用，用 setInterval 每秒减一更新文案“59s 后重发”，到 0 恢复。这里有个体验细节：用户可能在倒计时里刷新页面，倒计时就没了，又能点——正确做法是把“截止时间戳”存进 localStorage，页面加载时算剩余秒数接着倒。但光有前端倒计时等于没设防：攻击者直接调接口就能绕过。所以服务端必须限流，常见策略是滑动窗口计数：同一手机号 1 分钟 1 条、1 小时 5 条、1 天 10 条，超了直接拒绝。这既防短信轰炸（攻击者用你的接口给别人狂发短信，账单算你的），也防撞库。另外 setInterval 在页面切到后台会被浏览器节流，回来时秒数可能“跳变”，用“截止时间戳减当前时间”实时计算而不是累减，就能对得准。</p>
+
+<h2>网站是怎么做到的</h2><ul><li><b>前端倒计时只是“面子”</b>：按钮变灰、“59s 后重发”，都是做给你看的。真正的防刷在服务端，前端倒计时一绕就过。</li><li><b>服务端滑动窗口限流</b>：同一手机号 1 分钟 1 条、1 小时 5 条、1 天 10 条，超了直接拒绝。这才是防短信轰炸的真家伙。</li><li><b>截止时间戳：刷新也不怕</b>：把“截止时间”存进 localStorage，刷新页面后算剩余秒数接着倒，而不是重新开始。</li><li><b>时间戳相减：后台回来不跳变</b>：页面切到后台时定时器会被节流，用“截止时间减当前时间”实时算，而不是一秒一秒累减。</li></ul><ol><li>你点“获取验证码”，请求先发到服务端</li><li>服务端检查：这个手机号 1 分钟内发过吗？超限直接拒绝</li><li>通过后短信发出，前端按钮禁用，开始 60 秒倒计时</li><li>每秒用“截止时间戳减当前时间”更新文案，刷新页面也能从存储恢复</li><li>倒计时走完，按钮恢复可点</li></ol>
+<h2>延伸阅读</h2><ul><li><a href="http://docs-aliyun.cn-hangzhou.oss.aliyun-inc.com/pdf/Short-Message-Service-intro-cn-zh-2019-11-29.pdf" rel="noopener">阿里云短信流控规则（PDF）</a></li></ul>
+<h2>相关条目</h2><ul class="rel"><li><a href="https://www.aha.voyager06.tech/p/security-sms-otp.html">短信 OTP 验证码</a> <span>那条 6 位数短信，是运营商给你作的证</span></li><li><a href="https://www.aha.voyager06.tech/p/feat-qr-code.html">网页二维码生成</a> <span>一行链接，变成手机能扫的码</span></li><li><a href="https://www.aha.voyager06.tech/p/security-email-otp-magic-link.html">邮箱验证码/魔法链接</a> <span>点一下邮件里的链接，直接登录不用输密码</span></li></ul>
+
+<a class="spa" href="https://www.aha.voyager06.tech/#/p/feat-otp-countdown">在站内打开本篇（完整交互版）→</a>
+<div class="pn"><a href="https://www.aha.voyager06.tech/p/feat-web-push.html">← 上一个：Web 推送通知</a><a href="https://www.aha.voyager06.tech/p/feat-lightbox.html">下一个：图片灯箱预览 →</a></div>
+<footer>原来如此 · 把听说过的技术讲透 · 内容为科普解读，具体接入请以各服务官方文档为准</footer>
+</body>
+</html>

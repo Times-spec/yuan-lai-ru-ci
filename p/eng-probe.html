@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>探针：给服务装“心跳监测” · 原来如此</title>
+<meta name="description" content="服务是死是活，探针说了算。探针是外部系统定期发起的健康检查：存活探针判断进程要不要重启，就绪探针判断能不能接流量，启动探针给启动慢的服务宽限期。">
+<link rel="canonical" href="https://www.aha.voyager06.tech/p/eng-probe.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="探针：给服务装“心跳监测” · 原来如此">
+<meta property="og:description" content="服务是死是活，探针说了算。探针是外部系统定期发起的健康检查：存活探针判断进程要不要重启，就绪探针判断能不能接流量，启动探针给启动慢的服务宽限期。">
+<meta property="og:url" content="https://www.aha.voyager06.tech/p/eng-probe.html">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>">
+<style>
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;max-width:760px;margin:0 auto;padding:24px 20px 60px;color:#1c2b3a;line-height:1.8;background:#FDFCF9}
+a{color:#2563EB;text-decoration:none} a:hover{text-decoration:underline}
+.crumb{font-size:13px;color:#8A8A93;margin-bottom:18px}
+h1{font-size:30px;line-height:1.35;margin:6px 0 8px}
+.tagline{color:#5B6470;font-size:16px;margin-bottom:20px}
+.kick{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.1em;background:#EEF3F8;color:#31597F;border-radius:999px;padding:4px 12px}
+.scene{background:#FFF8EC;border:1px solid #F0E2C4;border-radius:12px;padding:16px 20px}
+.sum{background:#EEF4FF;border:1px solid #C9DBF5;border-radius:12px;padding:16px 20px;font-weight:600}
+h2{font-size:20px;margin:34px 0 12px}
+.steps li,.rel li{margin:6px 0}
+.cf{background:#F5F3FF;border:1px dashed #C4B5FD;border-radius:12px;padding:14px 20px;margin-top:22px}
+.mis{background:#FFF5F5;border:1px solid #F3C2C2;border-radius:12px;padding:14px 20px;margin-top:14px}
+.cf h3,.mis h3,.conf h3{margin:0 0 6px;font-size:16px}
+.cf p,.mis p{margin:0}
+.conf{border:1px solid #E3E0D8;border-radius:12px;padding:14px 20px;margin-top:22px}
+.conf p{margin:6px 0} .conf span,.rel span{color:#8A8A93;font-size:13.5px}
+.cap{color:#8A8A93;font-size:14px}
+.pn{display:flex;justify-content:space-between;gap:16px;margin-top:40px;border-top:1px solid #E3E0D8;padding-top:18px;font-size:14.5px}
+.spa{display:block;text-align:center;margin-top:28px;background:#1c2b3a;color:#fff;border-radius:12px;padding:12px}
+footer{margin-top:34px;color:#8A8A93;font-size:13px;text-align:center}
+</style>
+</head>
+<body>
+<div class="crumb"><a href="https://www.aha.voyager06.tech/">原来如此</a> / 工程与协作 / 探针：给服务装“心跳监测”</div>
+<span class="kick">工程与协作</span>
+<h1>探针：给服务装“心跳监测”</h1>
+<div class="tagline">服务是死是活，探针说了算</div>
+<div class="scene"><b>👀 日常场景</b><p>你部署了一个新服务，上线 5 分钟就“假死”了：进程还在，端口也开着，就是不处理请求。监控看 CPU 内存都正常，人工重启才恢复。如果有个“探针”每隔几秒敲门问一句“你还活着吗”，它早就该被发现了。</p></div>
+
+<h2>原理：它是怎么运作的</h2>
+<div class="sum">💡 探针是外部系统定期发起的健康检查：存活探针判断进程要不要重启，就绪探针判断能不能接流量，启动探针给启动慢的服务宽限期。</div>
+<h2>先看全过程</h2><ol class="steps"><li>探针=定期敲门检查</li><li>存活探针：死了就重启</li><li>就绪探针：没好就不接客</li><li>启动探针：给慢启动宽限</li><li>检查方式：HTTP/TCP/命令</li></ol>
+<p>在 Kubernetes 里，kubelet 就是靠探针管容器的。livenessProbe（存活探针）定期请求比如 GET /healthz，连续失败几次就重启容器——专治“假死”（进程活着但不干活）。readinessProbe（就绪探针）决定这个 Pod 要不要进负载均衡池：刚启动、正在加载数据时，先别接客。startupProbe（启动探针）给启动慢的应用（比如 Java 大应用）一个宽限期，宽限期内存活探针不生效，避免“还没启动完就被杀掉”的惨剧。</p><p>检查方式三种：HTTP GET 最常用，TCP 建连最轻量，容器里执行命令最灵活。探针的思想很通用：不要相信进程“看起来活着”，要定期验证它“真的能干活”。这也是你做发布验收时要“实测”而不是“看日志”的原因——日志会说谎，探针不会。</p>
+
+<h2>探针是怎么发现假死的</h2><ul><li><b>HTTP 探针</b>：GET /healthz，返回 200 算活</li><li><b>TCP 探针</b>：端口能连上算活</li><li><b>命令探针</b>：容器里跑条命令，退出码 0 算活</li></ul><ol><li>给服务加个 /healthz 接口</li><li>配存活探针：连续 3 次不通就重启</li><li>配就绪探针：没 ready 不进流量池</li><li>启动慢的服务再加启动探针宽限</li><li>探针间隔别太密：别把服务问死了</li></ol>
+
+<h2>相关条目</h2><ul class="rel"><li><a href="https://www.aha.voyager06.tech/p/backend-health-check.html">健康检查与优雅停机</a> <span>上线不丢请求，下线不杀进程</span></li><li><a href="https://www.aha.voyager06.tech/p/backend-trellis.html">Trellis：一键配出生产服务器</a> <span>一条命令，WordPress 服务器全自动上线</span></li><li><a href="https://www.aha.voyager06.tech/p/eng-tdd.html">TDD：先写测试再写代码</a> <span>先写考卷，再写答案</span></li></ul>
+
+<a class="spa" href="https://www.aha.voyager06.tech/#/p/eng-probe">在站内打开本篇（完整交互版）→</a>
+<div class="pn"><a href="https://www.aha.voyager06.tech/p/eng-baseline.html">← 上一个：基线：发布的“唯一真相”</a><a href="https://www.aha.voyager06.tech/p/eng-snapshot.html">下一个：快照：给系统拍张“定格照” →</a></div>
+<footer>原来如此 · 把听说过的技术讲透 · 内容为科普解读，具体接入请以各服务官方文档为准</footer>
+</body>
+</html>

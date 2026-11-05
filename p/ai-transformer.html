@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>注意力机制与 Transformer · 原来如此</title>
+<meta name="description" content="每个词同时看所有词，大模型的心脏。每个词同时看所有词，用 Q/K/V 算出&quot;该关注谁&quot;，全并行、长距离直连，模型才敢放大到千亿参数。">
+<link rel="canonical" href="https://www.aha.voyager06.tech/p/ai-transformer.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="注意力机制与 Transformer · 原来如此">
+<meta property="og:description" content="每个词同时看所有词，大模型的心脏。每个词同时看所有词，用 Q/K/V 算出&quot;该关注谁&quot;，全并行、长距离直连，模型才敢放大到千亿参数。">
+<meta property="og:url" content="https://www.aha.voyager06.tech/p/ai-transformer.html">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>">
+<style>
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;max-width:760px;margin:0 auto;padding:24px 20px 60px;color:#1c2b3a;line-height:1.8;background:#FDFCF9}
+a{color:#2563EB;text-decoration:none} a:hover{text-decoration:underline}
+.crumb{font-size:13px;color:#8A8A93;margin-bottom:18px}
+h1{font-size:30px;line-height:1.35;margin:6px 0 8px}
+.tagline{color:#5B6470;font-size:16px;margin-bottom:20px}
+.kick{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.1em;background:#EEF3F8;color:#31597F;border-radius:999px;padding:4px 12px}
+.scene{background:#FFF8EC;border:1px solid #F0E2C4;border-radius:12px;padding:16px 20px}
+.sum{background:#EEF4FF;border:1px solid #C9DBF5;border-radius:12px;padding:16px 20px;font-weight:600}
+h2{font-size:20px;margin:34px 0 12px}
+.steps li,.rel li{margin:6px 0}
+.cf{background:#F5F3FF;border:1px dashed #C4B5FD;border-radius:12px;padding:14px 20px;margin-top:22px}
+.mis{background:#FFF5F5;border:1px solid #F3C2C2;border-radius:12px;padding:14px 20px;margin-top:14px}
+.cf h3,.mis h3,.conf h3{margin:0 0 6px;font-size:16px}
+.cf p,.mis p{margin:0}
+.conf{border:1px solid #E3E0D8;border-radius:12px;padding:14px 20px;margin-top:22px}
+.conf p{margin:6px 0} .conf span,.rel span{color:#8A8A93;font-size:13.5px}
+.cap{color:#8A8A93;font-size:14px}
+.pn{display:flex;justify-content:space-between;gap:16px;margin-top:40px;border-top:1px solid #E3E0D8;padding-top:18px;font-size:14.5px}
+.spa{display:block;text-align:center;margin-top:28px;background:#1c2b3a;color:#fff;border-radius:12px;padding:12px}
+footer{margin-top:34px;color:#8A8A93;font-size:13px;text-align:center}
+</style>
+</head>
+<body>
+<div class="crumb"><a href="https://www.aha.voyager06.tech/">原来如此</a> / AI 与大模型 / 注意力机制与 Transformer</div>
+<span class="kick">AI 与大模型</span>
+<h1>注意力机制与 Transformer</h1>
+<div class="tagline">每个词同时看所有词，大模型的心脏</div>
+<div class="scene"><b>👀 日常场景</b><p>&quot;ChatGPT 背后是 Transformer 架构&quot;&quot;2017 年那篇神论文&quot;——这篇论文之前，AI 读句子像人一样逐词读，又慢又健忘；之后，AI 可以一眼看完全文。</p></div>
+
+<h2>原理：它是怎么运作的</h2>
+<div class="sum">💡 每个词同时看所有词，用 Q/K/V 算出&quot;该关注谁&quot;，全并行、长距离直连，模型才敢放大到千亿参数。</div>
+<h2>先看全过程</h2><ol class="steps"><li>输入词先变成向量</li><li>每个词生成 Q/K/V 三个向量</li><li>Q 和所有 K 算相似度</li><li>softmax 得到&quot;关注谁、关注多少&quot;</li><li>按权重对 V 加权求和</li><li>多头并行，堆叠几十层</li></ol>
+<p>在 Transformer 之前，处理语言的主力是 RNN：像人读书一样逐词串行处理，第 100 个词要等前 99 个算完。又慢，长距离还&quot;健忘&quot;——句首的信息传到句尾衰减得所剩无几。</p><p>2017 年论文《Attention Is All You Need》换了思路：别排队，让每个词同时看输入里的所有词。做法是每个词派出三个向量——Query（我在找什么）、Key（我是什么）、Value（我的内容）。&quot;银行&quot;这个词的 Query 和&quot;河边&quot;的 Key 相似度高，就多分一点注意力给它；和&quot;存款&quot;相关时又转去关注另一边。所有词的 Q/K/V 可以一次算完，全并行，GPU 最爱这种计算。</p><p>在逻辑链上，注意力机制解决的是&quot;结构可放大&quot;：神经网络给了可学的结构，但 RNN 的串行注定了它做不大；自注意力让计算全并行、任意两个词直连，模型才敢从几亿参数放大到千亿。今天几乎所有大模型（GPT、Claude、Qwen、Llama）都是 Transformer 的变体——它是这条链的心脏。</p>
+
+<h2>想深入了解怎么办</h2><ul><li><b>《Attention Is All You Need》原论文</b>：2017 年那篇神论文，8 页正文，值得逐字读</li><li><b>Jay Alammar 图解 Transformer</b>：全网最出名的图解，一张图讲清 Q/K/V</li><li><b>HuggingFace 官方课程</b>：从 tokenizer 到微调，手把手带你跑</li></ul><ol><li>先复习 RNN 的毛病：串行、健忘——这是 Transformer 要解决的问题</li><li>看 Jay Alammar 的图解，把 Q/K/V 的直觉建立起来</li><li>读原论文，重点看 multi-head 和位置编码这两节</li><li>跑 HuggingFace 教程：加载一个小模型，打印一条注意力权重看看</li><li>对比 GPT/ BERT：一个只看左边（解码器），一个左右都看（编码器）</li></ol>
+<h2>延伸阅读</h2><ul><li><a href="https://arxiv.org/abs/1706.03762" rel="noopener">Attention Is All You Need（Vaswani et al. 2017，论文）</a></li><li><a href="https://github.com/community-rocks/the-msp-kb/blob/HEAD/ai-for-msps/foundational-ai-concepts/attention-mechanism.md" rel="noopener">注意力机制讲解（the-msp-kb）</a></li></ul>
+<h2>相关条目</h2><ul class="rel"><li><a href="https://www.aha.voyager06.tech/p/ai-rag.html">RAG：给大模型外挂知识库</a> <span>给大模型外挂一个知识库</span></li><li><a href="https://www.aha.voyager06.tech/p/security-2fa.html">双因素认证 2FA</a> <span>密码泄露了，攻击者还是进不来</span></li><li><a href="https://www.aha.voyager06.tech/p/ai-token.html">Token：大模型眼中的文字单位</a> <span>模型眼里的文字，全是数字</span></li></ul>
+
+<a class="spa" href="https://www.aha.voyager06.tech/#/p/ai-transformer">在站内打开本篇（完整交互版）→</a>
+<div class="pn"><a href="https://www.aha.voyager06.tech/p/ai-neural-network.html">← 上一个：神经网络</a><a href="https://www.aha.voyager06.tech/p/ai-token.html">下一个：Token：大模型眼中的文字单位 →</a></div>
+<footer>原来如此 · 把听说过的技术讲透 · 内容为科普解读，具体接入请以各服务官方文档为准</footer>
+</body>
+</html>

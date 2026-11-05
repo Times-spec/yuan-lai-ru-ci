@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IP 限流 · 原来如此</title>
+<meta name="description" content="“操作频繁请稍后再试”背后的看门人。令牌桶/滑动窗口算法按 IP·账号维度计数，超阈值直接拒绝或加验证。">
+<link rel="canonical" href="https://www.aha.voyager06.tech/p/security-ip-rate-limit.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="IP 限流 · 原来如此">
+<meta property="og:description" content="“操作频繁请稍后再试”背后的看门人。令牌桶/滑动窗口算法按 IP·账号维度计数，超阈值直接拒绝或加验证。">
+<meta property="og:url" content="https://www.aha.voyager06.tech/p/security-ip-rate-limit.html">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>">
+<style>
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;max-width:760px;margin:0 auto;padding:24px 20px 60px;color:#1c2b3a;line-height:1.8;background:#FDFCF9}
+a{color:#2563EB;text-decoration:none} a:hover{text-decoration:underline}
+.crumb{font-size:13px;color:#8A8A93;margin-bottom:18px}
+h1{font-size:30px;line-height:1.35;margin:6px 0 8px}
+.tagline{color:#5B6470;font-size:16px;margin-bottom:20px}
+.kick{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.1em;background:#EEF3F8;color:#31597F;border-radius:999px;padding:4px 12px}
+.scene{background:#FFF8EC;border:1px solid #F0E2C4;border-radius:12px;padding:16px 20px}
+.sum{background:#EEF4FF;border:1px solid #C9DBF5;border-radius:12px;padding:16px 20px;font-weight:600}
+h2{font-size:20px;margin:34px 0 12px}
+.steps li,.rel li{margin:6px 0}
+.cf{background:#F5F3FF;border:1px dashed #C4B5FD;border-radius:12px;padding:14px 20px;margin-top:22px}
+.mis{background:#FFF5F5;border:1px solid #F3C2C2;border-radius:12px;padding:14px 20px;margin-top:14px}
+.cf h3,.mis h3,.conf h3{margin:0 0 6px;font-size:16px}
+.cf p,.mis p{margin:0}
+.conf{border:1px solid #E3E0D8;border-radius:12px;padding:14px 20px;margin-top:22px}
+.conf p{margin:6px 0} .conf span,.rel span{color:#8A8A93;font-size:13.5px}
+.cap{color:#8A8A93;font-size:14px}
+.pn{display:flex;justify-content:space-between;gap:16px;margin-top:40px;border-top:1px solid #E3E0D8;padding-top:18px;font-size:14.5px}
+.spa{display:block;text-align:center;margin-top:28px;background:#1c2b3a;color:#fff;border-radius:12px;padding:12px}
+footer{margin-top:34px;color:#8A8A93;font-size:13px;text-align:center}
+</style>
+</head>
+<body>
+<div class="crumb"><a href="https://www.aha.voyager06.tech/">原来如此</a> / 验证与安全 / IP 限流</div>
+<span class="kick">验证与安全</span>
+<h1>IP 限流</h1>
+<div class="tagline">“操作频繁请稍后再试”背后的看门人</div>
+<div class="scene"><b>👀 日常场景</b><p>连续点好几次“获取验证码”，页面弹出“操作频繁，请 60 秒后再试”。抢购时疯狂刷新，突然被请去“排队”。这些“不让点”的时刻，背后都站着同一个看门人。它不看你是谁，只看你点的有多快。</p></div>
+
+<h2>原理：它是怎么运作的</h2>
+<div class="sum">💡 令牌桶/滑动窗口算法按 IP·账号维度计数，超阈值直接拒绝或加验证。</div>
+<h2>先看全过程</h2><ol class="steps"><li>每个请求按 IP/用户/接口维度计数</li><li>令牌桶或滑动窗口算法判定频率</li><li>正常频率：直接放行</li><li>超阈值：拒绝或要求人机验证</li><li>计数器随时间自动衰减恢复</li><li>多维度叠加：IP+账号+接口三级</li></ol>
+<p>限流的本质是“用规则区分正常人和脚本”：正常人点“获取验证码”一分钟点一次，脚本一秒点十次。常用算法有三种：固定窗口（每分钟最多 N 次，简单但边界有毛刺）、滑动窗口（精确统计过去 60 秒，更平滑）、令牌桶（桶里有 N 个令牌，请求消耗令牌、令牌按速率补充，能容忍短暂突发）。工程上一般用 Redis + Lua 脚本做原子计数，保证高并发下计数准确。限流的维度是门学问：只限 IP 会误伤公司/学校出口同 IP 的正常用户，只限账号防不住换号攻击，所以成熟做法是 IP、账号、接口三级叠加，超了先上验证码挑战而不是直接封禁——把“可疑”变成“去证明你是人”，而不是一棍子打死。短信接口是限流的重灾区：阿里云默认就是 1 条/分钟、5 条/小时、10 条/天，不配限流的短信接口等于给黑产送钱的提款机。</p>
+
+<h2>开发者：应该如何接入</h2><ul><li><b>Nginx limit_req</b>：网关层限流，一行配置挡住大部分粗糙攻击。</li><li><b>Redis + Lua 计数</b>：应用层精细限流，原子操作防并发穿透。</li><li><b>Cloudflare Rate Limiting</b>：CDN 边缘限流，攻击流量到不了源站。</li><li><b>Kong / APISIX 限流插件</b>：API 网关原生限流插件，可视化配置。</li></ul><ol><li>确定限流维度：短信/登录接口按“手机号+IP”双维度，其他接口按 IP 或用户。</li><li>选算法：防轰炸用滑动窗口，允许突发用令牌桶，通过压测定阈值。</li><li>用 Redis + Lua 实现原子计数（INCR+EXPIRE 一次完成），key 设 TTL 自动过期。</li><li>超限时返回 429 状态码 + Retry-After 头，前端据此做倒计时提示。</li><li>高风险接口超限后不直接封，加一道人机验证（滑块/短信）做缓冲。</li><li>限流日志进监控，阈值随业务增长定期复盘调整。</li></ol>
+<h2>延伸阅读</h2><ul><li><a href="http://docs-aliyun.cn-hangzhou.oss.aliyun-inc.com/pdf/Short-Message-Service-intro-cn-zh-2019-11-29.pdf" rel="noopener">阿里云短信服务介绍（含短信场景流控实例）</a></li></ul>
+<h2>相关条目</h2><ul class="rel"><li><a href="https://www.aha.voyager06.tech/p/backend-os.html">操作系统（OS）</a> <span>所有软件脚下的大地</span></li><li><a href="https://www.aha.voyager06.tech/p/nav-spa-router.html">SPA 路由：不刷新页面的跳转</a> <span>页面不刷新，地址栏却在变</span></li><li><a href="https://www.aha.voyager06.tech/p/security-email-otp-magic-link.html">邮箱验证码/魔法链接</a> <span>点一下邮件里的链接，直接登录不用输密码</span></li></ul>
+
+<a class="spa" href="https://www.aha.voyager06.tech/#/p/security-ip-rate-limit">在站内打开本篇（完整交互版）→</a>
+<div class="pn"><a href="https://www.aha.voyager06.tech/p/security-device-fingerprint.html">← 上一个：设备指纹</a><a href="https://www.aha.voyager06.tech/p/security-csrf-token.html">下一个：CSRF Token：表单里的防伪暗记 →</a></div>
+<footer>原来如此 · 把听说过的技术讲透 · 内容为科普解读，具体接入请以各服务官方文档为准</footer>
+</body>
+</html>

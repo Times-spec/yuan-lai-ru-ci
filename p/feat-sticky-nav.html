@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>吸顶导航 · 原来如此</title>
+<meta name="description" content="往下滚，导航栏“粘”在顶部。用 CSS position: sticky 让导航在滚动到顶部时“粘住”，或监听滚动动态切换 fixed 定位实现。">
+<link rel="canonical" href="https://www.aha.voyager06.tech/p/feat-sticky-nav.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="吸顶导航 · 原来如此">
+<meta property="og:description" content="往下滚，导航栏“粘”在顶部。用 CSS position: sticky 让导航在滚动到顶部时“粘住”，或监听滚动动态切换 fixed 定位实现。">
+<meta property="og:url" content="https://www.aha.voyager06.tech/p/feat-sticky-nav.html">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>">
+<style>
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;max-width:760px;margin:0 auto;padding:24px 20px 60px;color:#1c2b3a;line-height:1.8;background:#FDFCF9}
+a{color:#2563EB;text-decoration:none} a:hover{text-decoration:underline}
+.crumb{font-size:13px;color:#8A8A93;margin-bottom:18px}
+h1{font-size:30px;line-height:1.35;margin:6px 0 8px}
+.tagline{color:#5B6470;font-size:16px;margin-bottom:20px}
+.kick{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.1em;background:#EEF3F8;color:#31597F;border-radius:999px;padding:4px 12px}
+.scene{background:#FFF8EC;border:1px solid #F0E2C4;border-radius:12px;padding:16px 20px}
+.sum{background:#EEF4FF;border:1px solid #C9DBF5;border-radius:12px;padding:16px 20px;font-weight:600}
+h2{font-size:20px;margin:34px 0 12px}
+.steps li,.rel li{margin:6px 0}
+.cf{background:#F5F3FF;border:1px dashed #C4B5FD;border-radius:12px;padding:14px 20px;margin-top:22px}
+.mis{background:#FFF5F5;border:1px solid #F3C2C2;border-radius:12px;padding:14px 20px;margin-top:14px}
+.cf h3,.mis h3,.conf h3{margin:0 0 6px;font-size:16px}
+.cf p,.mis p{margin:0}
+.conf{border:1px solid #E3E0D8;border-radius:12px;padding:14px 20px;margin-top:22px}
+.conf p{margin:6px 0} .conf span,.rel span{color:#8A8A93;font-size:13.5px}
+.cap{color:#8A8A93;font-size:14px}
+.pn{display:flex;justify-content:space-between;gap:16px;margin-top:40px;border-top:1px solid #E3E0D8;padding-top:18px;font-size:14.5px}
+.spa{display:block;text-align:center;margin-top:28px;background:#1c2b3a;color:#fff;border-radius:12px;padding:12px}
+footer{margin-top:34px;color:#8A8A93;font-size:13px;text-align:center}
+</style>
+</head>
+<body>
+<div class="crumb"><a href="https://www.aha.voyager06.tech/">原来如此</a> / 小功能大智慧 / 吸顶导航</div>
+<span class="kick">小功能大智慧</span>
+<h1>吸顶导航</h1>
+<div class="tagline">往下滚，导航栏“粘”在顶部</div>
+<div class="scene"><b>👀 日常场景</b><p>刷一篇长文章或商品列表，往下滚时顶部的导航栏、搜索框像被胶水粘住一样停在屏幕上方，分类、搜索随时能点，不用费劲滚回顶部。电商的筛选栏、文档站的目录，经常这样“吸”着你。</p></div>
+
+<h2>原理：它是怎么运作的</h2>
+<div class="sum">💡 用 CSS position: sticky 让导航在滚动到顶部时“粘住”，或监听滚动动态切换 fixed 定位实现。</div>
+<h2>先看全过程</h2><ol class="steps"><li>导航栏正常参与排版</li><li>滚动接近顶部阈值</li><li>切换为粘性固定定位</li><li>导航始终可见可点击</li><li>滚回顶部恢复原位</li><li>占位防止布局跳动</li></ol>
+<p>吸顶分两种实现，现代浏览器首选 CSS：给导航加 position: sticky; top: 0，滚动到它“顶到”视口顶部时，它就“粘”住了，滚回去又恢复原位——全程 GPU 友好，不用 JS。但 sticky 有个著名天坑：它只在父容器里有效，如果某个祖先元素设了 overflow: hidden（很多弹窗、轮播组件会设），sticky 直接失效，这是排查时的第一怀疑对象。老浏览器或复杂场景（比如滚动时导航栏收缩变矮、根据滚动方向隐藏/显示）就用 JS 方案：监听 scroll，超过阈值给导航加 fixed 定位，同时注意 fixed 会脱离文档流，下面的内容会“跳”上来，得在原位置留一个等高的占位 div。多个吸顶元素（比如导航加筛选栏）要排好 z-index 和 top 偏移，不然叠在一起打架。移动端还有个小技巧：iOS 的橡皮筋回弹滚动下，sticky 表现比 JS 方案稳得多。</p>
+
+<h2>网站是怎么做到的</h2><ul><li><b>CSS sticky：首选方案</b>：给导航加 position:sticky;top:0，滚动到顶就“粘”住，滚回去恢复原位。全程 GPU 友好，不用一行 JS。</li><li><b>祖先 overflow:hidden：头号天坑</b>：sticky 只在父容器里有效。如果某个祖先元素设了 overflow:hidden（弹窗、轮播很爱设），sticky 直接失效。</li><li><b>JS fixed 兜底：老浏览器的备胎</b>：监听 scroll，超阈值就切 fixed 定位。但 fixed 会脱离文档流，得在原位置留等高占位，不然内容“跳”上来。</li><li><b>iOS 橡皮筋：sticky 更稳</b>：iOS 的回弹滚动下，sticky 表现比 JS 方案稳得多，JS 方案容易抖动。</li></ul><ol><li>导航栏正常参与页面排版，跟着内容一起滚</li><li>滚动到它“顶”到视口顶部的位置</li><li>sticky 生效：导航“粘”在屏幕上方，不再往上走</li><li>分类、搜索随时可点，不用滚回顶部</li><li>往回滚：导航回到原位，一切如初</li></ol>
+<h2>延伸阅读</h2><ul><li><a href="https://blog.csdn.net/u010194271/article/details/153817239" rel="noopener">CSDN：彻底掌握 CSS 定位——sticky 吸顶原理与实战</a></li></ul>
+<h2>相关条目</h2><ul class="rel"><li><a href="https://www.aha.voyager06.tech/p/feat-search-autocomplete.html">搜索自动补全</a> <span>你每敲一个字，背后都在查一遍</span></li><li><a href="https://www.aha.voyager06.tech/p/feat-back-to-top.html">回到顶部</a> <span>滑得太深，一键回到开头</span></li><li><a href="https://www.aha.voyager06.tech/p/backend-elasticsearch.html">Elasticsearch 全文搜索</a> <span>全文搜索，快得像查字典</span></li></ul>
+
+<a class="spa" href="https://www.aha.voyager06.tech/#/p/feat-sticky-nav">在站内打开本篇（完整交互版）→</a>
+<div class="pn"><a href="https://www.aha.voyager06.tech/p/feat-lightbox.html">← 上一个：图片灯箱预览</a><a href="https://www.aha.voyager06.tech/p/feat-offline-detection.html">下一个：离线/弱网提示 →</a></div>
+<footer>原来如此 · 把听说过的技术讲透 · 内容为科普解读，具体接入请以各服务官方文档为准</footer>
+</body>
+</html>

@@ -1559,97 +1559,301 @@
   }
  },
  {
- "alias": [
-  "打开方式",
-  "分享面板",
-  "Open With",
-  "intent-filter"
- ],
- "category": "features",
- "id": "features-open-with-apps",
- "name": "「用其他应用打开」：推荐名单是怎么算出来的",
- "tagline": "不是系统随便排的，是每个 App 自己「报名」的结果",
- "scene": "在微信里收到一个 PDF，点右上角更多，选「用其他应用打开」——WPS、Adobe Reader 都在，偏偏你想用的那个 App 不在。你明明装了它，系统却像没看见一样。更迷的是：有的 App 里还能「添加」打开方式，有的 App 里列表就那么几个，死活加不上。这份名单到底谁定的？",
- "principle": {
-  "summary": "系统维护一张「谁能打开什么」的报名表：App 安装时申报自己能处理的文件类型；你点「用其他应用打开」时，系统按文件类型查表匹配，能对上的才上榜。",
-  "steps": [
-   "App 安装时「报名」：在安装包里声明自己能打开哪些类型的文件",
-   "系统收进一张大表：所有 App 的报名信息汇总成内部目录",
-   "你点「用其他应用打开」：当前 App 告诉系统「我要打开一个 PDF」",
-   "系统按类型查表：把报了名、且类型对得上的 App 挑出来",
-   "排序展示：常用的置顶、可固定的固定，其余按规则排",
-   "没报名的 App：再合适也不会出现——它不在表里"
+  "alias": [
+   "打开方式",
+   "分享面板",
+   "Open With",
+   "intent-filter"
   ],
-  "detail": "先说结论：那份名单不是系统「推荐」的，是各个 App 自己「报名」的结果。Android 上叫 intent-filter，iOS 上叫 UTI 声明，Windows 上叫文件关联注册——名字不同，干的都是同一件事：App 在安装时告诉系统「我能打开 PDF / 图片 / 视频」。\n\nAndroid 的机制最透明。每个 App 的安装包里有一份「简历」（AndroidManifest.xml），里面用 <intent-filter> 写清楚：我响应「查看」（ACTION_VIEW）这个动作，接受 application/pdf 这种数据类型。App 装好的那一刻，系统就把这份简历收进一个内部目录。等你在某个 App 里点「用其他应用打开」，它会发一个「隐式 Intent」——相当于喊一嗓子「我有个 PDF 要打开，谁能接？」系统拿着这嗓子去目录里按「动作 + 文件类型」匹配，对上的 App 才有资格上榜。官方文档里负责这件事的就叫 PackageManager.queryIntentActivities：查表，不是算命。\n\n那「文件类型」又是谁定的？是分享文件的那个 App 在分享时「报」的。Android 里文件以 content:// 链接的形式递过去，附带一个 MIME 类型（比如 application/pdf）；提供文件的 App 通常按文件扩展名判定类型（官方的 FileProvider 默认就是这么干的）。这里埋着第一个坑：如果分享方没给对类型——比如扩展名丢了、类型写成了含糊的通配——匹配就乱了，你想要的 App 可能因此落榜。\n\n第二个坑在 Android 11 之后。Google 以隐私为由加了「包可见性」限制：App 自己查表（调 queryIntentActivities）时，默认只能看到系统允许它看到的那部分应用，得在安装包里用 <queries> 额外申报。注意，系统自带的分享面板是系统进程查的，不受这个限制；受影响的是那些「自己组装名单」的 App。对普通用户来说，更常见的落榜原因其实是这几个：目标 App 根本没报名这种文件类型（最常见）；App 被停用了；公司配的工作资料和个人资料是隔离的，工作区的 App 不会出现在个人区的名单里。\n\niOS 是另一套话语，同一个逻辑。苹果不用 MIME 表，用 UTI（Uniform Type Identifier）：PDF 叫 com.adobe.pdf，PNG 叫 public.png。App 在 Info.plist 里用 CFBundleDocumentTypes 声明「我支持这些 UTI」，还能用 LSHandlerRank 说自己是「主人」（Owner）还是「备选」（Alternate）。你点分享，系统按 UTI 查表列出「Open In」名单。文件还会先被拷贝一份到目标 App 的「收件箱」（Inbox）目录再交接——这就是 iOS 沙盒的规矩：App 之间不直接碰文件，全靠系统转交。所以 iOS 上你没法「指定任意 App 打开」：目标 App 没报名，系统根本不会把它列出来，也没有 Windows 那样的「浏览 exe」入口。\n\nWindows 则是完全相反的哲学：文件关联写在注册表 HKEY_CLASSES_ROOT 里，扩展名 .pdf 对应哪个程序，一查便知。「打开方式」对话框列出的是注册了该扩展名的应用——但关键来了：对话框底下有「在这台电脑上查找其他应用」，可以直接浏览选中任意 exe。为什么手机不行、电脑行？因为手机 App 活在沙盒里，用户根本没有「可执行文件路径」这个概念可以选；Windows 上你是机器的主人，exe 文件就躺在磁盘上，系统允许你直接点名。自由度不同，入口自然不同。\n\n终于可以回答「为什么有时能自定义添加，有时不行」。系统级的分享面板（Android 的分享列表、iOS 的分享页）——名单由系统查表生成，用户加不了，能做的只有装更多「报了名」的 App，或者长按把常用的固定到前面。而有些 App（比如文件管理器、WPS）里的「打开方式」是它们自己做的选择器：开发者自己列个单子，甚至允许你从已装应用里任选——那是这个 App 的私活，不是系统能力。看起来「能添加」，其实是换了个实现。认出「这是系统的还是 App 自己做的」，困惑就解开一半～\n\n排序也值得一说。Android 的分享面板分三层：最上面是「直接分享」——微信、短信这些 App 主动上报的「常用联系人 / 常用目标」，由系统按你的使用习惯预测排序；中间是你长按固定📌的应用；下面才是全部候选，一般按字母顺序排。所以「你常用的怎么总在上面」——一是系统学了你的习惯，二是你亲手钉上去的。"
- },
- "guide": {
-  "heading": "🛠️ 名单里没有你想要的 App，怎么办",
-  "en": "FIX IT",
-  "short": "解决",
-  "num": "解",
-  "options": [
+  "category": "features",
+  "id": "features-open-with-apps",
+  "name": "「用其他应用打开」：推荐名单是怎么算出来的",
+  "tagline": "不是系统随便排的，是每个 App 自己「报名」的结果",
+  "scene": "在微信里收到一个 PDF，点右上角更多，选「用其他应用打开」——WPS、Adobe Reader 都在，偏偏你想用的那个 App 不在。你明明装了它，系统却像没看见一样。更迷的是：有的 App 里还能「添加」打开方式，有的 App 里列表就那么几个，死活加不上。这份名单到底谁定的？",
+  "principle": {
+   "summary": "系统维护一张「谁能打开什么」的报名表：App 安装时申报自己能处理的文件类型；你点「用其他应用打开」时，系统按文件类型查表匹配，能对上的才上榜。",
+   "steps": [
+    "App 安装时「报名」：在安装包里声明自己能打开哪些类型的文件",
+    "系统收进一张大表：所有 App 的报名信息汇总成内部目录",
+    "你点「用其他应用打开」：当前 App 告诉系统「我要打开一个 PDF」",
+    "系统按类型查表：把报了名、且类型对得上的 App 挑出来",
+    "排序展示：常用的置顶、可固定的固定，其余按规则排",
+    "没报名的 App：再合适也不会出现——它不在表里"
+   ],
+   "detail": "先说结论：那份名单不是系统「推荐」的，是各个 App 自己「报名」的结果。Android 上叫 intent-filter，iOS 上叫 UTI 声明，Windows 上叫文件关联注册——名字不同，干的都是同一件事：App 在安装时告诉系统「我能打开 PDF / 图片 / 视频」。\n\nAndroid 的机制最透明。每个 App 的安装包里有一份「简历」（AndroidManifest.xml），里面用 <intent-filter> 写清楚：我响应「查看」（ACTION_VIEW）这个动作，接受 application/pdf 这种数据类型。App 装好的那一刻，系统就把这份简历收进一个内部目录。等你在某个 App 里点「用其他应用打开」，它会发一个「隐式 Intent」——相当于喊一嗓子「我有个 PDF 要打开，谁能接？」系统拿着这嗓子去目录里按「动作 + 文件类型」匹配，对上的 App 才有资格上榜。官方文档里负责这件事的就叫 PackageManager.queryIntentActivities：查表，不是算命。\n\n那「文件类型」又是谁定的？是分享文件的那个 App 在分享时「报」的。Android 里文件以 content:// 链接的形式递过去，附带一个 MIME 类型（比如 application/pdf）；提供文件的 App 通常按文件扩展名判定类型（官方的 FileProvider 默认就是这么干的）。这里埋着第一个坑：如果分享方没给对类型——比如扩展名丢了、类型写成了含糊的通配——匹配就乱了，你想要的 App 可能因此落榜。\n\n第二个坑在 Android 11 之后。Google 以隐私为由加了「包可见性」限制：App 自己查表（调 queryIntentActivities）时，默认只能看到系统允许它看到的那部分应用，得在安装包里用 <queries> 额外申报。注意，系统自带的分享面板是系统进程查的，不受这个限制；受影响的是那些「自己组装名单」的 App。对普通用户来说，更常见的落榜原因其实是这几个：目标 App 根本没报名这种文件类型（最常见）；App 被停用了；公司配的工作资料和个人资料是隔离的，工作区的 App 不会出现在个人区的名单里。\n\niOS 是另一套话语，同一个逻辑。苹果不用 MIME 表，用 UTI（Uniform Type Identifier）：PDF 叫 com.adobe.pdf，PNG 叫 public.png。App 在 Info.plist 里用 CFBundleDocumentTypes 声明「我支持这些 UTI」，还能用 LSHandlerRank 说自己是「主人」（Owner）还是「备选」（Alternate）。你点分享，系统按 UTI 查表列出「Open In」名单。文件还会先被拷贝一份到目标 App 的「收件箱」（Inbox）目录再交接——这就是 iOS 沙盒的规矩：App 之间不直接碰文件，全靠系统转交。所以 iOS 上你没法「指定任意 App 打开」：目标 App 没报名，系统根本不会把它列出来，也没有 Windows 那样的「浏览 exe」入口。\n\nWindows 则是完全相反的哲学：文件关联写在注册表 HKEY_CLASSES_ROOT 里，扩展名 .pdf 对应哪个程序，一查便知。「打开方式」对话框列出的是注册了该扩展名的应用——但关键来了：对话框底下有「在这台电脑上查找其他应用」，可以直接浏览选中任意 exe。为什么手机不行、电脑行？因为手机 App 活在沙盒里，用户根本没有「可执行文件路径」这个概念可以选；Windows 上你是机器的主人，exe 文件就躺在磁盘上，系统允许你直接点名。自由度不同，入口自然不同。\n\n终于可以回答「为什么有时能自定义添加，有时不行」。系统级的分享面板（Android 的分享列表、iOS 的分享页）——名单由系统查表生成，用户加不了，能做的只有装更多「报了名」的 App，或者长按把常用的固定到前面。而有些 App（比如文件管理器、WPS）里的「打开方式」是它们自己做的选择器：开发者自己列个单子，甚至允许你从已装应用里任选——那是这个 App 的私活，不是系统能力。看起来「能添加」，其实是换了个实现。认出「这是系统的还是 App 自己做的」，困惑就解开一半～\n\n排序也值得一说。Android 的分享面板分三层：最上面是「直接分享」——微信、短信这些 App 主动上报的「常用联系人 / 常用目标」，由系统按你的使用习惯预测排序；中间是你长按固定📌的应用；下面才是全部候选，一般按字母顺序排。所以「你常用的怎么总在上面」——一是系统学了你的习惯，二是你亲手钉上去的。"
+  },
+  "guide": {
+   "heading": "🛠️ 名单里没有你想要的 App，怎么办",
+   "en": "FIX IT",
+   "short": "解决",
+   "num": "解",
+   "options": [
+    {
+     "name": "先确认它真能打开",
+     "desc": "去应用商店看介绍，或问开发者：这个 App 到底支不支持这种文件类型。没报名，装了也白搭",
+     "when": "怀疑是 App 本身就不支持"
+    },
+    {
+     "name": "Android：查三处",
+     "desc": "应用是否被停用（设置→应用→启用）；是不是装在工作资料里；清除该文件类型的「默认打开」设置",
+     "when": "App 明明支持，名单里却没有"
+    },
+    {
+     "name": "Windows：直接点名",
+     "desc": "右键→打开方式→选择其他应用→「在这台电脑上查找其他应用」，选中 exe；或重装软件修复关联",
+     "when": "在电脑上，名单里没有就自己加"
+    },
+    {
+     "name": "iOS：换条路",
+     "desc": "iOS 加不了名单。先把文件存到「文件」App，再从那里用其他应用打开；或换个声明了该类型的 App",
+     "when": "iPhone 上死活找不到"
+    }
+   ],
+   "steps": [
+    "复现一次：记下是在哪个 App 里、打开什么类型的文件时找不到目标",
+    "去应用商店看目标 App 的介绍，确认它声明支持这种文件类型",
+    "Android：设置→应用→找到目标 App，确认没有被停用；看它在个人资料还是工作资料",
+    "Android：设置→应用→默认应用，检查并清除相关文件类型的默认设置",
+    "Windows：右键文件→打开方式→选择其他应用，「更多应用」里找，没有就「在这台电脑上查找其他应用」",
+    "还不行：卸载重装目标 App（重装会重新「报名」），或换个同类 App"
+   ],
+   "code": {
+    "lang": "xml",
+    "label": "让你的 App 上榜：Android 篇",
+    "code": "<!-- 想让你的 App 出现在「用其他应用打开」里？在 AndroidManifest.xml 里「报名」 -->\n<activity android:name=\".PdfViewerActivity\">\n    <intent-filter>\n        <action android:name=\"android.intent.action.VIEW\" />\n        <category android:name=\"android.intent.category.DEFAULT\" />\n        <data android:mimeType=\"application/pdf\" />\n    </intent-filter>\n</activity>"
+   },
+   "pitfalls": [
+    "系统是故意不给我看的：不是。系统只负责查表，落榜 99% 是因为目标 App 没报名该类型，或报名信息对不上",
+    "重启手机能刷新名单：基本没用。名单是安装时生成的目录，不是缓存；重装目标 App 才会重新报名",
+    "iOS 上就没办法了：名单确实加不了，但可以先把文件存到「文件」App 再转手，或直接换个支持的 App",
+    "Windows 上随便指定 exe 都行：行，但指定一个根本打不开这类文件的 exe，只会得到报错，「能上榜」不等于「能打开」"
+   ]
+  },
+  "sources": [
    {
-    "name": "先确认它真能打开",
-    "desc": "去应用商店看介绍，或问开发者：这个 App 到底支不支持这种文件类型。没报名，装了也白搭",
-    "when": "怀疑是 App 本身就不支持"
+    "title": "Android Developers：让其他应用启动你的 Activity（intent-filter）",
+    "url": "https://developer.android.com/training/basics/intents/filters"
    },
    {
-    "name": "Android：查三处",
-    "desc": "应用是否被停用（设置→应用→启用）；是不是装在工作资料里；清除该文件类型的「默认打开」设置",
-    "when": "App 明明支持，名单里却没有"
+    "title": "Android Developers：声明包可见性需求（Android 11+）",
+    "url": "https://developer.android.com/training/package-visibility/declaring"
    },
    {
-    "name": "Windows：直接点名",
-    "desc": "右键→打开方式→选择其他应用→「在这台电脑上查找其他应用」，选中 exe；或重装软件修复关联",
-    "when": "在电脑上，名单里没有就自己加"
+    "title": "Android Developers：提供直接分享目标（Sharesheet 排序）",
+    "url": "https://developer.android.com/develop/ui/compose/sharing/direct-share-targets"
    },
    {
-    "name": "iOS：换条路",
-    "desc": "iOS 加不了名单。先把文件存到「文件」App，再从那里用其他应用打开；或换个声明了该类型的 App",
-    "when": "iPhone 上死活找不到"
+    "title": "Chariot Solutions：iOS 自定义文件类型与 UTI",
+    "url": "https://chariotsolutions.com/blog/post/importing-data-via-custom-file-types-in/"
+   },
+   {
+    "title": "Personal Knowbase：手动设置 Windows 文件关联",
+    "url": "https://www.bitsmithsoft.com/pkblog/fixing-lost-windows-file-associations.htm"
    }
   ],
-  "steps": [
-   "复现一次：记下是在哪个 App 里、打开什么类型的文件时找不到目标",
-   "去应用商店看目标 App 的介绍，确认它声明支持这种文件类型",
-   "Android：设置→应用→找到目标 App，确认没有被停用；看它在个人资料还是工作资料",
-   "Android：设置→应用→默认应用，检查并清除相关文件类型的默认设置",
-   "Windows：右键文件→打开方式→选择其他应用，「更多应用」里找，没有就「在这台电脑上查找其他应用」",
-   "还不行：卸载重装目标 App（重装会重新「报名」），或换个同类 App"
-  ],
-  "code": {
-   "lang": "xml",
-   "label": "让你的 App 上榜：Android 篇",
-   "code": "<!-- 想让你的 App 出现在「用其他应用打开」里？在 AndroidManifest.xml 里「报名」 -->\n<activity android:name=\".PdfViewerActivity\">\n    <intent-filter>\n        <action android:name=\"android.intent.action.VIEW\" />\n        <category android:name=\"android.intent.category.DEFAULT\" />\n        <data android:mimeType=\"application/pdf\" />\n    </intent-filter>\n</activity>"
-  },
-  "pitfalls": [
-   "系统是故意不给我看的：不是。系统只负责查表，落榜 99% 是因为目标 App 没报名该类型，或报名信息对不上",
-   "重启手机能刷新名单：基本没用。名单是安装时生成的目录，不是缓存；重装目标 App 才会重新报名",
-   "iOS 上就没办法了：名单确实加不了，但可以先把文件存到「文件」App 再转手，或直接换个支持的 App",
-   "Windows 上随便指定 exe 都行：行，但指定一个根本打不开这类文件的 exe，只会得到报错，「能上榜」不等于「能打开」"
-  ]
+  "added": "2026-10-21"
  },
- "sources": [
-  {
-   "title": "Android Developers：让其他应用启动你的 Activity（intent-filter）",
-   "url": "https://developer.android.com/training/basics/intents/filters"
+ {
+  "alias": [
+   "监控式定价",
+   "Surveillance Pricing",
+   "大数据杀熟",
+   "个性化定价",
+   "价格歧视"
+  ],
+  "category": "features",
+  "guide": {
+   "code": null,
+   "en": "STAY SAFE",
+   "heading": "🛡️ 避开价格歧视：四个自保动作",
+   "num": "防",
+   "options": [
+    {
+     "desc": "同一商品换设备/账号/无痕模式各看一眼，差价一目了然",
+     "name": "货比三家再下单",
+     "when": "买机票酒店等大额消费前"
+    },
+    {
+     "desc": "无痕模式、清 Cookie、关个性化广告，减少画像素材",
+     "name": "无痕 + 清痕迹",
+     "when": "不想被\"看人下菜碟\"时"
+    },
+    {
+     "desc": "把商品放购物车晾一晾，急单往往是高价重灾区",
+     "name": "别急着下单",
+     "when": "不赶时间就多等两天"
+    },
+    {
+     "desc": "截图保存不同账号的差价，违规营销可向消协/市监投诉",
+     "name": "留证据、走投诉",
+     "when": "差价离谱、怀疑被针对时"
+    }
+   ],
+   "pitfalls": [
+    "无痕模式防的是本地画像，IP 和定位还看得见",
+    "会员价≠杀熟：公开的会员体系是明码标价",
+    "优惠券\"因人而异\"也可能是定价策略",
+    "别为省几块钱泄露更多个人信息，得不偿失"
+   ],
+   "short": "防范",
+   "steps": [
+    "大额消费先比价：多设备多账号",
+    "无痕模式看一眼\"裸价\"",
+    "关掉 App 的个性化推荐/广告",
+    "不急就晾几天再买",
+    "保留差价证据，必要时投诉"
+   ]
   },
-  {
-   "title": "Android Developers：声明包可见性需求（Android 11+）",
-   "url": "https://developer.android.com/training/package-visibility/declaring"
+  "id": "security-surveillance-pricing",
+  "name": "监控式定价：为什么你和我看到不一样的价格",
+  "principle": {
+   "detail": "同一件商品，朋友 89 元你 129 元——这不是运气，可能是算法在\"看人下菜碟\"。商家手里有你的画像：设备型号、定位、历史订单、浏览习惯，据此预测你的\"支付意愿\"：猜你不在乎这点差价，就给你标高价；猜你是价格敏感型，就给你发优惠券\"留住你\"。和\"供需调价\"不同，它调的不是货，是人。\n\n它和正当的动态定价有条分界线：机票随余票涨价，调的是供需，人人可见；监控式定价按人头标价，过程不透明，你永远不知道\"原价\"是多少。这种隐蔽性让它极难举证——商家总能说\"这是个性化优惠\"。更棘手的是取证：你看到的价格只存在于你的屏幕上，刷新一下可能就变了。\n\n2026 年 10 月，美国西雅图成为首个立法禁止商家用个人数据加 AI 算法做\"量身定价\"的城市，据当地媒体报道，禁令直指\"监控式定价\"。名字有了，规则正在路上；在那之前，消费者只能先靠自己多留个心眼。",
+   "steps": [
+    "画像：设备型号、位置、购买史",
+    "预测：你最高愿意付多少",
+    "定价：愿意付多的，看到更贵",
+    "区别：调的是\"人\"，不是\"货\"",
+    "隐蔽：没人告诉你被区别对待",
+    "监管：西雅图 2026 年 10 月首禁"
+   ],
+   "summary": "商家用你的画像（设备、位置、消费习惯）预测\"支付意愿\"，支付意愿高的看到更高的价；和\"供需调价\"不同，它调的是\"人\"不是\"货\"。"
   },
-  {
-   "title": "Android Developers：提供直接分享目标（Sharesheet 排序）",
-   "url": "https://developer.android.com/develop/ui/compose/sharing/direct-share-targets"
+  "scene": "同一家外卖店，朋友满减后 23 元，你的 31 元；同一张机票，昨天 800 今天 950。你以为是运气，其实是算法\"看人下菜碟\"。2026 年 10 月，美国西雅图立法禁止商家用个人数据加 AI 算法\"量身定价\"。",
+  "sources": [
+   "https://sunmedia.tw/news/finance/1791734817-《商傳媒｜AI產業一週大事》AI發展的雙面刃：投資競逐與風險管控的急迫性"
+  ],
+  "tagline": "同一件商品，算法给每个人标不同的价"
+ },
+ {
+  "alias": [
+   "python-docx 中文字体",
+   "Word 字体分裂",
+   "w:eastAsia"
+  ],
+  "category": "features",
+  "guide": {
+   "code": {
+    "code": "from docx.oxml.ns import qn\nfrom docx.oxml import OxmlElement\n\ndef set_east_asia(run, font_name):\n    \"\"\"python-docx 的 font.name 管不到中文，这里手动补上\"\"\"\n    rPr = run._element.get_or_add_rPr()\n    rFonts = rPr.find(qn('w:rFonts'))\n    if rFonts is None:\n        rFonts = OxmlElement('w:rFonts')\n        rPr.append(rFonts)\n    rFonts.set(qn('w:eastAsia'), font_name)\n\nfor p in doc.paragraphs:\n    for run in p.runs:\n        set_east_asia(run, '宋体')",
+    "label": "给 run 补上中文字体通道",
+    "lang": "python"
+   },
+   "en": "FIX IT",
+   "heading": "🛠️ 开发者：让 python-docx 写出统一的中文字体",
+   "num": "修",
+   "options": [
+    {
+     "desc": "生成后遍历所有 run，手动补上 w:eastAsia 属性，一段小函数搞定",
+     "name": "事后补 eastAsia",
+     "when": "已经有一套生成代码，不想大改"
+    },
+    {
+     "desc": "在 Word 里做好带完整中文字体的模板，Document('模板.docx')",
+     "name": "自备模板",
+     "when": "长期、批量生成中文文档，一劳永逸"
+    },
+    {
+     "desc": "比如 docx-template（基于占位符），字体在模板里定好，代码只填内容",
+     "name": "换个思路",
+     "when": "文档结构固定，只是填空"
+    }
+   ],
+   "pitfalls": [
+    "run.font.name 能搞定中文：不能，它只写 ascii/hAnsi 两个通道，中文走 eastAsia，十年老坑",
+    "默认模板就是对的：python-docx 的默认模板是英文世界的模板，标题中文回退到宋体符合它的默认主题，不是 bug",
+    "在我电脑上看着正常就行：换台没装该字体的电脑，阅读器会自己做字体替换，重要文档要嵌入字体或直接转 PDF"
+   ],
+   "short": "修复",
+   "steps": [
+    "把 .docx 后缀改成 .zip 解压，打开 word/document.xml，找到标题那段 <w:r>，看 <w:rFonts> 里有没有 w:eastAsia",
+    "打开 word/styles.xml，看标题样式的字体是不是主题引用（属性名里带 Theme 的那种）",
+    "打开 word/theme/theme1.xml，搜 script=\"Hans\"，看简体中文被映射到了哪个字体",
+    "用下面的代码给每个 run 补上 eastAsia，重新生成后打开对比"
+   ]
   },
-  {
-   "title": "Chariot Solutions：iOS 自定义文件类型与 UTI",
-   "url": "https://chariotsolutions.com/blog/post/importing-data-via-custom-file-types-in/"
+  "id": "ai-docx-font-split",
+  "name": "AI 写的 Word 文档：数字和中文为什么像两种字体",
+  "principle": {
+   "detail": "先说结论：你的眼睛没骗你。那行标题确实被两种字体渲染了——“2.3”用的是 Calibri（圆润的无衬线体），“差异化定位与核心竞争优势”用的是宋体（带衬线的衬线体）。我把 python-docx 的默认模板拆开看过，又亲手复现渲染了一遍，证据确凿。\n\n关键的第一步：Word 里“这段文字用什么字体”不是一句话，而是一套“按字符种类查表”的机制。OOXML 规范里，每个文字片段（run）的字体由 <w:rFonts> 标签的四个属性分别指定：ascii 管数字和英文字母，hAnsi 管扩展西文，eastAsia 管中日韩文字，cs 管复杂文字。Word 在画出每个字符之前，先看它落在哪个 Unicode 区间，再去查对应的那张表。\n\n而 python-docx 默认模板里的标题样式，玩的是“间接引用”：它不写死“宋体”或“Calibri”，写的是“主题字体”——西文用主题的大标题西文字体（majorHAnsi → Calibri），中文用主题的大标题东亚字体（majorEastAsia）。主题文件 word/theme/theme1.xml 里，给每种文字都指定了默认字体，其中简体中文（Hans）对应的正是“宋体”。两条引用一分叉，字形就裂开了。\n\n还有个十年老坑：很多人（包括 AI 生成的代码）会写 run.font.name = '微软雅黑' 来设字体，但这行代码只改 ascii 和 hAnsi 两个通道，生成的 XML 里根本没有 w:eastAsia——中文部分完全不受影响，继续走样式和主题的回退。你以为设置了字体，其实只设置了一半。\n\n顺着这条线，就能回答“agent 写 Word 文档的底层原理是什么”：agent 从头到尾没有调用 Word，也没有排版引擎。它做的事分三步：生成 Python 代码 → 代码在内存里拼出 XML 树 → 打包成 zip（把 .docx 后缀改成 .zip 解压，里面就是 word/document.xml 这些文件）。“用什么字体画出来”的决定，是在你双击打开文档的那一刻，由 Word / WPS / LibreOffice 各自的渲染引擎做出的——同一份文档在不同电脑上打开，字形还可能不一样，因为“缺字体时用什么代替”是每个阅读器自己的选择。\n\n那为什么你删掉重打就“正常”了？因为你打字时，编辑器会按你输入法的语言给新文字配好“成对”的字体：中文输入法下敲出的中文，eastAsia 通道会被明确指定，整行字于是统一。而 agent 生成的 XML 里，中文走的是“主题回退”的间接路径。两条路径，两种结果～\n\n还有个更隐蔽的：不光数字和中文是两种字体，汉字和汉字之间看起来也可能怪怪的——AI 写的文档里，“与”字底下那一横拉得老长、出了头，自己打就不会。这不是 AI 写错了字：中文被回退到宋体后，“与”用的是宋体传承下来的老写法，底横出头；你平时用的黑体系字体里，底横是收住的。同一个字换个字体就换副长相，详见《同一个“与”字，为什么换个字体底横就出头了》。",
+   "steps": [
+    "agent 写文档 = 拼 XML：docx 本质是个 ZIP，里面装着 XML，python-docx 只是在组装文本",
+    "标题样式不写具体字体名，写的是“主题字体”这种间接引用",
+    "主题文件里写死映射：西文 → Calibri，简体中文 → 宋体",
+    "Word 渲染时按字符种类查表：数字走西文字体，中文走中文字体",
+    "于是同一行标题裂成两种字形：2.3 是 Calibri，差异化是宋体"
+   ],
+   "summary": "Word 给每个字符选字体时，会按“中英文”查两张不同的表；AI 生成的文档里，中文走的那张表指向了宋体。"
   },
-  {
-   "title": "Personal Knowbase：手动设置 Windows 文件关联",
-   "url": "https://www.bitsmithsoft.com/pkblog/fixing-lost-windows-file-associations.htm"
-  }
- ]
-}
+  "scene": "你让 AI 帮你写了份 Word 文档，打开一看标题不对劲：“2.3”这几个数字圆润现代，后面的“差异化定位”却带着宋体的衬线——像两种字体硬拼在一起。你把字删掉自己重打一遍，字形又统一了。是 AI 写错了字吗？不是。它写对了每一个字，只是“用什么字体画出来”这件事，在 Word 里比你想象的复杂。",
+  "sources": [
+   {
+    "title": "Microsoft Learn：w:eastAsia 属性说明",
+    "url": "https://learn.microsoft.com/en-us/dotnet/api/documentformat.openxml.linq.w.eastasia?view=openxml-2.20.0"
+   }
+  ],
+  "tagline": "同一行标题里，数字是 Calibri，中文是宋体",
+  "added": "2026-10-21"
+ },
+ {
+  "alias": [
+   "与字出头",
+   "宋体黑体字形差异",
+   "中文字形"
+  ],
+  "category": "features",
+  "guide": {
+   "en": "STAY CALM",
+   "heading": "🛠️ 写作者：别让字形吓到你",
+   "num": "应",
+   "options": [
+    {
+     "desc": "在 Word 里做好模板，把中文字体定死，Document('模板.docx')，从源头统一",
+     "name": "自备模板",
+     "when": "长期批量生成中文文档"
+    },
+    {
+     "desc": "对外发送、定稿归档都用 PDF，字形被'冻'住，到哪台电脑打开都长一个样",
+     "name": "转 PDF 定稿",
+     "when": "文档要发给别人看"
+    },
+    {
+     "desc": "公文、论文里宋体是正统，出头是传统写法不是错，把心放回肚子里",
+     "name": "接受它",
+     "when": "发现只是虚惊一场"
+    }
+   ],
+   "pitfalls": [
+    "以为是错字或乱码：Unicode 码位相同就不是错字，是字形设计差异",
+    "换个阅读器能'修复'：字形跟着字体走，换阅读器不换字体没有用",
+    "全角半角背锅：这次真不怪全角半角，是两套字体设计传统不同"
+   ],
+   "short": "应对",
+   "steps": [
+    "在 Word 里敲一个'与'，逐个切换字体（宋体 / 黑体 / 微软雅黑 / 等线），放大看底横",
+    "把 AI 生成的 docx 后缀改成 zip，查 word/document.xml 里中文 run 的 eastAsia 通道是什么",
+    "对比同一份文档在 Windows 和 Mac / 手机上打开的字形，体会'字随字体走'"
+   ]
+  },
+  "id": "ai-font-glyph-yu",
+  "name": "同一个“与”字，为什么换个字体底横就出头了",
+  "principle": {
+   "detail": "先说结论：你的眼睛又对了。我把“与”字分别用宋体风格和黑体风格渲染放大，底横确实一个出头、一个不出头——而两个字的 Unicode 码位完全相同（U+4E0E），笔画数量也一模一样。这不是错字，不是乱码，是“字形”层面的差异。\n\n这里要分清三个概念：字符（character，Unicode 码位，回答“你是哪个字”）、字形（glyph，字体里的具体画法）、字体（font，一整套字形的设计）。“与”永远是 U+4E0E，但宋体设计师和黑体设计师画出来的“与”可以不一样——就像同一个人，证件照和写真是两种画法，认得出是同一个人，但观感完全不同。\n\n为什么偏偏是“出头”还是“不出头”？这是两套设计传统的分歧。宋体（明朝体）直接继承自宋代雕版印刷，讲究横细竖粗、笔画带装饰，很多写法是几百年前的老样子：“与”的底横向右探出竖钩，就是传下来的写法。黑体是 20 世纪为现代印刷和屏幕显示设计的，追求横平竖直、干净利落，底横就收住了。两边都没错，只是普通话和方言的区别。\n\n串回上一篇：为什么偏偏是 AI 写的文档里“与”出头？因为上一篇讲的那个坑——agent 生成的 docx 没有给中文指定字体，中文一路回退到主题默认的“宋体”；而你平时在 Word 里打字，默认中文字体是等线 / 微软雅黑这类黑体系。同一份文档里中文字体一切换，“与”的底横就“出头”了。顺带一提：骨、直、具、令这些字，宋体和黑体的写法也各不相同，你可以自己放大找找～\n\n再往深想一层：这意味着“同一份文档在不同电脑上打开”，看到的字形可能不一样——Mac 默认苹方，Windows 默认微软雅黑，Linux 可能回退到别的字体。字还是那个字，但“长相”跟着字体走。所以重要文档定稿前，要么嵌入字体，要么转 PDF 把字形“冻”住。",
+   "steps": [
+    "电脑里没有“汉字”，只有每套字体的笔画设计",
+    "同一个码位 U+4E0E，每套字体各自画一遍",
+    "宋体继承雕版印刷：底横出头是传下来的老写法",
+    "黑体是现代设计：横平竖直，底横收住",
+    "AI 文档的中文回退到宋体 → 出头；你平时用黑体系字体 → 不出头"
+   ],
+   "summary": "同一个 Unicode 汉字，在不同字体里是两套独立的设计；宋体“与”的底横出头，是雕版印刷传下来的传统写法。"
+  },
+  "scene": "AI 帮你写的 Word 文档里，“与”字底下那一横拉得老长，超出了竖钩一大截，怎么看怎么别扭。你自己敲出来的“与”，底横却老老实实收在里面。是 AI 写错字了吗？把两个“与”放大并排一看：笔画数一模一样，只是长短不同——这不是错别字，是同一个字被“画”成了两种样子。",
+  "sources": [
+   {
+    "title": "Why do some characters look different in different fonts?",
+    "url": "https://talkpal.ai/culture/why-do-some-characters-look-different-in-different-fonts/"
+   }
+  ],
+  "tagline": "不是错字，是宋体传下来的老写法",
+  "added": "2026-10-21"
+ }
 ]

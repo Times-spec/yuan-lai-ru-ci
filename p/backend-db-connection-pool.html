@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>数据库连接池 · 原来如此</title>
+<meta name="description" content="建一次连接，复用一万次。预先建立一批数据库连接反复复用，省掉每次 TCP 握手与认证的开销。">
+<link rel="canonical" href="https://www.aha.voyager06.tech/p/backend-db-connection-pool.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="数据库连接池 · 原来如此">
+<meta property="og:description" content="建一次连接，复用一万次。预先建立一批数据库连接反复复用，省掉每次 TCP 握手与认证的开销。">
+<meta property="og:url" content="https://www.aha.voyager06.tech/p/backend-db-connection-pool.html">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>">
+<style>
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;max-width:760px;margin:0 auto;padding:24px 20px 60px;color:#1c2b3a;line-height:1.8;background:#FDFCF9}
+a{color:#2563EB;text-decoration:none} a:hover{text-decoration:underline}
+.crumb{font-size:13px;color:#8A8A93;margin-bottom:18px}
+h1{font-size:30px;line-height:1.35;margin:6px 0 8px}
+.tagline{color:#5B6470;font-size:16px;margin-bottom:20px}
+.kick{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.1em;background:#EEF3F8;color:#31597F;border-radius:999px;padding:4px 12px}
+.scene{background:#FFF8EC;border:1px solid #F0E2C4;border-radius:12px;padding:16px 20px}
+.sum{background:#EEF4FF;border:1px solid #C9DBF5;border-radius:12px;padding:16px 20px;font-weight:600}
+h2{font-size:20px;margin:34px 0 12px}
+.steps li,.rel li{margin:6px 0}
+.cf{background:#F5F3FF;border:1px dashed #C4B5FD;border-radius:12px;padding:14px 20px;margin-top:22px}
+.mis{background:#FFF5F5;border:1px solid #F3C2C2;border-radius:12px;padding:14px 20px;margin-top:14px}
+.cf h3,.mis h3,.conf h3{margin:0 0 6px;font-size:16px}
+.cf p,.mis p{margin:0}
+.conf{border:1px solid #E3E0D8;border-radius:12px;padding:14px 20px;margin-top:22px}
+.conf p{margin:6px 0} .conf span,.rel span{color:#8A8A93;font-size:13.5px}
+.cap{color:#8A8A93;font-size:14px}
+.pn{display:flex;justify-content:space-between;gap:16px;margin-top:40px;border-top:1px solid #E3E0D8;padding-top:18px;font-size:14.5px}
+.spa{display:block;text-align:center;margin-top:28px;background:#1c2b3a;color:#fff;border-radius:12px;padding:12px}
+footer{margin-top:34px;color:#8A8A93;font-size:13px;text-align:center}
+</style>
+</head>
+<body>
+<div class="crumb"><a href="https://www.aha.voyager06.tech/">原来如此</a> / 后端基建 / 数据库连接池</div>
+<span class="kick">后端基建</span>
+<h1>数据库连接池</h1>
+<div class="tagline">建一次连接，复用一万次</div>
+<div class="scene"><b>👀 日常场景</b><p>每次查数据库都要先 TCP 握手、再登录认证，握手一次要几十毫秒——高峰期每秒上万次查询，光握手就能把数据库拖死。连接池提前建好一批连接放着，用完归还，下次直接复用，握手的开销一次就够了。</p></div>
+
+<h2>原理：它是怎么运作的</h2>
+<div class="sum">💡 预先建立一批数据库连接反复复用，省掉每次 TCP 握手与认证的开销。</div>
+<h2>先看全过程</h2><ol class="steps"><li>应用启动时建好 N 个连接</li><li>业务需要时从池里借一个</li><li>用完立即归还到池中</li><li>池空了：排队等待或扩容</li><li>空闲太久：关闭回收</li><li>应用关闭：优雅释放所有连接</li></ol>
+<p>建一个数据库连接不便宜：TCP 三次握手、TLS（如果开了）、数据库的认证授权、分配会话内存，加起来几十毫秒。高并发下如果每次查询都现建连接，数据库光应付握手就满了——这就是连接池存在的理由。</p><p>池的核心参数就三个：最小空闲连接（保底）、最大连接数（上限）、获取超时。最大连接数不是越大越好：数据库的连接数对应着内存和线程，MySQL 默认才 151 个，应用开 500 个连接只会把数据库打爆。经验公式是「池大小约等于 CPU 核数 × 2」，再按压测调。</p><p>连接池还顺手解决了「连接泄漏」：借了不还的连接会被超时回收，配合监控能揪出没关连接的代码。云原生时代还有 PgBouncer 这类中间件池，让几千个应用连接复用几十个真实数据库连接。还有一个常见误区是把池建在错误的地方：Serverless 函数里每个实例都建一个池，实例一多连接数照样爆炸——这时应该用中间件池或 RDS Proxy 统一收敛。</p>
+
+<h2>开发者：应该如何接入</h2><ul><li><b>HikariCP</b>：Java 界最快，以快和稳著称</li><li><b>Druid</b>：阿里出品，自带 SQL 监控和防火墙</li><li><b>PgBouncer</b>：PostgreSQL 专用中间件池</li></ul><ol><li>选连接池实现（别自己手写，坑比你想象的多）</li><li>配置 JDBC URL、账号密码（密码走环境变量/密钥管理）</li><li>设最大连接数：先按公式估，再压测微调</li><li>设连接超时和最大生命周期，防止僵尸连接</li><li>业务代码用完连接必须关闭（归还），推荐 try-with-resources</li><li>监控活跃连接数，持续打满就是扩容或优化 SQL 的信号</li></ol>
+
+<h2>相关条目</h2><ul class="rel"><li><a href="https://www.aha.voyager06.tech/p/ai-agent.html">智能体 Agent</a> <span>从只会说，到会动手做事</span></li><li><a href="https://www.aha.voyager06.tech/p/feat-cookie-consent.html">Cookie 同意弹窗</a> <span>第一次打开网站，先问你同不同意</span></li><li><a href="https://www.aha.voyager06.tech/p/security-2fa.html">双因素认证 2FA</a> <span>密码泄露了，攻击者还是进不来</span></li></ul>
+
+<a class="spa" href="https://www.aha.voyager06.tech/#/p/backend-db-connection-pool">在站内打开本篇（完整交互版）→</a>
+<div class="pn"><a href="https://www.aha.voyager06.tech/p/backend-jwt-session.html">← 上一个：JWT vs Session：两种登录态</a><a href="https://www.aha.voyager06.tech/p/backend-distributed-lock.html">下一个：分布式锁 →</a></div>
+<footer>原来如此 · 把听说过的技术讲透 · 内容为科普解读，具体接入请以各服务官方文档为准</footer>
+</body>
+</html>

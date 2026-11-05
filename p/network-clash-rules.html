@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>分流规则：流量听谁的 · 原来如此</title>
+<meta name="description" content="从上往下，第一条命中的说了算。规则是“条件→动作”的列表，按从上到下逐条匹配，第一条命中即停止；MATCH 是永远命中的兜底，必须放在最后。">
+<link rel="canonical" href="https://www.aha.voyager06.tech/p/network-clash-rules.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="分流规则：流量听谁的 · 原来如此">
+<meta property="og:description" content="从上往下，第一条命中的说了算。规则是“条件→动作”的列表，按从上到下逐条匹配，第一条命中即停止；MATCH 是永远命中的兜底，必须放在最后。">
+<meta property="og:url" content="https://www.aha.voyager06.tech/p/network-clash-rules.html">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>">
+<style>
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;max-width:760px;margin:0 auto;padding:24px 20px 60px;color:#1c2b3a;line-height:1.8;background:#FDFCF9}
+a{color:#2563EB;text-decoration:none} a:hover{text-decoration:underline}
+.crumb{font-size:13px;color:#8A8A93;margin-bottom:18px}
+h1{font-size:30px;line-height:1.35;margin:6px 0 8px}
+.tagline{color:#5B6470;font-size:16px;margin-bottom:20px}
+.kick{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.1em;background:#EEF3F8;color:#31597F;border-radius:999px;padding:4px 12px}
+.scene{background:#FFF8EC;border:1px solid #F0E2C4;border-radius:12px;padding:16px 20px}
+.sum{background:#EEF4FF;border:1px solid #C9DBF5;border-radius:12px;padding:16px 20px;font-weight:600}
+h2{font-size:20px;margin:34px 0 12px}
+.steps li,.rel li{margin:6px 0}
+.cf{background:#F5F3FF;border:1px dashed #C4B5FD;border-radius:12px;padding:14px 20px;margin-top:22px}
+.mis{background:#FFF5F5;border:1px solid #F3C2C2;border-radius:12px;padding:14px 20px;margin-top:14px}
+.cf h3,.mis h3,.conf h3{margin:0 0 6px;font-size:16px}
+.cf p,.mis p{margin:0}
+.conf{border:1px solid #E3E0D8;border-radius:12px;padding:14px 20px;margin-top:22px}
+.conf p{margin:6px 0} .conf span,.rel span{color:#8A8A93;font-size:13.5px}
+.cap{color:#8A8A93;font-size:14px}
+.pn{display:flex;justify-content:space-between;gap:16px;margin-top:40px;border-top:1px solid #E3E0D8;padding-top:18px;font-size:14.5px}
+.spa{display:block;text-align:center;margin-top:28px;background:#1c2b3a;color:#fff;border-radius:12px;padding:12px}
+footer{margin-top:34px;color:#8A8A93;font-size:13px;text-align:center}
+</style>
+</head>
+<body>
+<div class="crumb"><a href="https://www.aha.voyager06.tech/">原来如此</a> / 网络与协议 / 分流规则：流量听谁的</div>
+<span class="kick">网络与协议</span>
+<h1>分流规则：流量听谁的</h1>
+<div class="tagline">从上往下，第一条命中的说了算</div>
+<div class="scene"><b>👀 日常场景</b><p>你想让 github.com 走代理，于是在规则里加了一行，保存重启，却发现没生效——或者更惨，之前好好的网站突然打不开了。十有八九，问题不在规则本身，而在规则的“顺序”上。</p></div>
+
+<h2>原理：它是怎么运作的</h2>
+<div class="sum">💡 规则是“条件→动作”的列表，按从上到下逐条匹配，第一条命中即停止；MATCH 是永远命中的兜底，必须放在最后。</div>
+<h2>先看全过程</h2><ol class="steps"><li>一条新连接到达 Clash</li><li>从第一条规则开始逐条比对</li><li>DOMAIN-SUFFIX 按域名后缀匹配</li><li>IP-CIDR / GEOIP 按地址匹配</li><li>命中则执行 DIRECT / PROXY / REJECT</li><li>都没命中，落到最后的 MATCH</li></ol>
+<p>先认识规则类型。DOMAIN 是精确匹配（DOMAIN,example.com 只匹配它自己）；DOMAIN-SUFFIX 是后缀匹配，连所有子域一起命中，最常用；DOMAIN-KEYWORD 是域名里包含关键词就命中；IP-CIDR 按网段匹配；GEOIP 按 IP 归属国家匹配（GEOIP,CN 是国内直连的经典写法）；PROCESS-NAME 按进程名匹配（比如让某个游戏走直连）；MATCH 是“以上都不中就归我”的兜底。</p><p>每条规则的格式是“类型,参数,策略”，策略可以是 DIRECT（直连）、PROXY（默认代理）、REJECT（拒绝），也可以是一个策略组的名字。IP 类规则还有个小尾巴 no-resolve：默认情况下，遇到 IP 类规则 Clash 会先把域名解析成 IP 再比对，加上 no-resolve 就跳过这步——在 Fake-IP 模式下很有用。</p><p>规则一多，自己维护就很累，于是有了 rule-providers（规则集）：别人维护好的大型规则列表，你订阅它，Clash 定期自动更新，配置里只用一行 RULE-SET 引用。</p><p>最后是铁律：顺序即正义。Clash 从上往下扫，命中第一条就停，后面的看都不看。所以精确的、小范围的规则放前面，宽泛的（如 GEOIP,CN）放中间，MATCH 永远钉在最后。MATCH 放错位置，后面的规则就全成了摆设。</p>
+
+<h2>分流规则怎么写</h2><ul><li><b>抄现成规则集（推荐）</b>：RULE-SET 引用别人维护好的规则，自动更新</li><li><b>手写几条</b>：DOMAIN-SUFFIX、GEOIP 自己写，完全掌控</li><li><b>套公开模板</b>：社区沉淀的完整配置，拿来改</li></ul><ol><li>先想清楚：哪些走代理、哪些直连、默认走哪边</li><li>新手直接上 RULE-SET：在配置里引用现成的规则集订阅</li><li>只想加几条自己的：用 DOMAIN-SUFFIX 写，精确的放前面</li><li>记住铁律：精确的在前、宽泛的在后，MATCH 永远钉在最后</li><li>改完去“连接”面板看实际走向，对不上就调顺序</li><li>定期更新规则集订阅，域名世界天天在变</li></ol>
+<h2>延伸阅读</h2><ul><li><a href="https://github.com/crt0810/ai-skills/blob/HEAD/clash-verge-routing/references/clash-verge-rev.md" rel="noopener">Clash Verge Rev 路由配置参考：规则语法速查</a></li><li><a href="https://dev.to/woodyxin/about-clash-3do3" rel="noopener">About Clash：规则配置与 Rule-Set 示例</a></li></ul>
+<h2>相关条目</h2><ul class="rel"><li><a href="https://www.aha.voyager06.tech/p/network-clash-modes.html">代理模式：直连 / 全局 / 规则</a> <span>记住一句就够：该直连的直连，该代理的代理</span></li><li><a href="https://www.aha.voyager06.tech/p/network-clash-what.html">Clash 是什么</a> <span>它不生产流量，它只是流量的交通警察</span></li><li><a href="https://www.aha.voyager06.tech/p/backend-trellis.html">Trellis：一键配出生产服务器</a> <span>一条命令，WordPress 服务器全自动上线</span></li></ul>
+
+<a class="spa" href="https://www.aha.voyager06.tech/#/p/network-clash-rules">在站内打开本篇（完整交互版）→</a>
+<div class="pn"><a href="https://www.aha.voyager06.tech/p/network-clash-modes.html">← 上一个：代理模式：直连 / 全局 / 规则</a><a href="https://www.aha.voyager06.tech/p/network-policy-groups.html">下一个：策略组：自动选最快节点 →</a></div>
+<footer>原来如此 · 把听说过的技术讲透 · 内容为科普解读，具体接入请以各服务官方文档为准</footer>
+</body>
+</html>

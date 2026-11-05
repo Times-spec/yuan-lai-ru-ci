@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>图片压缩上传 · 原来如此</title>
+<meta name="description" content="10MB 的照片，压成几百 KB 再传。用 canvas 把图片按尺寸和质量重绘，导出为压缩后的 Blob 再上传，大幅减小体积且肉眼几乎无差别。">
+<link rel="canonical" href="https://www.aha.voyager06.tech/p/feat-image-compress-upload.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="图片压缩上传 · 原来如此">
+<meta property="og:description" content="10MB 的照片，压成几百 KB 再传。用 canvas 把图片按尺寸和质量重绘，导出为压缩后的 Blob 再上传，大幅减小体积且肉眼几乎无差别。">
+<meta property="og:url" content="https://www.aha.voyager06.tech/p/feat-image-compress-upload.html">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>">
+<style>
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;max-width:760px;margin:0 auto;padding:24px 20px 60px;color:#1c2b3a;line-height:1.8;background:#FDFCF9}
+a{color:#2563EB;text-decoration:none} a:hover{text-decoration:underline}
+.crumb{font-size:13px;color:#8A8A93;margin-bottom:18px}
+h1{font-size:30px;line-height:1.35;margin:6px 0 8px}
+.tagline{color:#5B6470;font-size:16px;margin-bottom:20px}
+.kick{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.1em;background:#EEF3F8;color:#31597F;border-radius:999px;padding:4px 12px}
+.scene{background:#FFF8EC;border:1px solid #F0E2C4;border-radius:12px;padding:16px 20px}
+.sum{background:#EEF4FF;border:1px solid #C9DBF5;border-radius:12px;padding:16px 20px;font-weight:600}
+h2{font-size:20px;margin:34px 0 12px}
+.steps li,.rel li{margin:6px 0}
+.cf{background:#F5F3FF;border:1px dashed #C4B5FD;border-radius:12px;padding:14px 20px;margin-top:22px}
+.mis{background:#FFF5F5;border:1px solid #F3C2C2;border-radius:12px;padding:14px 20px;margin-top:14px}
+.cf h3,.mis h3,.conf h3{margin:0 0 6px;font-size:16px}
+.cf p,.mis p{margin:0}
+.conf{border:1px solid #E3E0D8;border-radius:12px;padding:14px 20px;margin-top:22px}
+.conf p{margin:6px 0} .conf span,.rel span{color:#8A8A93;font-size:13.5px}
+.cap{color:#8A8A93;font-size:14px}
+.pn{display:flex;justify-content:space-between;gap:16px;margin-top:40px;border-top:1px solid #E3E0D8;padding-top:18px;font-size:14.5px}
+.spa{display:block;text-align:center;margin-top:28px;background:#1c2b3a;color:#fff;border-radius:12px;padding:12px}
+footer{margin-top:34px;color:#8A8A93;font-size:13px;text-align:center}
+</style>
+</head>
+<body>
+<div class="crumb"><a href="https://www.aha.voyager06.tech/">原来如此</a> / 小功能大智慧 / 图片压缩上传</div>
+<span class="kick">小功能大智慧</span>
+<h1>图片压缩上传</h1>
+<div class="tagline">10MB 的照片，压成几百 KB 再传</div>
+<div class="scene"><b>👀 日常场景</b><p>发帖时选了张手机拍的 10MB 原图，上传进度条却“嗖”地一下走完了。你以为网速飞起，其实是浏览器在上传前先把照片压小了——传的只是几百 KB 的压缩版，肉眼还看不出差别。</p></div>
+
+<h2>原理：它是怎么运作的</h2>
+<div class="sum">💡 用 canvas 把图片按尺寸和质量重绘，导出为压缩后的 Blob 再上传，大幅减小体积且肉眼几乎无差别。</div>
+<h2>先看全过程</h2><ol class="steps"><li>用户选择本地图片</li><li>读入并解码为图像</li><li>canvas 按比例缩放重绘</li><li>按质量导出压缩 Blob</li><li>上传压缩后的文件</li><li>展示压缩前后对比</li></ol>
+<p>手机拍张照片动辄 8～10MB，直接上传又慢又费流量，但其实发帖、头像这种场景根本不需要原图。浏览器的 canvas 就是免费的“压缩车间”：把图片画到 canvas 上（drawImage），可以指定缩小后的尺寸（比如最长边压到 1920px），再用 canvas.toBlob(blob =&gt; ..., &#x27;image/jpeg&#x27;, 0.8) 导出——第三个参数就是质量，0.8 左右肉眼几乎看不出差别，体积能压到原来的 1/10。整个过程在用户手机上完成，传的只是几百 KB 的小文件，所以“上传秒完成”的真相是“传之前先压好了”。几个实战坑：一是 iOS 照片的 EXIF 方向信息：手机横着拍照存的可能是竖图加旋转标记，直接画 canvas 会 sideways（方向不正），得先读 EXIF 摆正；二是 PNG 转 JPEG 会丢透明通道，透明底变黑底，头像场景要注意；三是大图压缩放主线程会卡界面，几 MB 以上的图建议扔 Web Worker 里压。跟服务端压缩不冲突：前端压是省带宽和时间，服务端压是统一规格，两边都做最稳。</p>
+
+<h2>网站是怎么做到的</h2><ul><li><b>canvas：免费的压缩车间</b>：浏览器把图片画到 canvas 上再导出，指定缩小尺寸和质量（0.8 左右），体积能压到 1/10，肉眼几乎看不出差别。</li><li><b>EXIF 摆正：iOS 照片的方向陷阱</b>：手机横着拍照，存的可能是竖图加一个“旋转标记”。直接压缩会 sideways（方向不正），得先读标记摆正。</li><li><b>PNG 转 JPEG 会丢透明</b>：JPEG 没有透明通道，透明底会变成黑底。头像、logo 这种带透明的图要当心。</li><li><b>Web Worker：别卡死页面</b>：大图压缩是重活，放主线程页面会卡死几秒。扔给 Web Worker 在后台压，用户无感知。</li></ul><ol><li>你选了一张 10MB 的手机原图</li><li>浏览器先读 EXIF，把照片方向摆正</li><li>按最长边（比如 1920px）等比缩小，画到 canvas 上</li><li>按 0.7～0.8 的质量导出成几百 KB 的新图片</li><li>上传的其实是这个压缩版，所以进度条“嗖”地走完</li><li>肉眼看：和原图几乎没差别，体积只剩 1/10</li></ol>
+<h2>延伸阅读</h2><ul><li><a href="https://github.com/lihongyao/blogs/blob/HEAD/055.%20HTML5%20file%20Api%20+%20canvas%20实现图片压缩.md" rel="noopener">HTML5 File API + Canvas 实现图片压缩上传</a></li></ul>
+<h2>相关条目</h2><ul class="rel"><li><a href="https://www.aha.voyager06.tech/p/feat-lightbox.html">图片灯箱预览</a> <span>点图片，全屏大图浮出来</span></li><li><a href="https://www.aha.voyager06.tech/p/feat-chunked-upload.html">分片上传/断点续传</a> <span>大文件切成小块传，断了也能续上</span></li><li><a href="https://www.aha.voyager06.tech/p/nav-client-redirect.html">页面自动跳转：meta 与 JS</a> <span>服务器不说话，浏览器自己数完秒就走</span></li></ul>
+
+<a class="spa" href="https://www.aha.voyager06.tech/#/p/feat-image-compress-upload">在站内打开本篇（完整交互版）→</a>
+<div class="pn"><a href="https://www.aha.voyager06.tech/p/feat-form-draft-autosave.html">← 上一个：表单草稿自动保存</a><a href="https://www.aha.voyager06.tech/p/feat-web-push.html">下一个：Web 推送通知 →</a></div>
+<footer>原来如此 · 把听说过的技术讲透 · 内容为科普解读，具体接入请以各服务官方文档为准</footer>
+</body>
+</html>

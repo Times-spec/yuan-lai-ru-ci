@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>图片懒加载 · 原来如此</title>
+<meta name="description" content="看不见的图片先不加载，省流量又快。只加载进入视口（屏幕可视区域）附近的图片，用 IntersectionObserver 监听元素与视口的交叉来触发。">
+<link rel="canonical" href="https://www.aha.voyager06.tech/p/feat-image-lazy-load.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="图片懒加载 · 原来如此">
+<meta property="og:description" content="看不见的图片先不加载，省流量又快。只加载进入视口（屏幕可视区域）附近的图片，用 IntersectionObserver 监听元素与视口的交叉来触发。">
+<meta property="og:url" content="https://www.aha.voyager06.tech/p/feat-image-lazy-load.html">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>">
+<style>
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;max-width:760px;margin:0 auto;padding:24px 20px 60px;color:#1c2b3a;line-height:1.8;background:#FDFCF9}
+a{color:#2563EB;text-decoration:none} a:hover{text-decoration:underline}
+.crumb{font-size:13px;color:#8A8A93;margin-bottom:18px}
+h1{font-size:30px;line-height:1.35;margin:6px 0 8px}
+.tagline{color:#5B6470;font-size:16px;margin-bottom:20px}
+.kick{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.1em;background:#EEF3F8;color:#31597F;border-radius:999px;padding:4px 12px}
+.scene{background:#FFF8EC;border:1px solid #F0E2C4;border-radius:12px;padding:16px 20px}
+.sum{background:#EEF4FF;border:1px solid #C9DBF5;border-radius:12px;padding:16px 20px;font-weight:600}
+h2{font-size:20px;margin:34px 0 12px}
+.steps li,.rel li{margin:6px 0}
+.cf{background:#F5F3FF;border:1px dashed #C4B5FD;border-radius:12px;padding:14px 20px;margin-top:22px}
+.mis{background:#FFF5F5;border:1px solid #F3C2C2;border-radius:12px;padding:14px 20px;margin-top:14px}
+.cf h3,.mis h3,.conf h3{margin:0 0 6px;font-size:16px}
+.cf p,.mis p{margin:0}
+.conf{border:1px solid #E3E0D8;border-radius:12px;padding:14px 20px;margin-top:22px}
+.conf p{margin:6px 0} .conf span,.rel span{color:#8A8A93;font-size:13.5px}
+.cap{color:#8A8A93;font-size:14px}
+.pn{display:flex;justify-content:space-between;gap:16px;margin-top:40px;border-top:1px solid #E3E0D8;padding-top:18px;font-size:14.5px}
+.spa{display:block;text-align:center;margin-top:28px;background:#1c2b3a;color:#fff;border-radius:12px;padding:12px}
+footer{margin-top:34px;color:#8A8A93;font-size:13px;text-align:center}
+</style>
+</head>
+<body>
+<div class="crumb"><a href="https://www.aha.voyager06.tech/">原来如此</a> / 小功能大智慧 / 图片懒加载</div>
+<span class="kick">小功能大智慧</span>
+<h1>图片懒加载</h1>
+<div class="tagline">看不见的图片先不加载，省流量又快</div>
+<div class="scene"><b>👀 日常场景</b><p>刷商品列表或资讯流时，图片一张张“唰”地冒出来，没滑到的位置还是灰色块。其实你打开页面时只加载了首屏那几张图，后面的图都是等你快滑到时才开始下载的，页面秒开，流量也省了一大半。</p></div>
+
+<h2>原理：它是怎么运作的</h2>
+<div class="sum">💡 只加载进入视口（屏幕可视区域）附近的图片，用 IntersectionObserver 监听元素与视口的交叉来触发。</div>
+<h2>先看全过程</h2><ol class="steps"><li>图片先占位，真实地址藏进 data-src</li><li>用 Observer 监听图片位置</li><li>图片进入视口时触发回调</li><li>把 data-src 赋值给 src</li><li>浏览器开始下载并渲染图片</li><li>取消监听，释放 observer 资源</li></ol>
+<p>原理分两层：触发时机和加载方式。触发时机靠 IntersectionObserver——浏览器原生 API，它在后台异步计算目标元素和视口（屏幕可视区域）的交叉情况，比监听 scroll 事件省性能得多，因为 scroll 回调跑在主线程，节流没做好就会掉帧。加载方式是“偷梁换柱”：img 标签先不写 src（写了浏览器会立刻下载），把真实地址藏在 data-src 里，等回调触发再赋值，浏览器这才开始下载。为什么要费这事？首屏速度：一张长列表可能有上百张图，全加载要几十 MB，用户只看前三屏，剩下的全是浪费。还有个细节叫“预加载距离”：通过 rootMargin 把触发线提前 200px，图片在进入视口前就开始下，等你滑到时刚好显示，避免白块闪烁。占位也很重要：提前给图片定好宽高比，否则图片加载后会把下面内容顶下去，这种跳动叫 CLS（累积布局偏移），是 Google 的性能考核指标。现代浏览器还支持 img 加 loading=&quot;lazy&quot; 原生懒加载，一行代码搞定；但要精细控制（背景图、复杂动画）还是得手写 Observer。</p>
+
+<h2>网站是怎么做到的</h2><ul><li><b>偷梁换柱：data-src</b>：img 标签先不写 src（写了浏览器会立刻下载），把真实地址藏在 data-src 这个“小纸条”里，等时机到了再换上去。</li><li><b>IntersectionObserver：视口哨兵</b>：浏览器原生 API，在后台异步计算图片和屏幕可视区域的交叉情况，图片快露头了才回调通知，比监听 scroll 省性能得多。</li><li><b>rootMargin：提前 200px 起跑</b>：把触发线提前到视口上方 200px，图片在进入视口前就开始下载，等你滑到时刚好显示出来。</li><li><b>宽高占位：防布局跳动</b>：提前给图片定好宽高比，图片加载后不会把下面的内容顶下去。这种跳动叫 CLS，是 Google 的性能考核指标。</li></ul><ol><li>页面初始化：所有图片只写 data-src，src 留空，浏览器一张也不下载</li><li>给每张图配一个 Observer，在后台盯着它和视口的距离</li><li>你往下滑，某张图进入“视口上方 200px”的触发线</li><li>回调触发：把 data-src 的值赋给 src</li><li>浏览器这才开始下载图片，下载完渲染出来</li><li>取消对这张图的监听，释放资源——一张图只触发一次</li></ol>
+<h2>延伸阅读</h2><ul><li><a href="https://blog.csdn.net/BytePulse/article/details/153739516" rel="noopener">IntersectionObserver 懒加载与无限滚动实践（CSDN）</a></li><li><a href="https://github.com/zeminng/verse/blob/HEAD/web/web-api/intersection-observer.md" rel="noopener">Intersection Observer 笔记（GitHub）</a></li><li><a href="https://developer.mozilla.org/zh-CN/docs/Web/API/Intersection_Observer_API" rel="noopener">MDN：Intersection Observer API</a></li></ul>
+<h2>相关条目</h2><ul class="rel"><li><a href="https://www.aha.voyager06.tech/p/feat-lightbox.html">图片灯箱预览</a> <span>点图片，全屏大图浮出来</span></li><li><a href="https://www.aha.voyager06.tech/p/security-csrf-token.html">CSRF Token：表单里的防伪暗记</a> <span>表单里那个看不见的隐藏字段，是防“被代表”的</span></li><li><a href="https://www.aha.voyager06.tech/p/security-image-captcha.html">图形验证码</a> <span>你看得懂、机器看不懂的那张扭曲图片</span></li></ul>
+
+<a class="spa" href="https://www.aha.voyager06.tech/#/p/feat-image-lazy-load">在站内打开本篇（完整交互版）→</a>
+<div class="pn"><a href="https://www.aha.voyager06.tech/p/feat-search-autocomplete.html">← 上一个：搜索自动补全</a><a href="https://www.aha.voyager06.tech/p/feat-infinite-scroll.html">下一个：无限滚动 →</a></div>
+<footer>原来如此 · 把听说过的技术讲透 · 内容为科普解读，具体接入请以各服务官方文档为准</footer>
+</body>
+</html>

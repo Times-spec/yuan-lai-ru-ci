@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TUN 模式：接管所有流量的虚拟网卡 · 原来如此</title>
+<meta name="description" content="在系统里插上一条虚拟网线。TUN 在系统里创建一张虚拟网卡，把 IP 数据包直接导进来处理；系统代理只是“贴告示”，TUN 是“修新路”。">
+<link rel="canonical" href="https://www.aha.voyager06.tech/p/network-tun-mode.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="TUN 模式：接管所有流量的虚拟网卡 · 原来如此">
+<meta property="og:description" content="在系统里插上一条虚拟网线。TUN 在系统里创建一张虚拟网卡，把 IP 数据包直接导进来处理；系统代理只是“贴告示”，TUN 是“修新路”。">
+<meta property="og:url" content="https://www.aha.voyager06.tech/p/network-tun-mode.html">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>">
+<style>
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;max-width:760px;margin:0 auto;padding:24px 20px 60px;color:#1c2b3a;line-height:1.8;background:#FDFCF9}
+a{color:#2563EB;text-decoration:none} a:hover{text-decoration:underline}
+.crumb{font-size:13px;color:#8A8A93;margin-bottom:18px}
+h1{font-size:30px;line-height:1.35;margin:6px 0 8px}
+.tagline{color:#5B6470;font-size:16px;margin-bottom:20px}
+.kick{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.1em;background:#EEF3F8;color:#31597F;border-radius:999px;padding:4px 12px}
+.scene{background:#FFF8EC;border:1px solid #F0E2C4;border-radius:12px;padding:16px 20px}
+.sum{background:#EEF4FF;border:1px solid #C9DBF5;border-radius:12px;padding:16px 20px;font-weight:600}
+h2{font-size:20px;margin:34px 0 12px}
+.steps li,.rel li{margin:6px 0}
+.cf{background:#F5F3FF;border:1px dashed #C4B5FD;border-radius:12px;padding:14px 20px;margin-top:22px}
+.mis{background:#FFF5F5;border:1px solid #F3C2C2;border-radius:12px;padding:14px 20px;margin-top:14px}
+.cf h3,.mis h3,.conf h3{margin:0 0 6px;font-size:16px}
+.cf p,.mis p{margin:0}
+.conf{border:1px solid #E3E0D8;border-radius:12px;padding:14px 20px;margin-top:22px}
+.conf p{margin:6px 0} .conf span,.rel span{color:#8A8A93;font-size:13.5px}
+.cap{color:#8A8A93;font-size:14px}
+.pn{display:flex;justify-content:space-between;gap:16px;margin-top:40px;border-top:1px solid #E3E0D8;padding-top:18px;font-size:14.5px}
+.spa{display:block;text-align:center;margin-top:28px;background:#1c2b3a;color:#fff;border-radius:12px;padding:12px}
+footer{margin-top:34px;color:#8A8A93;font-size:13px;text-align:center}
+</style>
+</head>
+<body>
+<div class="crumb"><a href="https://www.aha.voyager06.tech/">原来如此</a> / 网络与协议 / TUN 模式：接管所有流量的虚拟网卡</div>
+<span class="kick">网络与协议</span>
+<h1>TUN 模式：接管所有流量的虚拟网卡</h1>
+<div class="tagline">在系统里插上一条虚拟网线</div>
+<div class="scene"><b>👀 日常场景</b><p>有人发现：不开 TUN，浏览器能上网，但游戏客户端、终端里的命令行工具就是不行；一把 TUN 打开，所有软件突然都“全局生效”了。TUN 到底施了什么魔法？</p></div>
+
+<h2>原理：它是怎么运作的</h2>
+<div class="sum">💡 TUN 在系统里创建一张虚拟网卡，把 IP 数据包直接导进来处理；系统代理只是“贴告示”，TUN 是“修新路”。</div>
+<h2>先看全过程</h2><ol class="steps"><li>电脑上的应用发起网络连接</li><li>系统路由把数据包导入虚拟网卡</li><li>Clash 收到原始 IP 数据包</li><li>按规则决定直连还是代理</li><li>直连：直接发往目标</li><li>代理：封装后转发给节点</li></ol>
+<p>先分清两个维度：出站模式（规则/全局/直连）回答“流量出去走哪条路”；接管方式（系统代理/TUN）回答“流量怎么被抓到 Clash 手里”。</p><p>系统代理像在系统公告栏贴告示：“要走代理的应用请来这个入口”。愿意看告示的（浏览器、多数桌面软件）会走；不看的（很多游戏、命令行工具、后台服务）直接无视，该怎么连还怎么连。它的优点是简单、好关，缺点是覆盖不全。</p><p>TUN 则是在系统里凭空插了一条“虚拟网线”（虚拟网卡，如 tun0）：配合系统路由，所有 IP 数据包先被导进来，再由 Clash 按规则处理。这是网络层的接管，不挑应用——UDP、DNS、QUIC 都能处理，不读系统代理的软件也跑不掉。这就是“开了 TUN 才全局生效”的原因：之前那些软件根本没看公告栏。</p><p>代价也有：需要管理员/VPN 权限；默认可能隔离局域网（打印机、NAS 突然连不上，要加 bypass）；和其它 VPN/加速器同时开会打架；DNS 最好配合 Fake-IP。所以推荐组合是：日常开 TUN + 规则模式，排查问题时先关 TUN 复测。</p>
+
+<h2>要不要开 TUN</h2><ul><li><b>开 TUN</b>：虚拟网卡接管所有流量，游戏、终端、后台服务全生效</li><li><b>不开，用系统代理</b>：只在系统设置里“贴告示”，简单好关</li><li><b>按需切换</b>：日常开 TUN，排查问题时先关掉复测</li></ul><ol><li>先判断：你的需求里有没有“不读系统代理”的软件（游戏、命令行工具）？有→开 TUN</li><li>开 TUN 需要管理员/VPN 权限，手机上要点允许</li><li>把局域网段加进 bypass，不然打印机、NAS 会失联</li><li>DNS 配合 Fake-IP，不然分流可能不准</li><li>出问题先关 TUN 复测：好了就是 TUN 的锅，再细查</li><li>别和别的 VPN/加速器同时开，会打架</li></ol>
+<h2>延伸阅读</h2><ul><li><a href="https://medium.com/@shixiaolong09/tun%E6%A8%A1%E5%BC%8F-b854497292d9" rel="noopener">TUN 模式原理：虚拟网卡与系统代理的区别</a></li><li><a href="https://github.com/hn2461/first-fullstack-vue-blog/blob/HEAD/output/网络与代理基础/01-代理模式与流量接管方式.md" rel="noopener">代理模式与流量接管方式：System Proxy 和 TUN 的区别</a></li></ul>
+<h2>相关条目</h2><ul class="rel"><li><a href="https://www.aha.voyager06.tech/p/network-webrtc-leak.html">WebRTC 泄露：代理开着，真 IP 却在裸奔</a> <span>代理管得住网页，管不住浏览器的“悄悄话”</span></li><li><a href="https://www.aha.voyager06.tech/p/network-clash-what.html">Clash 是什么</a> <span>它不生产流量，它只是流量的交通警察</span></li><li><a href="https://www.aha.voyager06.tech/p/network-clash-modes.html">代理模式：直连 / 全局 / 规则</a> <span>记住一句就够：该直连的直连，该代理的代理</span></li></ul>
+
+<a class="spa" href="https://www.aha.voyager06.tech/#/p/network-tun-mode">在站内打开本篇（完整交互版）→</a>
+<div class="pn"><a href="https://www.aha.voyager06.tech/p/network-policy-groups.html">← 上一个：策略组：自动选最快节点</a><a href="https://www.aha.voyager06.tech/p/network-subscription.html">下一个：订阅链接：节点通讯录 →</a></div>
+<footer>原来如此 · 把听说过的技术讲透 · 内容为科普解读，具体接入请以各服务官方文档为准</footer>
+</body>
+</html>

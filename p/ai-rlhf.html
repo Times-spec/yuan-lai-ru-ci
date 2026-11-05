@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RLHF：用人类反馈调教模型 · 原来如此</title>
+<meta name="description" content="教模型做对的事，而不只是像。人类（或 AI 法官）给回答排序→训练奖励模型→强化学习把模型往高分推，教它做&quot;对&quot;的事。">
+<link rel="canonical" href="https://www.aha.voyager06.tech/p/ai-rlhf.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="RLHF：用人类反馈调教模型 · 原来如此">
+<meta property="og:description" content="教模型做对的事，而不只是像。人类（或 AI 法官）给回答排序→训练奖励模型→强化学习把模型往高分推，教它做&quot;对&quot;的事。">
+<meta property="og:url" content="https://www.aha.voyager06.tech/p/ai-rlhf.html">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>">
+<style>
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;max-width:760px;margin:0 auto;padding:24px 20px 60px;color:#1c2b3a;line-height:1.8;background:#FDFCF9}
+a{color:#2563EB;text-decoration:none} a:hover{text-decoration:underline}
+.crumb{font-size:13px;color:#8A8A93;margin-bottom:18px}
+h1{font-size:30px;line-height:1.35;margin:6px 0 8px}
+.tagline{color:#5B6470;font-size:16px;margin-bottom:20px}
+.kick{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.1em;background:#EEF3F8;color:#31597F;border-radius:999px;padding:4px 12px}
+.scene{background:#FFF8EC;border:1px solid #F0E2C4;border-radius:12px;padding:16px 20px}
+.sum{background:#EEF4FF;border:1px solid #C9DBF5;border-radius:12px;padding:16px 20px;font-weight:600}
+h2{font-size:20px;margin:34px 0 12px}
+.steps li,.rel li{margin:6px 0}
+.cf{background:#F5F3FF;border:1px dashed #C4B5FD;border-radius:12px;padding:14px 20px;margin-top:22px}
+.mis{background:#FFF5F5;border:1px solid #F3C2C2;border-radius:12px;padding:14px 20px;margin-top:14px}
+.cf h3,.mis h3,.conf h3{margin:0 0 6px;font-size:16px}
+.cf p,.mis p{margin:0}
+.conf{border:1px solid #E3E0D8;border-radius:12px;padding:14px 20px;margin-top:22px}
+.conf p{margin:6px 0} .conf span,.rel span{color:#8A8A93;font-size:13.5px}
+.cap{color:#8A8A93;font-size:14px}
+.pn{display:flex;justify-content:space-between;gap:16px;margin-top:40px;border-top:1px solid #E3E0D8;padding-top:18px;font-size:14.5px}
+.spa{display:block;text-align:center;margin-top:28px;background:#1c2b3a;color:#fff;border-radius:12px;padding:12px}
+footer{margin-top:34px;color:#8A8A93;font-size:13px;text-align:center}
+</style>
+</head>
+<body>
+<div class="crumb"><a href="https://www.aha.voyager06.tech/">原来如此</a> / AI 与大模型 / RLHF：用人类反馈调教模型</div>
+<span class="kick">AI 与大模型</span>
+<h1>RLHF：用人类反馈调教模型</h1>
+<div class="tagline">教模型做对的事，而不只是像</div>
+<div class="scene"><b>👀 日常场景</b><p>&quot;模型要对齐人类价值观&quot;&quot;ChatGPT 为什么懂得拒绝&quot;——同样的问题，基座模型可能直接续写出有害教程，而你用的版本会礼貌拒绝。这道&quot;防火墙&quot;不是提示词，是训练阶段装进去的。</p></div>
+
+<h2>原理：它是怎么运作的</h2>
+<div class="sum">💡 人类（或 AI 法官）给回答排序→训练奖励模型→强化学习把模型往高分推，教它做&quot;对&quot;的事。</div>
+<h2>先看全过程</h2><ol class="steps"><li>模型生成多个候选回答</li><li>人类（或 AI 法官）排序</li><li>训练奖励模型学会打分</li><li>奖励模型当裁判</li><li>强化学习往高分方向推</li><li>模型学会拒绝与诚实</li></ol>
+<p>SFT 教会了模型&quot;像助手&quot;，但有个问题它解决不了：&quot;该不该说&quot;。SFT 数据里没人教模型拒绝——于是有了 RLHF（基于人类反馈的强化学习），ChatGPT 懂得拒绝、懂得说&quot;我不确定&quot;，主要靠它。</p><p>流程分三步：先让模型对同一问题生成多个回答，请人类排序（&quot;这个好、那个差&quot;）；再用这些排序训练一个&quot;奖励模型&quot;，让它学会像人类一样打分；最后用强化学习（PPO）把语言模型往高分方向推。RLAIF 把第一步昂贵的人类标注换成 AI 法官（如用 GPT-4 给回答排序），成本降一个数量级，效果接近。</p><p>在逻辑链上，RLHF 承接 SFT 的&quot;只教像什么样&quot;：SFT 定格式，RLHF 定价值观。这也是&quot;对齐&quot;（Alignment）一词的来源——让模型的行为与人类偏好对齐。但注意它的边界：它解决&quot;该不该说&quot;，不解决&quot;说得对不对&quot;（那是幻觉问题）。</p>
+
+<h2>想深入了解怎么办</h2><ul><li><b>InstructGPT 论文</b>：RLHF 的开山之作，讲清了&quot;人类排序→奖励模型→PPO&quot;全套</li><li><b>DPO 论文</b>：更简单的替代方案：不用强化学习，直接优化偏好</li><li><b>Anthropic 对齐博客</b>：Constitutional AI 等，用 AI 当法官的思路</li></ul><ol><li>先分清 SFT 和 RLHF：一个教&quot;像什么样&quot;，一个教&quot;该不该&quot;</li><li>理解奖励模型：它是个&quot;学会人类品味的打分器&quot;</li><li>看懂 PPO 在干什么：往高分方向小步推，别推飞</li><li>了解 DPO：把强化学习化简成分类问题，2023 年后的主流</li><li>最后看 RLAIF：人类标注太贵，AI 法官怎么顶上</li></ol>
+<h2>延伸阅读</h2><ul><li><a href="https://github.com/trishambp/trishambp.github.io/blob/HEAD/_posts/2026-09-10-reinforcement-learning-for-llms-rlhf-rlaif-rlvf-rlef-swirl-post-training.md" rel="noopener">LLM 强化学习：RLHF/RLAIF/RLVF 全景（2026）</a></li><li><a href="https://www.turingpost.com/p/stateofrl2025" rel="noopener">State of RL 2025（Turing Post）</a></li></ul>
+<h2>相关条目</h2><ul class="rel"><li><a href="https://www.aha.voyager06.tech/p/ai-rsi.html">RSI：当 AI 开始改进 AI 自己</a> <span>当 AI 开始改进 AI 自己</span></li><li><a href="https://www.aha.voyager06.tech/p/ai-agent.html">智能体 Agent</a> <span>从只会说，到会动手做事</span></li><li><a href="https://www.aha.voyager06.tech/p/ai-transformer.html">注意力机制与 Transformer</a> <span>每个词同时看所有词，大模型的心脏</span></li></ul>
+
+<a class="spa" href="https://www.aha.voyager06.tech/#/p/ai-rlhf">在站内打开本篇（完整交互版）→</a>
+<div class="pn"><a href="https://www.aha.voyager06.tech/p/ai-sft-lora.html">← 上一个：微调：教模型听懂指令</a><a href="https://www.aha.voyager06.tech/p/ai-inference-deploy.html">下一个：推理部署：让模型跑起来 →</a></div>
+<footer>原来如此 · 把听说过的技术讲透 · 内容为科普解读，具体接入请以各服务官方文档为准</footer>
+</body>
+</html>

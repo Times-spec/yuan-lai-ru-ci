@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>负载均衡 · 原来如此</title>
+<meta name="description" content="一台扛不住，就上十台。把流量按策略分摊到多台服务器，故障节点自动摘除，实现高可用。">
+<link rel="canonical" href="https://www.aha.voyager06.tech/p/backend-load-balancer.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="负载均衡 · 原来如此">
+<meta property="og:description" content="一台扛不住，就上十台。把流量按策略分摊到多台服务器，故障节点自动摘除，实现高可用。">
+<meta property="og:url" content="https://www.aha.voyager06.tech/p/backend-load-balancer.html">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>">
+<style>
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;max-width:760px;margin:0 auto;padding:24px 20px 60px;color:#1c2b3a;line-height:1.8;background:#FDFCF9}
+a{color:#2563EB;text-decoration:none} a:hover{text-decoration:underline}
+.crumb{font-size:13px;color:#8A8A93;margin-bottom:18px}
+h1{font-size:30px;line-height:1.35;margin:6px 0 8px}
+.tagline{color:#5B6470;font-size:16px;margin-bottom:20px}
+.kick{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.1em;background:#EEF3F8;color:#31597F;border-radius:999px;padding:4px 12px}
+.scene{background:#FFF8EC;border:1px solid #F0E2C4;border-radius:12px;padding:16px 20px}
+.sum{background:#EEF4FF;border:1px solid #C9DBF5;border-radius:12px;padding:16px 20px;font-weight:600}
+h2{font-size:20px;margin:34px 0 12px}
+.steps li,.rel li{margin:6px 0}
+.cf{background:#F5F3FF;border:1px dashed #C4B5FD;border-radius:12px;padding:14px 20px;margin-top:22px}
+.mis{background:#FFF5F5;border:1px solid #F3C2C2;border-radius:12px;padding:14px 20px;margin-top:14px}
+.cf h3,.mis h3,.conf h3{margin:0 0 6px;font-size:16px}
+.cf p,.mis p{margin:0}
+.conf{border:1px solid #E3E0D8;border-radius:12px;padding:14px 20px;margin-top:22px}
+.conf p{margin:6px 0} .conf span,.rel span{color:#8A8A93;font-size:13.5px}
+.cap{color:#8A8A93;font-size:14px}
+.pn{display:flex;justify-content:space-between;gap:16px;margin-top:40px;border-top:1px solid #E3E0D8;padding-top:18px;font-size:14.5px}
+.spa{display:block;text-align:center;margin-top:28px;background:#1c2b3a;color:#fff;border-radius:12px;padding:12px}
+footer{margin-top:34px;color:#8A8A93;font-size:13px;text-align:center}
+</style>
+</head>
+<body>
+<div class="crumb"><a href="https://www.aha.voyager06.tech/">原来如此</a> / 后端基建 / 负载均衡</div>
+<span class="kick">后端基建</span>
+<h1>负载均衡</h1>
+<div class="tagline">一台扛不住，就上十台</div>
+<div class="scene"><b>👀 日常场景</b><p>春运抢票、双11零点，单台服务器再强也会被流量淹没。负载均衡就是站在前面的「交通警察」：把涌入的请求按规则分给后面十几台服务器，哪台挂了就自动摘掉——用户只感觉到快，感觉不到某台机器正在冒烟。</p></div>
+
+<h2>原理：它是怎么运作的</h2>
+<div class="sum">💡 把流量按策略分摊到多台服务器，故障节点自动摘除，实现高可用。</div>
+<h2>先看全过程</h2><ol class="steps"><li>请求到达负载均衡器</li><li>按策略选一台健康后端</li><li>转发请求并等待响应</li><li>定期健康检查各节点</li><li>故障节点自动摘除</li><li>节点恢复后重新加入</li></ol>
+<p>负载均衡的核心就两件事：怎么分、挂了怎么办。分发策略各有性格：轮询（round-robin）简单公平，适合机器配置相近；加权轮询让高配机器多干活；最少连接把请求发给当前最闲的；一致性哈希让同一个用户的请求总落到同一台，适合有本地缓存的场景。</p><p>健康检查是生命线：均衡器定期探活，连续失败几次就把节点摘掉，流量自动绕开；节点恢复后再加回来。配合 Session 保持（sticky session）或干脆无状态化设计，才能保证用户不被踢下线。</p><p>实现分三层：DNS 轮询最便宜但故障切换慢；Nginx/HAProxy 在四层/七层做，灵活且可编程；云厂商的 CLB/ALB 开箱即用但按量计费。大多数团队的路径是：先用 Nginx 的 upstream 顶住，流量再大就换云负载均衡。选型时还要考虑会话保持和 TLS 卸载位置：TLS 在均衡器上卸载最省后端 CPU，但内网就是明文，金融级场景要端到端加密。</p>
+
+<h2>开发者：应该如何接入</h2><ul><li><b>Nginx upstream</b>：免费，随手可配，支持多种策略</li><li><b>HAProxy</b>：老牌四层/七层均衡器，性能极强</li><li><b>云负载均衡（CLB/ALB）</b>：托管高可用，按量付费</li></ul><ol><li>准备 2 台以上配置相同的应用服务器</li><li>确保应用无状态：Session 放 Redis，不存本地</li><li>在 Nginx 里写 upstream 块列出所有后端</li><li>选策略：默认轮询，或按需加 weight/ip_hash</li><li>配健康检查，故障节点自动摘除</li><li>压测验证：kill 一台后端，业务不受影响</li></ol>
+
+<h2>相关条目</h2><ul class="rel"><li><a href="https://www.aha.voyager06.tech/p/backend-cdn.html">CDN 内容分发网络</a> <span>让你访问的总是隔壁的服务器</span></li><li><a href="https://www.aha.voyager06.tech/p/backend-vps.html">VPS：合租一台服务器</a> <span>一台机器，N 个人分着用</span></li><li><a href="https://www.aha.voyager06.tech/p/network-proxy-protocols.html">翻墙协议：谁在看你翻墙</a> <span>协议是衣服，监测看的是身形</span></li></ul>
+
+<a class="spa" href="https://www.aha.voyager06.tech/#/p/backend-load-balancer">在站内打开本篇（完整交互版）→</a>
+<div class="pn"><a href="https://www.aha.voyager06.tech/p/backend-nginx-reverse-proxy.html">← 上一个：Nginx 反向代理</a><a href="https://www.aha.voyager06.tech/p/backend-message-queue.html">下一个：消息队列 →</a></div>
+<footer>原来如此 · 把听说过的技术讲透 · 内容为科普解读，具体接入请以各服务官方文档为准</footer>
+</body>
+</html>

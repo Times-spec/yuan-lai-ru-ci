@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI 幻觉：一本正经地胡说八道 · 原来如此</title>
+<meta name="description" content="一本正经胡说八道，是出厂设置。训练目标是&quot;像人话&quot;不是&quot;说真话&quot;，采样器没有&quot;不知道&quot;按钮——流畅≠正确是生成模型的内禀属性。">
+<link rel="canonical" href="https://www.aha.voyager06.tech/p/ai-hallucination.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="AI 幻觉：一本正经地胡说八道 · 原来如此">
+<meta property="og:description" content="一本正经胡说八道，是出厂设置。训练目标是&quot;像人话&quot;不是&quot;说真话&quot;，采样器没有&quot;不知道&quot;按钮——流畅≠正确是生成模型的内禀属性。">
+<meta property="og:url" content="https://www.aha.voyager06.tech/p/ai-hallucination.html">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>">
+<style>
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;max-width:760px;margin:0 auto;padding:24px 20px 60px;color:#1c2b3a;line-height:1.8;background:#FDFCF9}
+a{color:#2563EB;text-decoration:none} a:hover{text-decoration:underline}
+.crumb{font-size:13px;color:#8A8A93;margin-bottom:18px}
+h1{font-size:30px;line-height:1.35;margin:6px 0 8px}
+.tagline{color:#5B6470;font-size:16px;margin-bottom:20px}
+.kick{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.1em;background:#EEF3F8;color:#31597F;border-radius:999px;padding:4px 12px}
+.scene{background:#FFF8EC;border:1px solid #F0E2C4;border-radius:12px;padding:16px 20px}
+.sum{background:#EEF4FF;border:1px solid #C9DBF5;border-radius:12px;padding:16px 20px;font-weight:600}
+h2{font-size:20px;margin:34px 0 12px}
+.steps li,.rel li{margin:6px 0}
+.cf{background:#F5F3FF;border:1px dashed #C4B5FD;border-radius:12px;padding:14px 20px;margin-top:22px}
+.mis{background:#FFF5F5;border:1px solid #F3C2C2;border-radius:12px;padding:14px 20px;margin-top:14px}
+.cf h3,.mis h3,.conf h3{margin:0 0 6px;font-size:16px}
+.cf p,.mis p{margin:0}
+.conf{border:1px solid #E3E0D8;border-radius:12px;padding:14px 20px;margin-top:22px}
+.conf p{margin:6px 0} .conf span,.rel span{color:#8A8A93;font-size:13.5px}
+.cap{color:#8A8A93;font-size:14px}
+.pn{display:flex;justify-content:space-between;gap:16px;margin-top:40px;border-top:1px solid #E3E0D8;padding-top:18px;font-size:14.5px}
+.spa{display:block;text-align:center;margin-top:28px;background:#1c2b3a;color:#fff;border-radius:12px;padding:12px}
+footer{margin-top:34px;color:#8A8A93;font-size:13px;text-align:center}
+</style>
+</head>
+<body>
+<div class="crumb"><a href="https://www.aha.voyager06.tech/">原来如此</a> / AI 与大模型 / AI 幻觉：一本正经地胡说八道</div>
+<span class="kick">AI 与大模型</span>
+<h1>AI 幻觉：一本正经地胡说八道</h1>
+<div class="tagline">一本正经胡说八道，是出厂设置</div>
+<div class="scene"><b>👀 日常场景</b><p>&quot;AI 一本正经地胡说八道，还编出不存在的论文&quot;——它不是在骗你，它是真的不知道自己在胡说。理解了幻觉，才能理解 RAG、引用、拒答这些机制为什么必须存在，这就是本篇要拆开的东西。</p></div>
+
+<h2>原理：它是怎么运作的</h2>
+<div class="sum">💡 训练目标是&quot;像人话&quot;不是&quot;说真话&quot;，采样器没有&quot;不知道&quot;按钮——流畅≠正确是生成模型的内禀属性。</div>
+<h2>先看全过程</h2><ol class="steps"><li>训练目标奖励&quot;像人话&quot;</li><li>解码器永远输出一个 token</li><li>没有&quot;我不知道&quot;按钮</li><li>不确定也硬着头皮编</li><li>编得越流畅越像真的</li><li>只能缓解，无法根除</li></ol>
+<p>为什么 AI 会一本正经地胡说八道，甚至编出不存在的论文、煞有介事地引用？答案藏在训练目标里：预训练的目标是&quot;预测下一个词&quot;，奖励的是&quot;像人话&quot;，不是&quot;说真话&quot;。解码器的工作方式是永远输出一个 token——它没有&quot;我不知道&quot;这个按钮，不确定时也只能硬着头皮编一个最像人话的出来，而且编得越流畅越像真的。</p><p>这是生成模型的内禀属性，不是 bug：流畅≠正确。理解了这一点，就理解了为什么 RAG、引用标注、拒答策略必须存在——它们都是在给&quot;只能流畅输出&quot;的模型外挂&quot;求真&quot;机制：RAG 让它看着资料说，引用让它每个论断可查，拒答策略给它一个&quot;不知道&quot;按钮。</p><p>在逻辑链上，幻觉是 RAG 的&quot;立法理由&quot;：先讲为什么会错（这一环），再讲 RAG 怎么治（上一环在顺序上先出现，但逻辑上是为了解决这一环）。记住一句话：大模型是&quot;语言&quot;模型，不是&quot;真理&quot;模型。</p>
+
+<h2>如何不被 AI 骗</h2><ul><li><b>要出处</b>：让它每个关键论断标注来源，&quot;看着资料说&quot;</li><li><b>交叉验证</b>：同一个问题换个问法、换个模型再问一遍</li><li><b>人工核高风险项</b>：人名、日期、数字、论文标题，逐条核实</li></ul><ol><li>先记住总原则：流畅≠正确，它的目标是&quot;像人话&quot;不是&quot;说真话&quot;</li><li>凡是人名、日期、数字、引用，先打个问号</li><li>让它给出来处：&quot;这个结论的来源是？&quot;——编不出来的会露馅</li><li>换个问法再问一次：前后矛盾的就是它在编</li><li>关键决策（吃药、签合同、投钱）永远找真人或官方渠道复核</li><li>允许它说&quot;不知道&quot;：提前告诉它&quot;不确定就直说，别编&quot;</li></ol>
+<h2>延伸阅读</h2><ul><li><a href="https://github.com/tonik173/generative-ai-explained/blob/HEAD/doc/docs/llm-inference/sample/hallucination.md" rel="noopener">幻觉：采样机制讲解（generative-ai-explained）</a></li><li><a href="https://mindoxai.com/blog/artificial-intelligence/why-do-ai-models-hallucinate/" rel="noopener">为什么 AI 会产生幻觉（mindoxai）</a></li></ul>
+<h2>相关条目</h2><ul class="rel"><li><a href="https://www.aha.voyager06.tech/p/ai-agent.html">智能体 Agent</a> <span>从只会说，到会动手做事</span></li><li><a href="https://www.aha.voyager06.tech/p/ai-rag.html">RAG：给大模型外挂知识库</a> <span>给大模型外挂一个知识库</span></li><li><a href="https://www.aha.voyager06.tech/p/network-agent-protocol.html">个人智能体协议 PAP：AI 替你下单时，商家怎么认出它</a> <span>给 AI 代理办一张&quot;身份证 + 授权书&quot;</span></li></ul>
+
+<a class="spa" href="https://www.aha.voyager06.tech/#/p/ai-hallucination">在站内打开本篇（完整交互版）→</a>
+<div class="pn"><a href="https://www.aha.voyager06.tech/p/ai-rag.html">← 上一个：RAG：给大模型外挂知识库</a><a href="https://www.aha.voyager06.tech/p/ai-agent.html">下一个：智能体 Agent →</a></div>
+<footer>原来如此 · 把听说过的技术讲透 · 内容为科普解读，具体接入请以各服务官方文档为准</footer>
+</body>
+</html>

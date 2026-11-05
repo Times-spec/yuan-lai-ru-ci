@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Docker 容器 · 原来如此</title>
+<meta name="description" content="终结「在我电脑上明明是好的」。把应用和依赖打成镜像，容器是镜像的运行实例，一次构建、处处运行。">
+<link rel="canonical" href="https://www.aha.voyager06.tech/p/backend-docker.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Docker 容器 · 原来如此">
+<meta property="og:description" content="终结「在我电脑上明明是好的」。把应用和依赖打成镜像，容器是镜像的运行实例，一次构建、处处运行。">
+<meta property="og:url" content="https://www.aha.voyager06.tech/p/backend-docker.html">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>">
+<style>
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;max-width:760px;margin:0 auto;padding:24px 20px 60px;color:#1c2b3a;line-height:1.8;background:#FDFCF9}
+a{color:#2563EB;text-decoration:none} a:hover{text-decoration:underline}
+.crumb{font-size:13px;color:#8A8A93;margin-bottom:18px}
+h1{font-size:30px;line-height:1.35;margin:6px 0 8px}
+.tagline{color:#5B6470;font-size:16px;margin-bottom:20px}
+.kick{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.1em;background:#EEF3F8;color:#31597F;border-radius:999px;padding:4px 12px}
+.scene{background:#FFF8EC;border:1px solid #F0E2C4;border-radius:12px;padding:16px 20px}
+.sum{background:#EEF4FF;border:1px solid #C9DBF5;border-radius:12px;padding:16px 20px;font-weight:600}
+h2{font-size:20px;margin:34px 0 12px}
+.steps li,.rel li{margin:6px 0}
+.cf{background:#F5F3FF;border:1px dashed #C4B5FD;border-radius:12px;padding:14px 20px;margin-top:22px}
+.mis{background:#FFF5F5;border:1px solid #F3C2C2;border-radius:12px;padding:14px 20px;margin-top:14px}
+.cf h3,.mis h3,.conf h3{margin:0 0 6px;font-size:16px}
+.cf p,.mis p{margin:0}
+.conf{border:1px solid #E3E0D8;border-radius:12px;padding:14px 20px;margin-top:22px}
+.conf p{margin:6px 0} .conf span,.rel span{color:#8A8A93;font-size:13.5px}
+.cap{color:#8A8A93;font-size:14px}
+.pn{display:flex;justify-content:space-between;gap:16px;margin-top:40px;border-top:1px solid #E3E0D8;padding-top:18px;font-size:14.5px}
+.spa{display:block;text-align:center;margin-top:28px;background:#1c2b3a;color:#fff;border-radius:12px;padding:12px}
+footer{margin-top:34px;color:#8A8A93;font-size:13px;text-align:center}
+</style>
+</head>
+<body>
+<div class="crumb"><a href="https://www.aha.voyager06.tech/">原来如此</a> / 后端基建 / Docker 容器</div>
+<span class="kick">后端基建</span>
+<h1>Docker 容器</h1>
+<div class="tagline">终结「在我电脑上明明是好的」</div>
+<div class="scene"><b>👀 日常场景</b><p>程序在开发电脑上跑得好好的，一上服务器就报错：缺库、版本不对、路径不同。Docker 把应用连同操作系统依赖打包成镜像，哪里运行都是一模一样的环境——开发、测试、生产终于不再「各说各话」。</p></div>
+
+<h2>原理：它是怎么运作的</h2>
+<div class="sum">💡 把应用和依赖打成镜像，容器是镜像的运行实例，一次构建、处处运行。</div>
+<h2>先看全过程</h2><ol class="steps"><li>编写 Dockerfile 描述构建步骤</li><li>docker build 生成镜像</li><li>镜像分层存储，可复用共享</li><li>docker run 启动容器实例</li><li>容器间相互隔离、资源受限</li><li>删容器不影响镜像，随时重建</li></ol>
+<p>Docker 解决的是「环境不一致」这个千古难题。传统部署靠文档和运维手工装环境，差一个库版本就可能崩；Docker 把应用代码、运行时、系统库、配置文件全部打进镜像（image），镜像是只读模板，容器（container）是它的运行实例——就像类和对象的关系。</p><p>技术上靠 Linux 的两大机制：Namespace 做隔离（每个容器有独立的进程、网络、文件系统视角），Cgroups 做资源限制（这个容器最多用 2 核 4G）。和虚拟机相比，容器没有 Guest OS，启动是毫秒级，一台机器能跑几十上百个。</p><p>镜像采用分层存储：每一行 Dockerfile 指令产生一层，相同的基层（如 Python 3.12）在多个镜像间共享，既省磁盘又加快拉取。多阶段构建（multi-stage build）是常用优化：编译阶段用大镜像，运行阶段只拷二进制文件，镜像体积能从 1GB 压到几十 MB。</p>
+
+<h2>开发者：应该如何接入</h2><ul><li><b>Docker Engine</b>：官方容器运行时，事实标准</li><li><b>Docker Desktop</b>：带图形界面的桌面版</li><li><b>Podman</b>：红帽主推的无守护进程替代品</li></ul><ol><li>安装 Docker，跑通 docker run hello-world</li><li>为项目写 Dockerfile：选基础镜像、拷代码、装依赖</li><li>用 .dockerignore 排除 node_modules、.git 等无用文件</li><li>docker build -t myapp:1.0 . 构建镜像</li><li>docker run -d -p 8080:8080 myapp:1.0 启动验证</li><li>推送到镜像仓库，服务器上拉取运行</li></ol>
+<h2>延伸阅读</h2><ul><li><a href="https://docs.docker.com/" rel="noopener">Docker 官方文档</a></li></ul>
+<h2>相关条目</h2><ul class="rel"><li><a href="https://www.aha.voyager06.tech/p/backend-docker-compose.html">Docker Compose：一键启动整套服务</a> <span>一条命令，拉起整个开发环境</span></li><li><a href="https://www.aha.voyager06.tech/p/security-fde.html">FDE：给整块硬盘上锁</a> <span>电脑丢了，硬盘里的数据怎么办？</span></li><li><a href="https://www.aha.voyager06.tech/p/backend-distributed-lock.html">分布式锁</a> <span>多台机器，抢同一件事</span></li></ul>
+
+<a class="spa" href="https://www.aha.voyager06.tech/#/p/backend-docker">在站内打开本篇（完整交互版）→</a>
+<div class="pn"><a href="https://www.aha.voyager06.tech/p/backend-mysql-transaction.html">← 上一个：MySQL 事务</a><a href="https://www.aha.voyager06.tech/p/backend-docker-compose.html">下一个：Docker Compose：一键启动整套服务 →</a></div>
+<footer>原来如此 · 把听说过的技术讲透 · 内容为科普解读，具体接入请以各服务官方文档为准</footer>
+</body>
+</html>

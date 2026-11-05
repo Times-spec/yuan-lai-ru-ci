@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>无限滚动 · 原来如此</title>
+<meta name="description" content="刷不到底的页面，一直有新内容。在列表底部放一个“哨兵”元素，用 IntersectionObserver 监听它进入视口时请求下一页数据并追加。">
+<link rel="canonical" href="https://www.aha.voyager06.tech/p/feat-infinite-scroll.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="无限滚动 · 原来如此">
+<meta property="og:description" content="刷不到底的页面，一直有新内容。在列表底部放一个“哨兵”元素，用 IntersectionObserver 监听它进入视口时请求下一页数据并追加。">
+<meta property="og:url" content="https://www.aha.voyager06.tech/p/feat-infinite-scroll.html">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>">
+<style>
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;max-width:760px;margin:0 auto;padding:24px 20px 60px;color:#1c2b3a;line-height:1.8;background:#FDFCF9}
+a{color:#2563EB;text-decoration:none} a:hover{text-decoration:underline}
+.crumb{font-size:13px;color:#8A8A93;margin-bottom:18px}
+h1{font-size:30px;line-height:1.35;margin:6px 0 8px}
+.tagline{color:#5B6470;font-size:16px;margin-bottom:20px}
+.kick{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.1em;background:#EEF3F8;color:#31597F;border-radius:999px;padding:4px 12px}
+.scene{background:#FFF8EC;border:1px solid #F0E2C4;border-radius:12px;padding:16px 20px}
+.sum{background:#EEF4FF;border:1px solid #C9DBF5;border-radius:12px;padding:16px 20px;font-weight:600}
+h2{font-size:20px;margin:34px 0 12px}
+.steps li,.rel li{margin:6px 0}
+.cf{background:#F5F3FF;border:1px dashed #C4B5FD;border-radius:12px;padding:14px 20px;margin-top:22px}
+.mis{background:#FFF5F5;border:1px solid #F3C2C2;border-radius:12px;padding:14px 20px;margin-top:14px}
+.cf h3,.mis h3,.conf h3{margin:0 0 6px;font-size:16px}
+.cf p,.mis p{margin:0}
+.conf{border:1px solid #E3E0D8;border-radius:12px;padding:14px 20px;margin-top:22px}
+.conf p{margin:6px 0} .conf span,.rel span{color:#8A8A93;font-size:13.5px}
+.cap{color:#8A8A93;font-size:14px}
+.pn{display:flex;justify-content:space-between;gap:16px;margin-top:40px;border-top:1px solid #E3E0D8;padding-top:18px;font-size:14.5px}
+.spa{display:block;text-align:center;margin-top:28px;background:#1c2b3a;color:#fff;border-radius:12px;padding:12px}
+footer{margin-top:34px;color:#8A8A93;font-size:13px;text-align:center}
+</style>
+</head>
+<body>
+<div class="crumb"><a href="https://www.aha.voyager06.tech/">原来如此</a> / 小功能大智慧 / 无限滚动</div>
+<span class="kick">小功能大智慧</span>
+<h1>无限滚动</h1>
+<div class="tagline">刷不到底的页面，一直有新内容</div>
+<div class="scene"><b>👀 日常场景</b><p>刷微博、看视频评论区，滑到底部时自动冒出更多内容，根本没有“下一页”按钮。你本来只想看一眼，结果一不小心刷了半小时——页面好像永远没有尽头，新内容自己往上冒，手指根本停不下来。这背后没有魔法，只是一个藏在底部的“哨兵”在默默干活。</p></div>
+
+<h2>原理：它是怎么运作的</h2>
+<div class="sum">💡 在列表底部放一个“哨兵”元素，用 IntersectionObserver 监听它进入视口时请求下一页数据并追加。</div>
+<h2>先看全过程</h2><ol class="steps"><li>列表底部放一个哨兵空元素</li><li>监听哨兵进入视口</li><li>请求下一页数据接口</li><li>loading 占位等待返回</li><li>新数据追加到列表尾部</li><li>无数据时撤掉哨兵显示到底</li></ol>
+<p>无限滚动和懒加载是“一家人”：都是 IntersectionObserver 监听某个元素进视口。区别在于，懒加载监听的是每张图片，无限滚动监听的是列表底部的一个“哨兵”空 div。哨兵一露头，前端就请求下一页数据（page=2&amp;pageSize=20），拿到后追加到列表尾部，哨兵自然被顶到更下面，继续等你滑过来。为什么产品都爱用它？因为“没有尽头”最抓注意力：传统分页要点“下一页”，每次点击都是一次“要不要继续”的心理门槛，而无限滚动把这个门槛抹掉了——这也是它让人上瘾的原因。但天下没有免费午餐：DOM 节点会越积越多，刷一小时可能攒出上万个节点，手机直接卡死，所以正经的长列表会配合“虚拟滚动”（virtual scroll，只渲染可视区附近的几十行）；还要处理“重复请求”（加 loading 锁，数据没回来前哨兵再露头也不发请求）、“到底了”（后端返回空数组就撤掉哨兵换“没有更多”）、“返回位置”（从详情页回来要恢复滚动位置，否则用户会疯）。</p>
+
+<h2>网站是怎么做到的</h2><ul><li><b>哨兵元素：藏在底部的眼线</b>：列表最底部藏一个看不见的空 div。你滑到底部时它一露头，就等于在喊“下面没了，快去拿下一页”。</li><li><b>loading 锁：防重复请求</b>：数据没回来之前，即使哨兵反复露头也不发新请求。否则一次滑动抖动就能打出好几次重复请求。</li><li><b>到底判定：空数组即终点</b>：后端返回空数组，就说明没有下一页了。这时撤掉哨兵，换上“没有更多了”。</li><li><b>虚拟滚动：只渲染看得见的</b>：刷一小时能攒出上万个 DOM 节点，手机直接卡死。正经的长列表只渲染可视区附近的几十行，滑走的就回收。</li></ul><ol><li>列表底部藏一个“哨兵”空 div，平时你看不见它</li><li>你往下滑，哨兵进入视口，Observer 触发回调</li><li>前端请求下一页数据（page=2&amp;pageSize=20），同时上 loading 锁</li><li>数据回来，追加到列表尾部，哨兵被新内容顶到更下面</li><li>你继续滑，哨兵再次露头，循环往复</li><li>某次后端返回空数组：撤掉哨兵，换上“没有更多了”，滚动到此结束</li></ol>
+<h2>延伸阅读</h2><ul><li><a href="https://blog.csdn.net/BytePulse/article/details/153739516" rel="noopener">IntersectionObserver 懒加载与无限滚动实践（CSDN）</a></li></ul>
+<h2>相关条目</h2><ul class="rel"><li><a href="https://www.aha.voyager06.tech/p/feat-skeleton-screen.html">骨架屏</a> <span>内容没到，先给你看个“轮廓”</span></li><li><a href="https://www.aha.voyager06.tech/p/nav-deferred-deeplink.html">延迟深度链接：先装 App 再进对的页</a> <span>先装 App 再打开，照样直达当初那个页面</span></li><li><a href="https://www.aha.voyager06.tech/p/nav-payment-return.html">支付成功回跳：回到商户页面</a> <span>付完钱，先给你看个“支付成功”页面</span></li></ul>
+
+<a class="spa" href="https://www.aha.voyager06.tech/#/p/feat-infinite-scroll">在站内打开本篇（完整交互版）→</a>
+<div class="pn"><a href="https://www.aha.voyager06.tech/p/feat-image-lazy-load.html">← 上一个：图片懒加载</a><a href="https://www.aha.voyager06.tech/p/feat-chunked-upload.html">下一个：分片上传/断点续传 →</a></div>
+<footer>原来如此 · 把听说过的技术讲透 · 内容为科普解读，具体接入请以各服务官方文档为准</footer>
+</body>
+</html>

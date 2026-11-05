@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Linear/Jira：需求的任务看板 · 原来如此</title>
+<meta name="description" content="一个需求从出生到上线的旅行记录。把每件事变成一张有状态的卡片，需求从提出到上线的全过程都在卡片上留痕、可追溯。">
+<link rel="canonical" href="https://www.aha.voyager06.tech/p/eng-linear-jira.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Linear/Jira：需求的任务看板 · 原来如此">
+<meta property="og:description" content="一个需求从出生到上线的旅行记录。把每件事变成一张有状态的卡片，需求从提出到上线的全过程都在卡片上留痕、可追溯。">
+<meta property="og:url" content="https://www.aha.voyager06.tech/p/eng-linear-jira.html">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>">
+<style>
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;max-width:760px;margin:0 auto;padding:24px 20px 60px;color:#1c2b3a;line-height:1.8;background:#FDFCF9}
+a{color:#2563EB;text-decoration:none} a:hover{text-decoration:underline}
+.crumb{font-size:13px;color:#8A8A93;margin-bottom:18px}
+h1{font-size:30px;line-height:1.35;margin:6px 0 8px}
+.tagline{color:#5B6470;font-size:16px;margin-bottom:20px}
+.kick{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.1em;background:#EEF3F8;color:#31597F;border-radius:999px;padding:4px 12px}
+.scene{background:#FFF8EC;border:1px solid #F0E2C4;border-radius:12px;padding:16px 20px}
+.sum{background:#EEF4FF;border:1px solid #C9DBF5;border-radius:12px;padding:16px 20px;font-weight:600}
+h2{font-size:20px;margin:34px 0 12px}
+.steps li,.rel li{margin:6px 0}
+.cf{background:#F5F3FF;border:1px dashed #C4B5FD;border-radius:12px;padding:14px 20px;margin-top:22px}
+.mis{background:#FFF5F5;border:1px solid #F3C2C2;border-radius:12px;padding:14px 20px;margin-top:14px}
+.cf h3,.mis h3,.conf h3{margin:0 0 6px;font-size:16px}
+.cf p,.mis p{margin:0}
+.conf{border:1px solid #E3E0D8;border-radius:12px;padding:14px 20px;margin-top:22px}
+.conf p{margin:6px 0} .conf span,.rel span{color:#8A8A93;font-size:13.5px}
+.cap{color:#8A8A93;font-size:14px}
+.pn{display:flex;justify-content:space-between;gap:16px;margin-top:40px;border-top:1px solid #E3E0D8;padding-top:18px;font-size:14.5px}
+.spa{display:block;text-align:center;margin-top:28px;background:#1c2b3a;color:#fff;border-radius:12px;padding:12px}
+footer{margin-top:34px;color:#8A8A93;font-size:13px;text-align:center}
+</style>
+</head>
+<body>
+<div class="crumb"><a href="https://www.aha.voyager06.tech/">原来如此</a> / 工程与协作 / Linear/Jira：需求的任务看板</div>
+<span class="kick">工程与协作</span>
+<h1>Linear/Jira：需求的任务看板</h1>
+<div class="tagline">一个需求从出生到上线的旅行记录</div>
+<div class="scene"><b>👀 日常场景</b><p>产品经理在群里说：“登录页加个记住我，下版本上。”两周后功能上线了。这中间发生了什么？谁排的期、谁开发的、测了哪几轮、为什么延期两天——答案不在聊天记录里，而在一张叫 issue 的卡片上。Linear 和 Jira 就是管这些卡片的工具。</p></div>
+
+<h2>原理：它是怎么运作的</h2>
+<div class="sum">💡 把每件事变成一张有状态的卡片，需求从提出到上线的全过程都在卡片上留痕、可追溯。</div>
+<h2>先看全过程</h2><ol class="steps"><li>产品经理创建一个需求卡片</li><li>写清背景、验收标准和优先级</li><li>需求进入迭代，分配给开发</li><li>开发认领，关联代码分支</li><li>测试按验收标准逐条验证</li><li>验证通过，上线并关闭卡片</li></ol>
+<p>这类工具的学名叫 Issue Tracker（问题跟踪器），核心思想只有一句：把“要做的事”变成一张有状态的卡片。</p><p>每张卡片都有标题、描述、负责人、优先级、截止日期，更重要的是“状态机”：待办 → 进行中 → 待验收 → 已完成。状态流转留下完整时间线，谁什么时候接手、为什么延期、最终怎么解决的，全都可查。产品经理提的“登录页加个记住我”，从提出、评审、排期、开发、测试到上线，经历的每一步都在卡片上留痕。</p><p>Jira 是老牌霸主，功能极重：自定义工作流、审批流、燃尽图，大公司爱它；代价是配置复杂，新人要学一阵。Linear 是新锐，哲学是“快”：键盘操作行云流水、界面干净，初创团队爱它。选哪个不重要，重要的是团队养成“事事有卡、卡卡有主”的习惯——口头说的需求会丢，聊天记录会沉，只有卡片是团队的共同记忆。</p>
+
+<h2>我该怎么用它</h2><ul><li><b>先看懂三列看板</b>：待办 → 进行中 → 已完成。所有工作都在这三列里流动，一眼看清团队在忙什么、卡在哪。</li><li><b>一张卡只讲一件事</b>：标题说清“做什么”，描述写清“为什么”和“做到什么程度算完”。一卡多事等于没卡。</li><li><b>状态随手更新</b>：开工拖到“进行中”，做完拖到“待验收”。看板是活的，状态不更新，看板就是死的。</li></ul><ol><li>接到任务先建卡：标题说清“做什么”，别写“做个登录”这种谜语</li><li>描述里写清背景、验收标准、优先级——这是以后扯皮的依据</li><li>开工了，把卡拖到“进行中”，指定负责人和截止日</li><li>开发时关联代码分支，合并后状态自动流转</li><li>做完拖到“待验收”，按验收标准逐条验</li><li>验证通过，关闭卡片——它成了团队可检索的记忆</li></ol>
+
+<h2>相关条目</h2><ul class="rel"><li><a href="https://www.aha.voyager06.tech/p/eng-prd.html">PRD：需求从这里开始</a> <span>需求的出生证明</span></li><li><a href="https://www.aha.voyager06.tech/p/eng-ux-ui.html">UX 与 UI</a> <span>好看是 UI，好用是 UX</span></li><li><a href="https://www.aha.voyager06.tech/p/nav-http-307.html">HTTP 307/308 严格重定向</a> <span>跳转也不改请求方法，POST 还是 POST</span></li></ul>
+
+<a class="spa" href="https://www.aha.voyager06.tech/#/p/eng-linear-jira">在站内打开本篇（完整交互版）→</a>
+<div class="pn"><a href="https://www.aha.voyager06.tech/p/eng-smoke-test.html">← 上一个：冒烟测试：先点火看看冒不冒烟</a><a href="https://www.aha.voyager06.tech/p/eng-tdd.html">下一个：TDD：先写测试再写代码 →</a></div>
+<footer>原来如此 · 把听说过的技术讲透 · 内容为科普解读，具体接入请以各服务官方文档为准</footer>
+</body>
+</html>

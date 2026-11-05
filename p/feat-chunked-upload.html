@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>分片上传/断点续传 · 原来如此</title>
+<meta name="description" content="大文件切成小块传，断了也能续上。前端用 Blob.slice 把文件切成小块并行上传，服务端按序号合并；已传分片被记账，续传时跳过。">
+<link rel="canonical" href="https://www.aha.voyager06.tech/p/feat-chunked-upload.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="分片上传/断点续传 · 原来如此">
+<meta property="og:description" content="大文件切成小块传，断了也能续上。前端用 Blob.slice 把文件切成小块并行上传，服务端按序号合并；已传分片被记账，续传时跳过。">
+<meta property="og:url" content="https://www.aha.voyager06.tech/p/feat-chunked-upload.html">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>">
+<style>
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;max-width:760px;margin:0 auto;padding:24px 20px 60px;color:#1c2b3a;line-height:1.8;background:#FDFCF9}
+a{color:#2563EB;text-decoration:none} a:hover{text-decoration:underline}
+.crumb{font-size:13px;color:#8A8A93;margin-bottom:18px}
+h1{font-size:30px;line-height:1.35;margin:6px 0 8px}
+.tagline{color:#5B6470;font-size:16px;margin-bottom:20px}
+.kick{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.1em;background:#EEF3F8;color:#31597F;border-radius:999px;padding:4px 12px}
+.scene{background:#FFF8EC;border:1px solid #F0E2C4;border-radius:12px;padding:16px 20px}
+.sum{background:#EEF4FF;border:1px solid #C9DBF5;border-radius:12px;padding:16px 20px;font-weight:600}
+h2{font-size:20px;margin:34px 0 12px}
+.steps li,.rel li{margin:6px 0}
+.cf{background:#F5F3FF;border:1px dashed #C4B5FD;border-radius:12px;padding:14px 20px;margin-top:22px}
+.mis{background:#FFF5F5;border:1px solid #F3C2C2;border-radius:12px;padding:14px 20px;margin-top:14px}
+.cf h3,.mis h3,.conf h3{margin:0 0 6px;font-size:16px}
+.cf p,.mis p{margin:0}
+.conf{border:1px solid #E3E0D8;border-radius:12px;padding:14px 20px;margin-top:22px}
+.conf p{margin:6px 0} .conf span,.rel span{color:#8A8A93;font-size:13.5px}
+.cap{color:#8A8A93;font-size:14px}
+.pn{display:flex;justify-content:space-between;gap:16px;margin-top:40px;border-top:1px solid #E3E0D8;padding-top:18px;font-size:14.5px}
+.spa{display:block;text-align:center;margin-top:28px;background:#1c2b3a;color:#fff;border-radius:12px;padding:12px}
+footer{margin-top:34px;color:#8A8A93;font-size:13px;text-align:center}
+</style>
+</head>
+<body>
+<div class="crumb"><a href="https://www.aha.voyager06.tech/">原来如此</a> / 小功能大智慧 / 分片上传/断点续传</div>
+<span class="kick">小功能大智慧</span>
+<h1>分片上传/断点续传</h1>
+<div class="tagline">大文件切成小块传，断了也能续上</div>
+<div class="scene"><b>👀 日常场景</b><p>上传一个 2GB 的视频，到 90% 时断网了。你以为要从头再来，结果重新上传时进度条直接从 90% 继续走——没传完的部分补上就行。网盘、视频网站上传大文件时，背后都是这套机制在兜底。</p></div>
+
+<h2>原理：它是怎么运作的</h2>
+<div class="sum">💡 前端用 Blob.slice 把文件切成小块并行上传，服务端按序号合并；已传分片被记账，续传时跳过。</div>
+<h2>先看全过程</h2><ol class="steps"><li>计算文件哈希作为唯一标识</li><li>Blob.slice 按固定大小切分</li><li>多个分片并发上传</li><li>服务端按序号暂存分片</li><li>断网后查询已传分片清单</li><li>跳过已传，只补传剩余分片</li></ol>
+<p>大文件上传最怕两件事：慢和断。分片上传同时解决两个。前端用 File 对象的 slice 方法（跟切蛋糕一样）把文件按固定大小（比如 5MB）切成 N 个小块，每个小块独立发一个上传请求，浏览器可以并发传 3～6 个，总耗时接近“同时传”，比一个一个排队快得多。断点续传的关键是一个“账本”：上传前先算整个文件的哈希值（MD5，一种给文件算“指纹”的算法）作为文件唯一标识，每传完一块，服务端就在 Redis 里记一笔；断网重连后，前端先问服务端“我这个文件传到哪了”，跳过已传的分片只补剩下的。还有个 bonus 叫“秒传”：如果哈希值在服务端已存在，说明别人传过一模一样的文件，直接跳过上传。下载方向的断点续传原理相通，靠 HTTP 的 Range 头（告诉服务器“我要从第几个字节开始”）和 206 状态码实现。标准化协议叫 tus，专门解决“传一半断了怎么办”。为什么分片大小要讲究？太小则请求数爆炸（1GB 按 1KB 切就是一百万个请求），太大则失败重试成本高，5MB 左右是常见折中。</p>
+
+<h2>网站是怎么做到的</h2><ul><li><b>Blob.slice：像切蛋糕一样切文件</b>：浏览器用 File 对象的 slice 方法，把 2GB 的大文件按 5MB 切成几百个小块，每个小块独立上传。</li><li><b>文件哈希：给文件办身份证</b>：上传前先算整个文件的 MD5“指纹”。靠这个指纹，服务端认得出“这个文件传过一半了”，也认得出“这个文件别人传过”。</li><li><b>记账本：哪块传了记哪块</b>：每传完一块，服务端记一笔。断网重连后先查账本，只补没传的块，传过的跳过。</li><li><b>秒传：别人传过你就不用传</b>：哈希一查，服务端发现一模一样的文件已经在了，直接“秒传”成功，连 1 字节都不用上传。</li></ul><ol><li>你选中 2GB 视频，浏览器先算它的哈希指纹</li><li>拿指纹问服务端：这个文件传过吗？传到哪了？</li><li>没传过：按 5MB 切成几百块，3～6 个并发一起传</li><li>每传完一块，服务端在账本上记一笔</li><li>断网了！重连后先查账本，传过的块全部跳过</li><li>只补没传的块，全齐了服务端按序号拼好，校验哈希确认完整</li></ol>
+<h2>延伸阅读</h2><ul><li><a href="https://juejin.cn/post/7429626822868189193" rel="noopener">大文件分片上传与断点续传实践（掘金）</a></li><li><a href="https://blog.csdn.net/m0_51768044/article/details/155519320" rel="noopener">分片上传实现（CSDN）</a></li></ul>
+<h2>相关条目</h2><ul class="rel"><li><a href="https://www.aha.voyager06.tech/p/feat-image-compress-upload.html">图片压缩上传</a> <span>10MB 的照片，压成几百 KB 再传</span></li><li><a href="https://www.aha.voyager06.tech/p/security-totp.html">TOTP：验证器 App 的动态密码</a> <span>每 30 秒一变的数字，断网也能算出来</span></li></ul>
+
+<a class="spa" href="https://www.aha.voyager06.tech/#/p/feat-chunked-upload">在站内打开本篇（完整交互版）→</a>
+<div class="pn"><a href="https://www.aha.voyager06.tech/p/feat-infinite-scroll.html">← 上一个：无限滚动</a><a href="https://www.aha.voyager06.tech/p/feat-cookie-consent.html">下一个：Cookie 同意弹窗 →</a></div>
+<footer>原来如此 · 把听说过的技术讲透 · 内容为科普解读，具体接入请以各服务官方文档为准</footer>
+</body>
+</html>

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>夹具：测试的“道具组” · 原来如此</title>
+<meta name="description" content="每个测试，开场前先摆好道具。夹具是测试的“前置道具组”：每个测试运行前自动搭好环境（造数据、起服务），跑完自动拆掉；保证测试之间不互相污染、可重复。">
+<link rel="canonical" href="https://www.aha.voyager06.tech/p/eng-fixture.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="夹具：测试的“道具组” · 原来如此">
+<meta property="og:description" content="每个测试，开场前先摆好道具。夹具是测试的“前置道具组”：每个测试运行前自动搭好环境（造数据、起服务），跑完自动拆掉；保证测试之间不互相污染、可重复。">
+<meta property="og:url" content="https://www.aha.voyager06.tech/p/eng-fixture.html">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>">
+<style>
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;max-width:760px;margin:0 auto;padding:24px 20px 60px;color:#1c2b3a;line-height:1.8;background:#FDFCF9}
+a{color:#2563EB;text-decoration:none} a:hover{text-decoration:underline}
+.crumb{font-size:13px;color:#8A8A93;margin-bottom:18px}
+h1{font-size:30px;line-height:1.35;margin:6px 0 8px}
+.tagline{color:#5B6470;font-size:16px;margin-bottom:20px}
+.kick{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.1em;background:#EEF3F8;color:#31597F;border-radius:999px;padding:4px 12px}
+.scene{background:#FFF8EC;border:1px solid #F0E2C4;border-radius:12px;padding:16px 20px}
+.sum{background:#EEF4FF;border:1px solid #C9DBF5;border-radius:12px;padding:16px 20px;font-weight:600}
+h2{font-size:20px;margin:34px 0 12px}
+.steps li,.rel li{margin:6px 0}
+.cf{background:#F5F3FF;border:1px dashed #C4B5FD;border-radius:12px;padding:14px 20px;margin-top:22px}
+.mis{background:#FFF5F5;border:1px solid #F3C2C2;border-radius:12px;padding:14px 20px;margin-top:14px}
+.cf h3,.mis h3,.conf h3{margin:0 0 6px;font-size:16px}
+.cf p,.mis p{margin:0}
+.conf{border:1px solid #E3E0D8;border-radius:12px;padding:14px 20px;margin-top:22px}
+.conf p{margin:6px 0} .conf span,.rel span{color:#8A8A93;font-size:13.5px}
+.cap{color:#8A8A93;font-size:14px}
+.pn{display:flex;justify-content:space-between;gap:16px;margin-top:40px;border-top:1px solid #E3E0D8;padding-top:18px;font-size:14.5px}
+.spa{display:block;text-align:center;margin-top:28px;background:#1c2b3a;color:#fff;border-radius:12px;padding:12px}
+footer{margin-top:34px;color:#8A8A93;font-size:13px;text-align:center}
+</style>
+</head>
+<body>
+<div class="crumb"><a href="https://www.aha.voyager06.tech/">原来如此</a> / 工程与协作 / 夹具：测试的“道具组”</div>
+<span class="kick">工程与协作</span>
+<h1>夹具：测试的“道具组”</h1>
+<div class="tagline">每个测试，开场前先摆好道具</div>
+<div class="scene"><b>👀 日常场景</b><p>你写了个测试：下单前要先有个用户、有件商品、有张优惠券。每个测试都重复写一遍“创建用户、创建商品、创建优惠券”，改个字段要改 20 处。直到你发现了“夹具”：把这些准备工作抽出来，测试只管拿来用。</p></div>
+
+<h2>原理：它是怎么运作的</h2>
+<div class="sum">💡 夹具是测试的“前置道具组”：每个测试运行前自动搭好环境（造数据、起服务），跑完自动拆掉；保证测试之间不互相污染、可重复。</div>
+<h2>先看全过程</h2><ol class="steps"><li>夹具=测试的道具组</li><li>跑前搭好：造数据、起服务</li><li>跑完拆掉：不留垃圾</li><li>测试之间不互相污染</li><li>道具复用：一改全改</li></ol>
+<p>“夹具”（fixture）这个名字来自机械加工：固定工件的装置，保证每次加工位置都一样。测试夹具干的是一样的事：保证每次测试的“起跑线”都一样。典型用法是 pytest 的 @pytest.fixture：函数里准备好用户、商品、优惠券，测试函数声明要用，跑完自动清理。</p><p>没有夹具的测试长什么样？每个测试开头 30 行准备代码，还互相复用数据库里的脏数据——这个挂了连带那个也挂，史称“测试间互相污染”。夹具解决两个问题：一是复用（道具只造一次，一改全改），二是隔离（每个测试拿到的是干净的）。</p><p>夹具有作用域：函数级（每个测试都重建，最干净）、模块级（整个文件共享，快但要小心污染）、会话级（整个测试跑一次，比如起一个测试数据库）。原则是能小就小——共享越多，互相污染的风险越大。夹具可以嵌套，像搭积木，但别套超过 3 层，否则调试时你会想哭。</p>
+
+<h2>夹具到底是个啥</h2><ul><li><b>看 pytest fixture</b>：最直观的夹具实现，5 分钟上手</li><li><b>看测试金字塔</b>：单元/集成/E2E 各自用什么夹具</li><li><b>看“测试隔离”</b>：为什么测试不能互相污染</li></ul><ol><li>找个你写过的测试，数数准备代码有几行</li><li>把准备代码抽成一个 fixture 函数</li><li>测试函数声明需要它</li><li>跑一遍：确认道具自动搭好</li><li>再写个新测试复用它：体会“一改全改”</li></ol>
+
+<h2>相关条目</h2><ul class="rel"><li><a href="https://www.aha.voyager06.tech/p/eng-adr.html">ADR：给技术选型留的字条</a> <span>给未来的自己留一张纸条</span></li><li><a href="https://www.aha.voyager06.tech/p/eng-baseline.html">基线：发布的“唯一真相”</a> <span>所有人都对着同一份清单干活</span></li><li><a href="https://www.aha.voyager06.tech/p/eng-linear-jira.html">Linear/Jira：需求的任务看板</a> <span>一个需求从出生到上线的旅行记录</span></li></ul>
+
+<a class="spa" href="https://www.aha.voyager06.tech/#/p/eng-fixture">在站内打开本篇（完整交互版）→</a>
+<div class="pn"><a href="https://www.aha.voyager06.tech/p/eng-quality-gate.html">← 上一个：门禁：89 道检查一道不能少</a><a href="https://www.aha.voyager06.tech/p/eng-hash-verify.html">下一个：哈希：给文件办“身份证” →</a></div>
+<footer>原来如此 · 把听说过的技术讲透 · 内容为科普解读，具体接入请以各服务官方文档为准</footer>
+</body>
+</html>

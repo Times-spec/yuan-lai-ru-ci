@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VPS：合租一台服务器 · 原来如此</title>
+<meta name="description" content="一台机器，N 个人分着用。一台物理机切成多台虚拟小电脑，各有独立系统但共享硬件；便宜，性能看邻居脸色。">
+<link rel="canonical" href="https://www.aha.voyager06.tech/p/backend-vps.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="VPS：合租一台服务器 · 原来如此">
+<meta property="og:description" content="一台机器，N 个人分着用。一台物理机切成多台虚拟小电脑，各有独立系统但共享硬件；便宜，性能看邻居脸色。">
+<meta property="og:url" content="https://www.aha.voyager06.tech/p/backend-vps.html">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>">
+<style>
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;max-width:760px;margin:0 auto;padding:24px 20px 60px;color:#1c2b3a;line-height:1.8;background:#FDFCF9}
+a{color:#2563EB;text-decoration:none} a:hover{text-decoration:underline}
+.crumb{font-size:13px;color:#8A8A93;margin-bottom:18px}
+h1{font-size:30px;line-height:1.35;margin:6px 0 8px}
+.tagline{color:#5B6470;font-size:16px;margin-bottom:20px}
+.kick{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.1em;background:#EEF3F8;color:#31597F;border-radius:999px;padding:4px 12px}
+.scene{background:#FFF8EC;border:1px solid #F0E2C4;border-radius:12px;padding:16px 20px}
+.sum{background:#EEF4FF;border:1px solid #C9DBF5;border-radius:12px;padding:16px 20px;font-weight:600}
+h2{font-size:20px;margin:34px 0 12px}
+.steps li,.rel li{margin:6px 0}
+.cf{background:#F5F3FF;border:1px dashed #C4B5FD;border-radius:12px;padding:14px 20px;margin-top:22px}
+.mis{background:#FFF5F5;border:1px solid #F3C2C2;border-radius:12px;padding:14px 20px;margin-top:14px}
+.cf h3,.mis h3,.conf h3{margin:0 0 6px;font-size:16px}
+.cf p,.mis p{margin:0}
+.conf{border:1px solid #E3E0D8;border-radius:12px;padding:14px 20px;margin-top:22px}
+.conf p{margin:6px 0} .conf span,.rel span{color:#8A8A93;font-size:13.5px}
+.cap{color:#8A8A93;font-size:14px}
+.pn{display:flex;justify-content:space-between;gap:16px;margin-top:40px;border-top:1px solid #E3E0D8;padding-top:18px;font-size:14.5px}
+.spa{display:block;text-align:center;margin-top:28px;background:#1c2b3a;color:#fff;border-radius:12px;padding:12px}
+footer{margin-top:34px;color:#8A8A93;font-size:13px;text-align:center}
+</style>
+</head>
+<body>
+<div class="crumb"><a href="https://www.aha.voyager06.tech/">原来如此</a> / 后端基建 / VPS：合租一台服务器</div>
+<span class="kick">后端基建</span>
+<h1>VPS：合租一台服务器</h1>
+<div class="tagline">一台机器，N 个人分着用</div>
+<div class="scene"><b>👀 日常场景</b><p>想搭个个人博客，搜了一圈服务器：云服务器一个月几十块，VPS 居然一年才一百多，还写着“独立 IP、root 权限”。这么便宜，能买吗？VPS 的本质是“合租”：一台物理机切成几十台小电脑，大家共享硬件——便宜，但邻居搞事你也会卡。</p></div>
+
+<h2>原理：它是怎么运作的</h2>
+<div class="sum">💡 一台物理机切成多台虚拟小电脑，各有独立系统但共享硬件；便宜，性能看邻居脸色。</div>
+<h2>先看全过程</h2><ol class="steps"><li>一台高配物理机：几十核 CPU、上百 G 内存</li><li>虚拟化软件把它切成几十台“小电脑”</li><li>每台有独立系统和 root 权限</li><li>但 CPU、内存、硬盘 IO 大家共享</li><li>邻居跑满资源，你的网站跟着卡</li></ol>
+<p>VPS 全称虚拟专用服务器，技术上就是虚拟化：一台高配物理机装上 KVM 这类虚拟化软件，切出几十台相互隔离的“小电脑”。每台有自己的操作系统、独立 IP 和 root 权限，用起来像一台真正的服务器，但底层的 CPU、内存、硬盘 IO 是大家共享的。</p><p>它为什么这么便宜？两个原因：一是规模效应，一台机器卖几十份；二是“超售”——商家赌所有人不会同时跑满，1 核的 CPU 可能卖给 4 个人。生意好的商家超售克制，用着跟独享差不多；黑心商家超售十几倍，晚上高峰期卡成 PPT，这就是 VPS 口碑两极分化的根源。</p><p>大厂的“轻量应用服务器”（阿里云、腾讯云都有）本质上也是 VPS，但不超售、带宽实在，还预装了建站镜像，适合新手。传统 VPS 商家（如搬瓦工）胜在便宜、线路可选，适合会折腾的人。记住一条线：玩具和测试用 VPS，真要做正经业务，早晚要搬到资源独享的云服务器。</p>
+
+<h2>VPS 这么便宜，能买吗</h2><ul><li><b>大厂轻量应用服务器</b>：阿里云/腾讯云的轻量服务器：不超售、带宽实在，预装博客、面板镜像</li><li><b>传统 VPS 商家</b>：老牌 VPS 商，便宜量大，机房线路可选</li><li><b>云服务器 ECS / CVM</b>：贵一点，但 CPU 内存独享、随时升降配</li><li><b>直接上 PaaS</b>：Vercel、Netlify：连服务器都不用买，推代码即上线</li></ul><ol><li>先想清楚用途：博客、测试、跑小服务，需求差很多</li><li>新手直接选大厂轻量服务器，应用镜像一键装好博客</li><li>传统 VPS 先看评价：商家跑路、IP 被墙是两大坑</li><li>下单前确认：流量按月算还是按带宽，有没有退款政策</li><li>网站做起来了就迁到云服务器，资源独享更稳</li></ol>
+
+<h2>相关条目</h2><ul class="rel"><li><a href="https://www.aha.voyager06.tech/p/backend-ecs.html">云服务器 ECS：租一台弹性电脑</a> <span>随开随关、随时升降配的电脑</span></li><li><a href="https://www.aha.voyager06.tech/p/backend-trellis.html">Trellis：一键配出生产服务器</a> <span>一条命令，WordPress 服务器全自动上线</span></li><li><a href="https://www.aha.voyager06.tech/p/backend-cdn.html">CDN 内容分发网络</a> <span>让你访问的总是隔壁的服务器</span></li></ul>
+
+<a class="spa" href="https://www.aha.voyager06.tech/#/p/backend-vps">在站内打开本篇（完整交互版）→</a>
+<div class="pn"><a href="https://www.aha.voyager06.tech/p/backend-health-check.html">← 上一个：健康检查与优雅停机</a><a href="https://www.aha.voyager06.tech/p/backend-ecs.html">下一个：云服务器 ECS：租一台弹性电脑 →</a></div>
+<footer>原来如此 · 把听说过的技术讲透 · 内容为科普解读，具体接入请以各服务官方文档为准</footer>
+</body>
+</html>

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fake-IP：Clash 的 DNS 骗术 · 原来如此</title>
+<meta name="description" content="先给浏览器一个假地址，稳住它。Clash 的 DNS 不做真实解析，直接返回假 IP 并记下映射；浏览器拿假 IP 来连接时，Clash 查表找回真实域名再匹配规则，真实解析交给远端节点。">
+<link rel="canonical" href="https://www.aha.voyager06.tech/p/network-fake-ip.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Fake-IP：Clash 的 DNS 骗术 · 原来如此">
+<meta property="og:description" content="先给浏览器一个假地址，稳住它。Clash 的 DNS 不做真实解析，直接返回假 IP 并记下映射；浏览器拿假 IP 来连接时，Clash 查表找回真实域名再匹配规则，真实解析交给远端节点。">
+<meta property="og:url" content="https://www.aha.voyager06.tech/p/network-fake-ip.html">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>">
+<style>
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;max-width:760px;margin:0 auto;padding:24px 20px 60px;color:#1c2b3a;line-height:1.8;background:#FDFCF9}
+a{color:#2563EB;text-decoration:none} a:hover{text-decoration:underline}
+.crumb{font-size:13px;color:#8A8A93;margin-bottom:18px}
+h1{font-size:30px;line-height:1.35;margin:6px 0 8px}
+.tagline{color:#5B6470;font-size:16px;margin-bottom:20px}
+.kick{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.1em;background:#EEF3F8;color:#31597F;border-radius:999px;padding:4px 12px}
+.scene{background:#FFF8EC;border:1px solid #F0E2C4;border-radius:12px;padding:16px 20px}
+.sum{background:#EEF4FF;border:1px solid #C9DBF5;border-radius:12px;padding:16px 20px;font-weight:600}
+h2{font-size:20px;margin:34px 0 12px}
+.steps li,.rel li{margin:6px 0}
+.cf{background:#F5F3FF;border:1px dashed #C4B5FD;border-radius:12px;padding:14px 20px;margin-top:22px}
+.mis{background:#FFF5F5;border:1px solid #F3C2C2;border-radius:12px;padding:14px 20px;margin-top:14px}
+.cf h3,.mis h3,.conf h3{margin:0 0 6px;font-size:16px}
+.cf p,.mis p{margin:0}
+.conf{border:1px solid #E3E0D8;border-radius:12px;padding:14px 20px;margin-top:22px}
+.conf p{margin:6px 0} .conf span,.rel span{color:#8A8A93;font-size:13.5px}
+.cap{color:#8A8A93;font-size:14px}
+.pn{display:flex;justify-content:space-between;gap:16px;margin-top:40px;border-top:1px solid #E3E0D8;padding-top:18px;font-size:14.5px}
+.spa{display:block;text-align:center;margin-top:28px;background:#1c2b3a;color:#fff;border-radius:12px;padding:12px}
+footer{margin-top:34px;color:#8A8A93;font-size:13px;text-align:center}
+</style>
+</head>
+<body>
+<div class="crumb"><a href="https://www.aha.voyager06.tech/">原来如此</a> / 网络与协议 / Fake-IP：Clash 的 DNS 骗术</div>
+<span class="kick">网络与协议</span>
+<h1>Fake-IP：Clash 的 DNS 骗术</h1>
+<div class="tagline">先给浏览器一个假地址，稳住它</div>
+<div class="scene"><b>👀 日常场景</b><p>配置文件的 dns 一节里，总有个 fake-ip 开关。给浏览器返回“假 IP”？这听起来像骗人——但恰恰是这个“骗术”，解决了 Clash 分流里最头疼的 DNS 难题。</p></div>
+
+<h2>原理：它是怎么运作的</h2>
+<div class="sum">💡 Clash 的 DNS 不做真实解析，直接返回假 IP 并记下映射；浏览器拿假 IP 来连接时，Clash 查表找回真实域名再匹配规则，真实解析交给远端节点。</div>
+<h2>先看全过程</h2><ol class="steps"><li>浏览器查询域名的 IP</li><li>Clash 的 DNS 模块拦截请求</li><li>返回假 IP（如 198.18.0.x）并记录映射</li><li>浏览器拿着假 IP 来建连</li><li>Clash 查映射找回域名并按规则匹配</li><li>走代理的由远端节点做真实解析</li></ol>
+<p>为什么需要这个“骗术”？因为 Clash 的规则大多是按域名写的（DOMAIN-SUFFIX），但浏览器发起连接前要先有 IP。传统做法是：Clash 自己先做一次真实 DNS 解析，拿到真 IP 再走规则。可这就撞上了两堵墙：一是 DNS 污染——解析结果可能是假的，拿着被污染的 IP 去连，注定失败；二是 DNS 泄露——本地解析请求本身就暴露了你在访问什么。</p><p>Fake-IP 的思路是釜底抽薪：本地根本不做真实解析。浏览器问“google.com 的 IP 是多少”，Clash 从保留段（198.18.0.0/16）里随手给一个假 IP，同时在内存记下“这个假 IP = google.com”。浏览器拿着假 IP 来建连，Clash 查表找回域名，按域名走规则；命中代理的，把域名原样交给远端节点，由节点在干净的网络环境里做真实解析。</p><p>还有个配套概念 fake-ip-filter：有些域名不能拿假 IP，比如内网服务、网银——它们要直连，必须给真 IP，所以要列入白名单。</p><p>它的前任叫 redir-host（直接返回真实 IP），污染和泄露问题太多，已被取代。Fake-IP 也不是完美的：如果 Clash 异常退出，浏览器还缓存着假 IP，会短暂打不开网站——不过 DNS 响应的 TTL 被设得很短（1 秒），等缓存过期就好。</p>
+<div class="cf"><h3>🌀 如果没有它会怎样</h3><p>没有 Fake-IP，Clash 就得先在本地做真实解析：解析结果可能被污染，解析请求本身还会暴露你在访问什么——规则按域名写得再准，也没有干净的域名可用。</p></div><div class="mis"><h3>🚫 常见误解</h3><p>解析到 198.18.x.x 就是中了毒或配错了。其实那是 Clash 故意发的假 IP：198.18.0.0/16 是保留段，专门用来占位，等连接发起时再回查真实域名。</p></div>
+<h2>要不要打开 Fake-IP</h2><ul><li><b>打开（默认推荐）</b>：本地不做真实解析，防 DNS 污染、防泄露，延迟还低</li><li><b>关掉用真实解析</b>：每个域名都做真实 DNS 查询，行为最“老实”</li><li><b>开了 + 配白名单</b>：内网域名、网银等走真实解析，其他走假 IP</li></ul><ol><li>默认建议：打开（dns 一节 enhanced-mode: fake-ip）</li><li>把内网域名（*.lan、*.local、公司域名）加进 fake-ip-filter 白名单</li><li>网银、政务网站如果异常：先加白名单，再试</li><li>出问题时关掉对比一下：好了就是假 IP 的锅</li><li>异常退出后打不开网站：清一下 DNS 缓存，或等几秒（TTL 只有 1 秒）</li></ol>
+<h2>延伸阅读</h2><ul><li><a href="https://www.v2ex.com/t/838687" rel="noopener">V2EX：Clash fake ip 模式是否可以解决 DNS 污染？</a></li><li><a href="https://bulianglin.com/archives/dns.html" rel="noopener">彻底弄懂 DNS 在透明代理中的行为：fake-ip 成功上位</a></li></ul>
+<h2>相关条目</h2><ul class="rel"><li><a href="https://www.aha.voyager06.tech/p/network-clash-what.html">Clash 是什么</a> <span>它不生产流量，它只是流量的交通警察</span></li><li><a href="https://www.aha.voyager06.tech/p/network-dns-records.html">DNS：网址的电话簿</a> <span>你输入的每个网址，都要先问它</span></li><li><a href="https://www.aha.voyager06.tech/p/network-doh.html">DOH：加密的 DNS 查询</a> <span>把查域名的请求，装进加密信封</span></li></ul>
+
+<a class="spa" href="https://www.aha.voyager06.tech/#/p/network-fake-ip">在站内打开本篇（完整交互版）→</a>
+<div class="pn"><a href="https://www.aha.voyager06.tech/p/network-subscription.html">← 上一个：订阅链接：节点通讯录</a><a href="https://www.aha.voyager06.tech/p/network-ip-types.html">下一个：机房 IP vs 住宅 IP：差的不是速度，是“出身” →</a></div>
+<footer>原来如此 · 把听说过的技术讲透 · 内容为科普解读，具体接入请以各服务官方文档为准</footer>
+</body>
+</html>

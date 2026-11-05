@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>健康检查与优雅停机 · 原来如此</title>
+<meta name="description" content="上线不丢请求，下线不杀进程。探针持续报告服务是否可用，优雅停机让旧实例处理完手头请求再退出。">
+<link rel="canonical" href="https://www.aha.voyager06.tech/p/backend-health-check.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="健康检查与优雅停机 · 原来如此">
+<meta property="og:description" content="上线不丢请求，下线不杀进程。探针持续报告服务是否可用，优雅停机让旧实例处理完手头请求再退出。">
+<meta property="og:url" content="https://www.aha.voyager06.tech/p/backend-health-check.html">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>">
+<style>
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;max-width:760px;margin:0 auto;padding:24px 20px 60px;color:#1c2b3a;line-height:1.8;background:#FDFCF9}
+a{color:#2563EB;text-decoration:none} a:hover{text-decoration:underline}
+.crumb{font-size:13px;color:#8A8A93;margin-bottom:18px}
+h1{font-size:30px;line-height:1.35;margin:6px 0 8px}
+.tagline{color:#5B6470;font-size:16px;margin-bottom:20px}
+.kick{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.1em;background:#EEF3F8;color:#31597F;border-radius:999px;padding:4px 12px}
+.scene{background:#FFF8EC;border:1px solid #F0E2C4;border-radius:12px;padding:16px 20px}
+.sum{background:#EEF4FF;border:1px solid #C9DBF5;border-radius:12px;padding:16px 20px;font-weight:600}
+h2{font-size:20px;margin:34px 0 12px}
+.steps li,.rel li{margin:6px 0}
+.cf{background:#F5F3FF;border:1px dashed #C4B5FD;border-radius:12px;padding:14px 20px;margin-top:22px}
+.mis{background:#FFF5F5;border:1px solid #F3C2C2;border-radius:12px;padding:14px 20px;margin-top:14px}
+.cf h3,.mis h3,.conf h3{margin:0 0 6px;font-size:16px}
+.cf p,.mis p{margin:0}
+.conf{border:1px solid #E3E0D8;border-radius:12px;padding:14px 20px;margin-top:22px}
+.conf p{margin:6px 0} .conf span,.rel span{color:#8A8A93;font-size:13.5px}
+.cap{color:#8A8A93;font-size:14px}
+.pn{display:flex;justify-content:space-between;gap:16px;margin-top:40px;border-top:1px solid #E3E0D8;padding-top:18px;font-size:14.5px}
+.spa{display:block;text-align:center;margin-top:28px;background:#1c2b3a;color:#fff;border-radius:12px;padding:12px}
+footer{margin-top:34px;color:#8A8A93;font-size:13px;text-align:center}
+</style>
+</head>
+<body>
+<div class="crumb"><a href="https://www.aha.voyager06.tech/">原来如此</a> / 后端基建 / 健康检查与优雅停机</div>
+<span class="kick">后端基建</span>
+<h1>健康检查与优雅停机</h1>
+<div class="tagline">上线不丢请求，下线不杀进程</div>
+<div class="scene"><b>👀 日常场景</b><p>发布新版本时，旧容器被直接杀掉，正在支付的用户当场报错。健康检查像「体检」：K8s 定期问服务「你还好吗」，答不上来就摘掉流量；优雅停机像「交接班」：收到下线信号后，先拒绝新请求，把手头的处理完再退出——用户毫无感知。</p></div>
+
+<h2>原理：它是怎么运作的</h2>
+<div class="sum">💡 探针持续报告服务是否可用，优雅停机让旧实例处理完手头请求再退出。</div>
+<h2>先看全过程</h2><ol class="steps"><li>应用暴露 /health 存活探针</li><li>暴露 /ready 就绪探针</li><li>编排系统定期探测</li><li>探针失败：摘流量/重启</li><li>收到 SIGTERM 停止接新请求</li><li>处理完手头请求再退出</li></ol>
+<p>滚动发布时如果没有健康检查，新版本还没启动完就接流量，用户看到一堆 502；旧版本被 SIGKILL 直接杀掉，正在处理的支付请求就断了。两个探针分工不同：liveness（存活）答不上来说明进程僵死了，K8s 会重启它；readiness（就绪）答不上来说明暂时不能接流量（刚启动、依赖还没好），K8s 先把它的流量摘掉，好了再加回来。</p><p>优雅停机处理的是「下线」那一刻：收到 SIGTERM 后，应用先告诉网关「别再给我新请求」，等手头的请求处理完（设个上限如 30 秒）、关闭连接池、刷完日志，再退出。Node 要监听 SIGTERM，Java 靠 Spring 的 graceful shutdown，Go 用 signal.Notify。</p><p>探针接口一定要轻：/health 只返回 200，别在里面查数据库——数据库一抖，所有实例被同时摘掉，雪崩就是这么来的。</p>
+
+<h2>开发者：应该如何接入</h2><ul><li><b>K8s 探针</b>：liveness/readiness 标准机制</li><li><b>Spring Boot Actuator</b>：Java 生态开箱即用的健康端点</li><li><b>自定义心跳</b>：简单 HTTP 接口 + 外部监控</li></ul><ol><li>应用里加 /health 接口，只做轻量自检</li><li>区分 liveness（进程活着）和 readiness（能接流量）</li><li>K8s deployment 里配置两个探针的路径和阈值</li><li>代码里监听 SIGTERM，实现优雅停机逻辑</li><li>设置 terminationGracePeriodSeconds 给足退出时间</li><li>发布时观察：先摘流量、再停旧版，错误率无抖动</li></ol>
+
+<h2>相关条目</h2><ul class="rel"><li><a href="https://www.aha.voyager06.tech/p/eng-probe.html">探针：给服务装“心跳监测”</a> <span>服务是死是活，探针说了算</span></li><li><a href="https://www.aha.voyager06.tech/p/backend-nginx-reverse-proxy.html">Nginx 反向代理</a> <span>所有请求，先过它这一关</span></li><li><a href="https://www.aha.voyager06.tech/p/network-doh.html">DOH：加密的 DNS 查询</a> <span>把查域名的请求，装进加密信封</span></li></ul>
+
+<a class="spa" href="https://www.aha.voyager06.tech/#/p/backend-health-check">在站内打开本篇（完整交互版）→</a>
+<div class="pn"><a href="https://www.aha.voyager06.tech/p/backend-log-collection.html">← 上一个：日志收集</a><a href="https://www.aha.voyager06.tech/p/backend-vps.html">下一个：VPS：合租一台服务器 →</a></div>
+<footer>原来如此 · 把听说过的技术讲透 · 内容为科普解读，具体接入请以各服务官方文档为准</footer>
+</body>
+</html>

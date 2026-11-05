@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cookie 同意弹窗 · 原来如此</title>
+<meta name="description" content="第一次打开网站，先问你同不同意。按法规要求，网站在写入非必要 Cookie 前必须先征得用户同意，同意状态存起来，后续不再打扰。">
+<link rel="canonical" href="https://www.aha.voyager06.tech/p/feat-cookie-consent.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Cookie 同意弹窗 · 原来如此">
+<meta property="og:description" content="第一次打开网站，先问你同不同意。按法规要求，网站在写入非必要 Cookie 前必须先征得用户同意，同意状态存起来，后续不再打扰。">
+<meta property="og:url" content="https://www.aha.voyager06.tech/p/feat-cookie-consent.html">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>">
+<style>
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;max-width:760px;margin:0 auto;padding:24px 20px 60px;color:#1c2b3a;line-height:1.8;background:#FDFCF9}
+a{color:#2563EB;text-decoration:none} a:hover{text-decoration:underline}
+.crumb{font-size:13px;color:#8A8A93;margin-bottom:18px}
+h1{font-size:30px;line-height:1.35;margin:6px 0 8px}
+.tagline{color:#5B6470;font-size:16px;margin-bottom:20px}
+.kick{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.1em;background:#EEF3F8;color:#31597F;border-radius:999px;padding:4px 12px}
+.scene{background:#FFF8EC;border:1px solid #F0E2C4;border-radius:12px;padding:16px 20px}
+.sum{background:#EEF4FF;border:1px solid #C9DBF5;border-radius:12px;padding:16px 20px;font-weight:600}
+h2{font-size:20px;margin:34px 0 12px}
+.steps li,.rel li{margin:6px 0}
+.cf{background:#F5F3FF;border:1px dashed #C4B5FD;border-radius:12px;padding:14px 20px;margin-top:22px}
+.mis{background:#FFF5F5;border:1px solid #F3C2C2;border-radius:12px;padding:14px 20px;margin-top:14px}
+.cf h3,.mis h3,.conf h3{margin:0 0 6px;font-size:16px}
+.cf p,.mis p{margin:0}
+.conf{border:1px solid #E3E0D8;border-radius:12px;padding:14px 20px;margin-top:22px}
+.conf p{margin:6px 0} .conf span,.rel span{color:#8A8A93;font-size:13.5px}
+.cap{color:#8A8A93;font-size:14px}
+.pn{display:flex;justify-content:space-between;gap:16px;margin-top:40px;border-top:1px solid #E3E0D8;padding-top:18px;font-size:14.5px}
+.spa{display:block;text-align:center;margin-top:28px;background:#1c2b3a;color:#fff;border-radius:12px;padding:12px}
+footer{margin-top:34px;color:#8A8A93;font-size:13px;text-align:center}
+</style>
+</head>
+<body>
+<div class="crumb"><a href="https://www.aha.voyager06.tech/">原来如此</a> / 小功能大智慧 / Cookie 同意弹窗</div>
+<span class="kick">小功能大智慧</span>
+<h1>Cookie 同意弹窗</h1>
+<div class="tagline">第一次打开网站，先问你同不同意</div>
+<div class="scene"><b>👀 日常场景</b><p>第一次打开某个国外网站，底部弹出一大条横幅：“我们使用 Cookie 来改善体验……”，下面有“接受”和“拒绝”两个按钮。点了接受它才消失，下次再来也不会弹了。你可能没细想：它到底在征求你同意什么？</p></div>
+
+<h2>原理：它是怎么运作的</h2>
+<div class="sum">💡 按法规要求，网站在写入非必要 Cookie 前必须先征得用户同意，同意状态存起来，后续不再打扰。</div>
+<h2>先看全过程</h2><ol class="steps"><li>页面加载先检查同意记录</li><li>无记录则弹出同意横幅</li><li>用户选择接受或拒绝</li><li>同意状态存入本地存储</li><li>按选择决定是否加载追踪脚本</li><li>提供入口让用户随时修改选择</li></ol>
+<p>这不是网站“良心发现”，是法律逼的。欧盟 GDPR 和 ePrivacy 指令规定：除了维持网站运行所必需的 Cookie（比如登录态），写入任何用于追踪、广告、数据分析的 Cookie 前，必须先拿到用户明确同意。所以你看到的弹窗，本质是一个“授权仪式”。技术实现分三步：首次访问时检查本地有没有存过同意记录（存在 cookie 或 localStorage 里），没有就弹横幅；用户点“接受”或“拒绝”后，把选择存下来，以后不再打扰；关键是第三步——按选择决定是否加载第三方脚本。正经做法是：Google Analytics、广告追踪这些脚本默认不加载，等用户点了接受才动态插入 script 标签，这类“同意管理”工具叫 CMP（Consent Management Platform，同意管理平台）。为什么很多网站的“拒绝”按钮藏得特别深？这叫暗黑模式（dark pattern，故意误导用户的界面设计），欧盟已经开出不少罚单，合规的做法是接受和拒绝同等显眼。国内对应的是《个人信息保护法》，逻辑相通：先授权，再收集。</p>
+
+<h2>我该点“同意”吗</h2><ul><li><b>点“全部接受”</b>：网站会加载广告、统计等所有追踪脚本。你用起来最顺滑（不用反复弹），但你的浏览行为会被记录、用于广告画像。</li><li><b>点“拒绝 / 仅必要”</b>：只保留维持网站运行必需的 Cookie（比如登录态），广告和统计脚本不加载。网站照常用，广告可能不那么“懂你”。</li><li><b>点“自定义设置”</b>：逐项开关：统计、广告、功能增强各开各的。比如允许统计（帮网站改进），拒绝广告追踪。</li></ul><ol><li>先别急着点“接受”——找找有没有“拒绝”“仅必要”或“自定义”</li><li>选“拒绝/仅必要”：一键挡掉大部分追踪</li><li>想更细就进“自定义”，只保留你认可的项</li><li>点确认，弹窗消失，你的选择被存下来</li><li>哪天反悔了，去页面底部的“隐私设置”入口随时改</li></ol>
+<h2>延伸阅读</h2><ul><li><a href="https://blog.csdn.net/gitblog_00189/article/details/153954185" rel="noopener">Cookie 同意弹窗与 GDPR 合规（CSDN）</a></li><li><a href="http://www.360doc.com/content/25/1007/17/73381051_1162622881.shtml" rel="noopener">Cookie 合规相关解读</a></li></ul>
+<h2>相关条目</h2><ul class="rel"><li><a href="https://www.aha.voyager06.tech/p/security-device-fingerprint.html">设备指纹</a> <span>清掉 Cookie 也甩不掉的隐形身份证</span></li><li><a href="https://www.aha.voyager06.tech/p/backend-docker-compose.html">Docker Compose：一键启动整套服务</a> <span>一条命令，拉起整个开发环境</span></li><li><a href="https://www.aha.voyager06.tech/p/security-surveillance-pricing.html">监控式定价：为什么你和我看到不一样的价格</a> <span>同一件商品，算法给每个人标不同的价</span></li></ul>
+
+<a class="spa" href="https://www.aha.voyager06.tech/#/p/feat-cookie-consent">在站内打开本篇（完整交互版）→</a>
+<div class="pn"><a href="https://www.aha.voyager06.tech/p/feat-chunked-upload.html">← 上一个：分片上传/断点续传</a><a href="https://www.aha.voyager06.tech/p/feat-realtime-push.html">下一个：实时推送 →</a></div>
+<footer>原来如此 · 把听说过的技术讲透 · 内容为科普解读，具体接入请以各服务官方文档为准</footer>
+</body>
+</html>

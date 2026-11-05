@@ -339,23 +339,22 @@ a{color:inherit;text-decoration:none}
 
 /* 原理流程图 */
 .flow-label{font-size:13px;font-weight:700;letter-spacing:.14em;color:var(--c);margin:28px 0 14px}
-.flow{list-style:none;max-width:660px;display:flex;flex-direction:column}
+.flow{list-style:none;max-width:660px;position:relative;margin:0;padding:0}
+.flow::before{content:"";position:absolute;left:15px;top:12px;bottom:12px;width:2px;border-radius:2px;
+  background:color-mix(in srgb,var(--c) 38%,var(--line))}
 .fstep{
-  position:relative;background:var(--card);border:1px solid var(--line);border-radius:14px;
-  padding:14px 18px 14px 64px;box-shadow:var(--shadow);
+  position:relative;background:none;border:none;box-shadow:none;
+  padding:10px 0 10px 48px;
   font-size:15.5px;color:var(--ink);line-height:1.7;
 }
 .fstep .n{
-  position:absolute;left:14px;top:50%;transform:translateY(-50%);
-  width:32px;height:32px;border-radius:10px;color:#fff;font-weight:700;font-size:14px;
+  position:absolute;left:0;top:9px;
+  width:32px;height:32px;border-radius:50%;color:#fff;font-weight:700;font-size:14px;
   background:linear-gradient(135deg,var(--c),color-mix(in srgb,var(--c) 72%,#000));
-  display:flex;align-items:center;justify-content:center;
+  display:flex;align-items:center;justify-content:center;z-index:1;
 }
 .fstep p{margin:0}
-.farrow{
-  text-align:center;color:var(--c);font-size:19px;line-height:1.15;font-weight:700;
-  animation:bob 1.8s ease-in-out infinite;user-select:none;
-}
+.farrow{display:none}
 @keyframes bob{0%,100%{transform:translateY(0);opacity:.5}50%{transform:translateY(5px);opacity:1}}
 
 /* options */
@@ -558,7 +557,7 @@ a{color:inherit;text-decoration:none}
 /* reveal animation */
 /* B3: 渐进增强 —— 默认可见，只有 JS 成功注册 IntersectionObserver 后才启用隐藏 */
 .rv{opacity:1;transform:none}
-.js-reveal .rv{opacity:0;transform:translateY(18px);transition:opacity .6s ease,transform .6s ease}
+.js-reveal .rv{opacity:0;transform:translateY(10px);transition:opacity .35s ease,transform .35s ease}
 .js-reveal .rv.in{opacity:1;transform:none}
 @media (prefers-reduced-motion: reduce){
   .js-reveal .rv{opacity:1;transform:none;transition:none}
@@ -671,3 +670,28 @@ a{color:inherit;text-decoration:none}
   .hero{padding:64px 0 48px}
   .header-inner{gap:12px}
 }
+
+/* 捕获现场 */
+.capture-line{margin:14px 0 0;font-size:14px;color:var(--muted);line-height:1.7}
+.capture-line b{color:var(--ink)}
+
+/* 如果没有它会怎样 / 常见误解 */
+.callout-cf{background:#F5F3FF;border:1px dashed #C4B5FD;border-radius:14px;padding:18px 24px;margin:26px 0 0}
+.callout-cf .ccf-head{font-size:15px;font-weight:700;margin-bottom:8px;color:#5B21B6}
+.callout-cf p{margin:0;font-size:15px;line-height:1.75;color:var(--ink-2)}
+.callout-mis{background:#FFF5F5;border:1px solid #F3C2C2;border-radius:14px;padding:18px 24px;margin:14px 0 0}
+.callout-mis .cmis-head{font-size:15px;font-weight:700;margin-bottom:8px;color:#B91C1C}
+.callout-mis p{margin:0;font-size:15px;line-height:1.75;color:var(--ink-2)}
+
+/* 容易混淆 */
+.confuse-box{border:1px solid var(--line);border-radius:14px;padding:18px 22px;margin:30px 0 0;background:var(--card)}
+.confuse-box .cfb-head{font-size:15px;font-weight:700;margin-bottom:10px}
+.confuse-item{display:flex;align-items:baseline;gap:12px;padding:9px 2px;text-decoration:none;border-top:1px dashed var(--line)}
+.confuse-item:first-of-type{border-top:none}
+.confuse-item .ci-name{font-weight:700;color:var(--ink);white-space:nowrap}
+.confuse-item .ci-tag{color:var(--muted);font-size:13.5px;flex:1}
+.confuse-item .ci-go{color:var(--c);font-size:13.5px;font-weight:700;white-space:nowrap}
+.confuse-item:hover .ci-name{color:var(--c)}
+
+/* 最近收录日期 */
+.rdate{margin-left:auto;font-size:12px;color:var(--muted);white-space:nowrap}

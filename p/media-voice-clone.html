@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI 声音克隆：10 秒音频复制你的声音 · 原来如此</title>
+<meta name="description" content="10 秒录音 + 一段文字 = 你的&quot;声音分身&quot;。声音克隆分两步：从 10 秒音频提取&quot;声纹特征&quot;（音色指纹），再由语音合成模型按文字生成带这个音色的语音；新模型还能读上下文加情绪。">
+<link rel="canonical" href="https://www.aha.voyager06.tech/p/media-voice-clone.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="AI 声音克隆：10 秒音频复制你的声音 · 原来如此">
+<meta property="og:description" content="10 秒录音 + 一段文字 = 你的&quot;声音分身&quot;。声音克隆分两步：从 10 秒音频提取&quot;声纹特征&quot;（音色指纹），再由语音合成模型按文字生成带这个音色的语音；新模型还能读上下文加情绪。">
+<meta property="og:url" content="https://www.aha.voyager06.tech/p/media-voice-clone.html">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>">
+<style>
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;max-width:760px;margin:0 auto;padding:24px 20px 60px;color:#1c2b3a;line-height:1.8;background:#FDFCF9}
+a{color:#2563EB;text-decoration:none} a:hover{text-decoration:underline}
+.crumb{font-size:13px;color:#8A8A93;margin-bottom:18px}
+h1{font-size:30px;line-height:1.35;margin:6px 0 8px}
+.tagline{color:#5B6470;font-size:16px;margin-bottom:20px}
+.kick{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.1em;background:#EEF3F8;color:#31597F;border-radius:999px;padding:4px 12px}
+.scene{background:#FFF8EC;border:1px solid #F0E2C4;border-radius:12px;padding:16px 20px}
+.sum{background:#EEF4FF;border:1px solid #C9DBF5;border-radius:12px;padding:16px 20px;font-weight:600}
+h2{font-size:20px;margin:34px 0 12px}
+.steps li,.rel li{margin:6px 0}
+.cf{background:#F5F3FF;border:1px dashed #C4B5FD;border-radius:12px;padding:14px 20px;margin-top:22px}
+.mis{background:#FFF5F5;border:1px solid #F3C2C2;border-radius:12px;padding:14px 20px;margin-top:14px}
+.cf h3,.mis h3,.conf h3{margin:0 0 6px;font-size:16px}
+.cf p,.mis p{margin:0}
+.conf{border:1px solid #E3E0D8;border-radius:12px;padding:14px 20px;margin-top:22px}
+.conf p{margin:6px 0} .conf span,.rel span{color:#8A8A93;font-size:13.5px}
+.cap{color:#8A8A93;font-size:14px}
+.pn{display:flex;justify-content:space-between;gap:16px;margin-top:40px;border-top:1px solid #E3E0D8;padding-top:18px;font-size:14.5px}
+.spa{display:block;text-align:center;margin-top:28px;background:#1c2b3a;color:#fff;border-radius:12px;padding:12px}
+footer{margin-top:34px;color:#8A8A93;font-size:13px;text-align:center}
+</style>
+</head>
+<body>
+<div class="crumb"><a href="https://www.aha.voyager06.tech/">原来如此</a> / 影音媒体 / AI 声音克隆：10 秒音频复制你的声音</div>
+<span class="kick">影音媒体</span>
+<h1>AI 声音克隆：10 秒音频复制你的声音</h1>
+<div class="tagline">10 秒录音 + 一段文字 = 你的&quot;声音分身&quot;</div>
+<div class="scene"><b>👀 日常场景</b><p>你刷到一条视频，博主&quot;本人&quot;用流利英文介绍产品，评论区却说这是 AI 配的音。2026 年 10 月，ElevenLabs 发布 Eleven v4：10 秒音频克隆声音、90 多种语言，句中写 [笑声] 就能指挥情绪。</p></div>
+
+<h2>原理：它是怎么运作的</h2>
+<div class="sum">💡 声音克隆分两步：从 10 秒音频提取&quot;声纹特征&quot;（音色指纹），再由语音合成模型按文字生成带这个音色的语音；新模型还能读上下文加情绪。</div>
+<h2>先看全过程</h2><ol class="steps"><li>10 秒录音：提取你的音色指纹</li><li>输入文字：模型按字发音</li><li>声纹 + 文字 = 你的声音读稿</li><li>[笑声]标签：句中指挥情绪</li><li>Turbo 版：100ms 延迟做实时对话</li><li>90+ 语言：一人配音全球发行</li></ol>
+<p>2026 年 10 月 1 日，ElevenLabs 发布语音模型 Eleven v4（9 月 28 日公布）：支持 90 多种语言，能在句子里直接写 [laughter]、[speaks angrily with a British accent] 这样的&quot;导演备注&quot;指挥情绪，还能让多个说话人的音色在对话里保持一致。据 TechCrunch 报道，克隆一个声音现在只需要 10 秒音频。</p><p>原理分两步：先从这 10 秒里提取&quot;声纹特征&quot;——就像指纹，每个人音色里有稳定的频谱印记；再把文字转成语音时，套上这层音色。v4 的进步在于&quot;会读空气&quot;：它读上下文和人物设定来决定语气、语速和情绪，而不是逐字机械朗读。</p><p>还有个 Turbo 版：音频延迟约 100 毫秒，专为实时语音助手设计，ElevenLabs 的智能体 API 已默认切换到它。10 秒、100 毫秒、90 种语言——声音的&quot;复制粘贴&quot;时代，门槛已经低到人人可及，这也是它让人兴奋又让人警惕的原因。</p>
+
+<h2>我该怎么用它：从配音到声音分身</h2><ul><li><b>视频配音/有声书</b>：写好文案选好音色，一键生成旁白；v4 支持句中情绪标签</li><li><b>多语言发行</b>：一次录制，90+ 语言版本，口音和情绪尽量保留</li><li><b>实时语音助手</b>：v4 Turbo 约 100ms 延迟，接电话客服、语音 Agent 够快</li><li><b>个人声音存档</b>：10 秒录音留住音色：给长辈、给未来的自己</li></ul><ol><li>准备 10 秒清晰录音，安静环境</li><li>在平台上传样本，生成你的音色</li><li>输入文字，加情绪标签微调</li><li>试听，不对就改标签重生成</li><li>商用前确认授权与平台条款</li></ol>
+<h2>延伸阅读</h2><ul><li><a href="https://openaimaster.com/new-ai-tools-october-2026/" rel="noopener">https://openaimaster.com/new-ai-tools-october-2026/</a></li></ul>
+<h2>相关条目</h2><ul class="rel"><li><a href="https://www.aha.voyager06.tech/p/ai-agent.html">智能体 Agent</a> <span>从只会说，到会动手做事</span></li><li><a href="https://www.aha.voyager06.tech/p/ai-open-weights.html">开放权重：Mistral Large 4 的 1T 参数到底&quot;开放&quot;了什么</a> <span>开放权重≠开源，先看清三张不同的通行证</span></li><li><a href="https://www.aha.voyager06.tech/p/nav-spa-router.html">SPA 路由：不刷新页面的跳转</a> <span>页面不刷新，地址栏却在变</span></li></ul>
+
+<a class="spa" href="https://www.aha.voyager06.tech/#/p/media-voice-clone">在站内打开本篇（完整交互版）→</a>
+<div class="pn"><a href="https://www.aha.voyager06.tech/p/media-export-params.html">← 上一个：视频导出参数：采样率、位深、格式一次讲明白</a><a href="https://www.aha.voyager06.tech/p/media-export-params.html">下一个：视频导出参数：采样率、位深、格式一次讲明白 →</a></div>
+<footer>原来如此 · 把听说过的技术讲透 · 内容为科普解读，具体接入请以各服务官方文档为准</footer>
+</body>
+</html>

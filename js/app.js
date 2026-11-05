@@ -46,6 +46,50 @@ var SUBGROUPS = {
   ]
 };
 
+/* 容易混淆：手工维护的对比对（双向生效），在文章页单独成区 */
+var CONFUSE = {
+  "security-totp": ["security-sms-otp"],
+  "security-sms-otp": ["security-totp", "security-email-otp-magic-link"],
+  "security-email-otp-magic-link": ["security-sms-otp"],
+  "nav-http-301": ["nav-http-302"],
+  "nav-http-302": ["nav-http-301"],
+  "backend-cookie": ["backend-jwt-session"],
+  "backend-jwt-session": ["backend-cookie"],
+  "network-dns-records": ["network-doh"],
+  "network-doh": ["network-dns-records"]
+};
+function textGrams(s){
+  var r = {}, t = String(s||"");
+  for(var i=0;i<t.length-1;i++){ r[t.substr(i,2)] = 1; }
+  return r;
+}
+function relatedOf(it, n){
+  var mine = textGrams(it.name+" "+(it.alias||[]).join(" ")+" "+(it.tagline||""));
+  var conf = CONFUSE[it.id]||[];
+  var scored = [];
+  Object.keys(BY_ID).forEach(function(id){
+    if(id===it.id || conf.indexOf(id)>=0) return;
+    var o = BY_ID[id];
+    var g = textGrams(o.name+" "+(o.alias||[]).join(" ")+" "+(o.tagline||""));
+    var shared = 0;
+    Object.keys(g).forEach(function(k){ if(mine[k]) shared++; });
+    if(shared<2) return;
+    scored.push({o:o, s: shared + (o.category===it.category ? 2 : 0)});
+  });
+  scored.sort(function(a,b){ return b.s-a.s; });
+  return scored.slice(0, n||3).map(function(x){ return x.o; });
+}
+function recentCardHTML(it){
+  var c = CATS[it.category];
+  return '<a class="card rv" href="#/p/'+it.id+'" data-nav>'+
+    '<div class="meta"><span class="dot" style="background:'+c.color+'"></span>'+
+    '<span class="catname">'+c.name+'</span><span class="rdate">'+esc(it.added)+' 收录</span></div>'+
+    '<h3>'+esc(it.name)+'</h3>'+
+    '<div class="tagline">'+esc(it.tagline||"")+'</div>'+
+    '<div class="foot">💡 <b>原理一句话：</b>'+esc(it.principle?it.principle.summary:"")+'</div>'+
+  '</a>';
+}
+
 var DATA = null;        // {security:[], navigation:[], features:[]}
 var BY_ID = {};
 var app = document.getElementById('app');
@@ -123,6 +167,11 @@ function homeView(){
     '<h3>'+esc(feat.name)+'</h3><p>'+esc(feat.tagline||"")+'</p>'+
     '<div class="ph-go">开始阅读 →</div></a>';
   var smallHTML = smallPicks.map(cardHTML).join("");
+  var recents = allItems().filter(function(x){ return x.added; })
+    .sort(function(a,b){ return a.added<b.added ? 1 : (a.added>b.added ? -1 : 0); }).slice(0,6);
+  var recentHTML = recents.length ?
+    '<div class="sec-head"><h2>最近收录</h2><span style="font-size:13px;color:var(--muted)">这个站还在长大 · 按收录时间排</span></div>'+
+    '<div class="cards">'+recents.map(recentCardHTML).join("")+'</div>' : "";
   return '<div class="hero"><div class="wrap">'+
     '<div class="hero-badge">🔍 每天都在用，却从没想过为什么</div>'+
     '<h1>习以为常的背后，<br><span class="hl">原来如此</span></h1>'+
@@ -131,9 +180,10 @@ function homeView(){
     '用大白话讲原理，给开发者讲接入。</p>'+
     '</div></div>'+
   '<div class="wrap"><div class="cat-cards">'+catCards+'</div>'+
+    '<a class="all-btn rv" href="#/all" data-nav>浏览全部 '+total+' 篇 →</a>'+
+    recentHTML+
     '<div class="sec-head"><h2>精选</h2></div>'+
     '<div class="picks">'+featHTML+'<div class="picks-small">'+smallHTML+'</div></div>'+
-    '<a class="all-btn rv" href="#/all" data-nav>浏览全部 '+total+' 篇 →</a>'+
     '<div style="height:24px"></div>'+
   '</div>';
 }
@@ -238,7 +288,7 @@ function detailView(id){
       return i<stepsArr.length-1 ? card+'<li class="farrow" aria-hidden="true">↓</li>' : card;
     }).join("")+'</ol>';
   }
-  var steps = stepsArr.length?'<div class="flow-label">📊 先看这张图——'+stepsArr.length+'步看懂全过程</div>'+flow:"";
+  var steps = stepsArr.length?'<div class="flow-label">🧭 先看全过程——'+stepsArr.length+' 步走完这条线</div>'+flow:"";
   var paras = (it.principle.detail||"").split(/\n+/).map(function(p){return p.trim();}).filter(function(p){return p;});
   var detail = paras.map(function(p){return '<p>'+esc(p)+'</p>';}).join("");
   var deep = paras.length?'<div class="deep-label">📖 掰开揉碎，讲透每一步</div><div class="detail-text">'+detail+'</div>':"";
@@ -279,6 +329,23 @@ function detailView(id){
     return '<li><a href="'+esc(s.url)+'" target="_blank" rel="noopener">'+esc(s.title||s.url)+
       '<span class="ext">↗ 外部链接</span></a></li>';
   }).join("");
+  /* 新栏目：如果没有它会怎样（反事实）+ 常见误解，有数据才渲染 */
+  var cfMis =
+    (it.counterfactual?'<div class="callout-cf"><div class="ccf-head">🌀 如果没有它会怎样</div><p>'+esc(it.counterfactual)+'</p></div>':"")+
+    (it.misconception?'<div class="callout-mis"><div class="cmis-head">🚫 常见误解</div><p>'+esc(it.misconception)+'</p></div>':"");
+  /* 相关条目：标题/别名/一句话的文字重合 + 同分类加权，自动成网 */
+  var relItems = relatedOf(it, 3);
+  var relSec = relItems.length ?
+    '<section class="dsec" id="sec-related"><div class="dsec-head"><span class="num">连</span><h2>相关条目</h2><span class="en">RELATED</span></div>'+
+    '<div class="cards">'+relItems.map(cardHTML).join("")+'</div></section>' : "";
+  /* 容易混淆：手工对比对，单独成区 */
+  var confItems = (CONFUSE[it.id]||[]).map(function(x){ return BY_ID[x]; }).filter(function(x){ return x; });
+  var confSec = confItems.length ?
+    '<div class="confuse-box"><div class="cfb-head">🤔 容易混淆，去分清</div>'+
+    confItems.map(function(o){
+      return '<a class="confuse-item" href="#/p/'+o.id+'" data-nav><span class="ci-name">《'+esc(o.name)+'》</span>'+
+        '<span class="ci-tag">'+esc(o.tagline||"")+'</span><span class="ci-go">分清 →</span></a>';
+    }).join("")+'</div>' : "";
 
   return '<div class="wrap" style="--c:'+c.color+'"><div class="prose">'+
     '<div class="detail-hero"><div class="crumb"><a href="#/" data-nav>首页</a><span class="sep">/</span>'+
@@ -287,15 +354,18 @@ function detailView(id){
       '<h1>'+esc(it.name)+'</h1>'+
       '<div class="tagline">'+esc(it.tagline||"")+'</div>'+alias+'</div>'+
     '<div class="scene-lead" id="sec-scene"><div class="label">👀 日常场景</div><p>'+esc(it.scene||"")+'</p></div>'+
+    (it.capture?'<div class="capture-line">📍 <b>捕获现场</b> —— '+esc(it.capture)+'</div>':"")+
 
     '<section class="dsec" id="sec-principle"><div class="dsec-head"><span class="num">原</span><h2>原理：它是怎么运作的</h2><span class="en">HOW IT WORKS</span></div>'+
       '<div class="psummary"><span class="plabel">💡 一句话说透</span><p>'+esc(it.principle.summary||"")+'</p></div>'+
       steps+deep+'</section>'+
+    cfMis +
 
     devSec +
 
     (srcs?'<section class="dsec" id="sec-read"><div class="dsec-head"><span class="num">读</span><h2>延伸阅读</h2><span class="en">READ MORE</span></div><ul class="sources">'+srcs+'</ul></section>':"")+
 
+    relSec + confSec +
     '<div class="pn-nav">'+
       '<a class="pn" href="#/p/'+prev.id+'" data-nav><div class="dir">← 上一个</div><div class="nm">'+esc(prev.name)+'</div></a>'+
       '<a class="pn next" href="#/p/'+next.id+'" data-nav><div class="dir">下一个 →</div><div class="nm">'+esc(next.name)+'</div></a>'+
@@ -488,7 +558,7 @@ function revealInit(){
   if(io) io.disconnect();
   io = new IntersectionObserver(function(es){
     es.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target);} });
-  },{threshold:.08});
+  },{threshold:0, rootMargin:'0px 0px 320px 0px'});
   els.forEach(function(e){ io.observe(e); });
 }
 

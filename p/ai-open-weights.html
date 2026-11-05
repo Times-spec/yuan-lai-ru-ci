@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>开放权重：Mistral Large 4 的 1T 参数到底&quot;开放&quot;了什么 · 原来如此</title>
+<meta name="description" content="开放权重≠开源，先看清三张不同的通行证。权重是训练好的参数文件（万亿级的数字矩阵）；&quot;开放&quot;有三档：API 只管用、开放权重可下载自己部署、开源连训练代码数据都公开。">
+<link rel="canonical" href="https://www.aha.voyager06.tech/p/ai-open-weights.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="开放权重：Mistral Large 4 的 1T 参数到底&quot;开放&quot;了什么 · 原来如此">
+<meta property="og:description" content="开放权重≠开源，先看清三张不同的通行证。权重是训练好的参数文件（万亿级的数字矩阵）；&quot;开放&quot;有三档：API 只管用、开放权重可下载自己部署、开源连训练代码数据都公开。">
+<meta property="og:url" content="https://www.aha.voyager06.tech/p/ai-open-weights.html">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>">
+<style>
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;max-width:760px;margin:0 auto;padding:24px 20px 60px;color:#1c2b3a;line-height:1.8;background:#FDFCF9}
+a{color:#2563EB;text-decoration:none} a:hover{text-decoration:underline}
+.crumb{font-size:13px;color:#8A8A93;margin-bottom:18px}
+h1{font-size:30px;line-height:1.35;margin:6px 0 8px}
+.tagline{color:#5B6470;font-size:16px;margin-bottom:20px}
+.kick{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.1em;background:#EEF3F8;color:#31597F;border-radius:999px;padding:4px 12px}
+.scene{background:#FFF8EC;border:1px solid #F0E2C4;border-radius:12px;padding:16px 20px}
+.sum{background:#EEF4FF;border:1px solid #C9DBF5;border-radius:12px;padding:16px 20px;font-weight:600}
+h2{font-size:20px;margin:34px 0 12px}
+.steps li,.rel li{margin:6px 0}
+.cf{background:#F5F3FF;border:1px dashed #C4B5FD;border-radius:12px;padding:14px 20px;margin-top:22px}
+.mis{background:#FFF5F5;border:1px solid #F3C2C2;border-radius:12px;padding:14px 20px;margin-top:14px}
+.cf h3,.mis h3,.conf h3{margin:0 0 6px;font-size:16px}
+.cf p,.mis p{margin:0}
+.conf{border:1px solid #E3E0D8;border-radius:12px;padding:14px 20px;margin-top:22px}
+.conf p{margin:6px 0} .conf span,.rel span{color:#8A8A93;font-size:13.5px}
+.cap{color:#8A8A93;font-size:14px}
+.pn{display:flex;justify-content:space-between;gap:16px;margin-top:40px;border-top:1px solid #E3E0D8;padding-top:18px;font-size:14.5px}
+.spa{display:block;text-align:center;margin-top:28px;background:#1c2b3a;color:#fff;border-radius:12px;padding:12px}
+footer{margin-top:34px;color:#8A8A93;font-size:13px;text-align:center}
+</style>
+</head>
+<body>
+<div class="crumb"><a href="https://www.aha.voyager06.tech/">原来如此</a> / AI 与大模型 / 开放权重：Mistral Large 4 的 1T 参数到底&quot;开放&quot;了什么</div>
+<span class="kick">AI 与大模型</span>
+<h1>开放权重：Mistral Large 4 的 1T 参数到底&quot;开放&quot;了什么</h1>
+<div class="tagline">开放权重≠开源，先看清三张不同的通行证</div>
+<div class="scene"><b>👀 日常场景</b><p>10 月初新闻刷屏：Mistral 发布 1 万亿参数的 Mistral Large 4，号称开放权重。你心动了——顶级模型免费下载，本地跑岂不美滋滋？点进去一看：现在只能调 API，权重要&quot;10 月底才放&quot;。开放权重，怎么还有&quot;稍后&quot;？</p></div>
+
+<h2>原理：它是怎么运作的</h2>
+<div class="sum">💡 权重是训练好的参数文件（万亿级的数字矩阵）；&quot;开放&quot;有三档：API 只管用、开放权重可下载自己部署、开源连训练代码数据都公开。</div>
+<h2>先看全过程</h2><ol class="steps"><li>权重 = 模型的&quot;脑回路&quot;，一堆数字矩阵</li><li>API：黑盒服务，按 token 收费</li><li>开放权重：可下载，自己部署魔改</li><li>开源：代码数据全公开，门槛最高</li><li>ML4：先给 API，后放权重</li><li>1T 参数≠全干活：只激活 49B</li></ol>
+<p>2026 年 10 月 6 日，法国 Mistral 发布旗舰模型 Mistral Large 4（代号&quot;Le Chonk&quot;）：总参数约 1.05 万亿、每次只激活 490 亿的混合专家（MoE）架构，100 万 token 上下文，支持 160 多种语言。据官方称，它在网络安全基准 Cybench 上拿到 93%、CyberGym-E2E 上 82%，主打欧洲企业市场。</p><p>但&quot;开放&quot;有个时间表：发布当天只能调 API（发布时报价：输入每百万 token 1.36 美元、输出 4.18 美元），权重文件计划 10 月底才放出。这正是理解&quot;开放权重&quot;的关键：开放的是训练好的参数文件——下载下来，你可以在自己的服务器上部署、微调，不用把数据送到别人家，也不怕供应商断供，这正是欧洲喊&quot;主权 AI&quot;想要的东西。</p><p>但它不等于&quot;开源&quot;：训练代码、训练数据通常不公开，你能用、能改、能商用（看许可证），但复现不了训练过程。三档要分清：API 是租服务，开放权重是拿走模型自己跑，开源是连&quot;菜谱&quot;都公开。参数量也别被唬住：1.05T 里真正干活的只有 49B，MoE 的精髓就是&quot;备着多，上场少&quot;。</p>
+
+<h2>开放权重、开源、API 到底怎么选</h2><ul><li><b>只想用：调 API</b>：预览版 API 按量计费，开箱即用，不用管显卡</li><li><b>要可控：等开放权重</b>：权重放出后可下载到自己服务器部署、微调，数据不出境</li><li><b>要商用：先读许可证</b>：Apache 2.0 等宽松许可证才能放心商用魔改；有些&quot;开放&quot;只给看不给卖</li><li><b>要省钱：别盯最大</b>：1T 参数看着唬人，激活的只有 49B；小模型本地跑更便宜</li></ul><ol><li>先问自己：用一下、自己部署、还是研究原理</li><li>用一下→调 API，盯着价格表</li><li>自己部署→等权重放出，再读许可证</li><li>研究原理→找技术报告和第三方实测</li><li>别被参数量吓到：看激活参数和实测效果</li></ol>
+<h2>延伸阅读</h2><ul><li><a href="https://tech-insider.org/mistral-large-4-le-chonk-1-05t-parameters-2026/" rel="noopener">https://tech-insider.org/mistral-large-4-le-chonk-1-05t-parameters-2026/</a></li><li><a href="https://ai0.news/posts/2026-10-07-daily-digest/" rel="noopener">https://ai0.news/posts/2026-10-07-daily-digest/</a></li></ul>
+<h2>相关条目</h2><ul class="rel"><li><a href="https://www.aha.voyager06.tech/p/ai-agent.html">智能体 Agent</a> <span>从只会说，到会动手做事</span></li><li><a href="https://www.aha.voyager06.tech/p/ai-benchmark.html">Benchmark：给大模型的标准化考试</a> <span>大模型的高考，分数也会通胀</span></li><li><a href="https://www.aha.voyager06.tech/p/ai-rag.html">RAG：给大模型外挂知识库</a> <span>给大模型外挂一个知识库</span></li></ul>
+
+<a class="spa" href="https://www.aha.voyager06.tech/#/p/ai-open-weights">在站内打开本篇（完整交互版）→</a>
+<div class="pn"><a href="https://www.aha.voyager06.tech/p/ai-rsi.html">← 上一个：RSI：当 AI 开始改进 AI 自己</a><a href="https://www.aha.voyager06.tech/p/network-agent-protocol.html">下一个：个人智能体协议 PAP：AI 替你下单时，商家怎么认出它 →</a></div>
+<footer>原来如此 · 把听说过的技术讲透 · 内容为科普解读，具体接入请以各服务官方文档为准</footer>
+</body>
+</html>

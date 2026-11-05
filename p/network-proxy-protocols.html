@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>翻墙协议：谁在看你翻墙 · 原来如此</title>
+<meta name="description" content="协议是衣服，监测看的是身形。协议决定流量“长什么样”；能监测你的有四方：GFW 看流量特征，网站看 IP 和 TLS 指纹，机场主看域名，本地网管看 SNI。">
+<link rel="canonical" href="https://www.aha.voyager06.tech/p/network-proxy-protocols.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="翻墙协议：谁在看你翻墙 · 原来如此">
+<meta property="og:description" content="协议是衣服，监测看的是身形。协议决定流量“长什么样”；能监测你的有四方：GFW 看流量特征，网站看 IP 和 TLS 指纹，机场主看域名，本地网管看 SNI。">
+<meta property="og:url" content="https://www.aha.voyager06.tech/p/network-proxy-protocols.html">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>">
+<style>
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;max-width:760px;margin:0 auto;padding:24px 20px 60px;color:#1c2b3a;line-height:1.8;background:#FDFCF9}
+a{color:#2563EB;text-decoration:none} a:hover{text-decoration:underline}
+.crumb{font-size:13px;color:#8A8A93;margin-bottom:18px}
+h1{font-size:30px;line-height:1.35;margin:6px 0 8px}
+.tagline{color:#5B6470;font-size:16px;margin-bottom:20px}
+.kick{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.1em;background:#EEF3F8;color:#31597F;border-radius:999px;padding:4px 12px}
+.scene{background:#FFF8EC;border:1px solid #F0E2C4;border-radius:12px;padding:16px 20px}
+.sum{background:#EEF4FF;border:1px solid #C9DBF5;border-radius:12px;padding:16px 20px;font-weight:600}
+h2{font-size:20px;margin:34px 0 12px}
+.steps li,.rel li{margin:6px 0}
+.cf{background:#F5F3FF;border:1px dashed #C4B5FD;border-radius:12px;padding:14px 20px;margin-top:22px}
+.mis{background:#FFF5F5;border:1px solid #F3C2C2;border-radius:12px;padding:14px 20px;margin-top:14px}
+.cf h3,.mis h3,.conf h3{margin:0 0 6px;font-size:16px}
+.cf p,.mis p{margin:0}
+.conf{border:1px solid #E3E0D8;border-radius:12px;padding:14px 20px;margin-top:22px}
+.conf p{margin:6px 0} .conf span,.rel span{color:#8A8A93;font-size:13.5px}
+.cap{color:#8A8A93;font-size:14px}
+.pn{display:flex;justify-content:space-between;gap:16px;margin-top:40px;border-top:1px solid #E3E0D8;padding-top:18px;font-size:14.5px}
+.spa{display:block;text-align:center;margin-top:28px;background:#1c2b3a;color:#fff;border-radius:12px;padding:12px}
+footer{margin-top:34px;color:#8A8A93;font-size:13px;text-align:center}
+</style>
+</head>
+<body>
+<div class="crumb"><a href="https://www.aha.voyager06.tech/">原来如此</a> / 网络与协议 / 翻墙协议：谁在看你翻墙</div>
+<span class="kick">网络与协议</span>
+<h1>翻墙协议：谁在看你翻墙</h1>
+<div class="tagline">协议是衣服，监测看的是身形</div>
+<div class="scene"><b>👀 日常场景</b><p>Shadowsocks、VLESS、Trojan、Hysteria……协议名字越出越多，商家都说自己“抗封锁最强”。但换协议真的能隐身吗？先搞清一个问题：到底是谁、在看什么。</p></div>
+
+<h2>原理：它是怎么运作的</h2>
+<div class="sum">💡 协议决定流量“长什么样”；能监测你的有四方：GFW 看流量特征，网站看 IP 和 TLS 指纹，机场主看域名，本地网管看 SNI。</div>
+<h2>先看全过程</h2><ol class="steps"><li>协议=流量伪装术</li><li>GFW：看 SNI 和流量指纹</li><li>网站：看 IP 信誉+JA3 指纹</li><li>机场主：能看到你访问的域名</li><li>本地网管：同样看 SNI</li><li>没有任何协议能“隐身”</li></ol>
+<p>协议速览，一句话版：Shadowsocks 是老牌轻量选手，简单快速但特征明显；VMess 是 V2Ray 系的多面手；VLESS 是更轻量的继任者；Trojan 把流量伪装成正常 HTTPS；Hysteria2 基于 QUIC，弱网提速明显；WireGuard 是正经 VPN 协议，速度快但特征也明显。</p><p>核心洞察：协议只能改变“流量长什么样”，不能让你“不存在”。四方监测各看各的：GFW 看 SNI（你连了哪个域名）、流量指纹和主动探测——这就是它能封锁协议的原因；网站看 IP 信誉库和 TLS 指纹，截图里的 JA3/JA4 就是干这个的：不同客户端的 TLS 握手特征各不相同；机场/节点主能看到你的 DNS 和 SNI，也就是你访问了哪些域名（除非用上加密 DNS 和 ECH）；公司、校园网的网管同理。</p><p>所以“抗封锁”不等于“匿名”。选协议之前，先想清楚你的威胁模型：你要防的到底是谁。</p>
+
+<h2>怎么少暴露一点</h2><ul><li><b>选新协议</b>：VLESS/Trojan/Hysteria2 的流量更像正常 HTTPS，比老协议难识别</li><li><b>堵住 DNS 和 WebRTC 泄露</b>：开 TUN 模式让 DNS 也走代理，堵 WebRTC 见前一篇</li><li><b>接受现实：没有隐身衣</b>：机场主和审查层面，流量存在本身就可见</li></ul><ol><li>想清楚你要防谁：网站、网管，还是审查</li><li>按需选协议：日常用 VLESS/Trojan 类</li><li>开 TUN 模式，让 DNS 也走代理</li><li>堵 WebRTC 泄露（见 WebRTC 那篇）</li><li>记住：机场主始终能看到你的域名</li></ol>
+
+<h2>相关条目</h2><ul class="rel"><li><a href="https://www.aha.voyager06.tech/p/network-proxy-chain.html">直连与链式代理</a> <span>你的请求，中间转了几道手？</span></li><li><a href="https://www.aha.voyager06.tech/p/network-ssh.html">SSH：安全连上远程服务器</a> <span>私钥从不出门，也能证明你就是你</span></li><li><a href="https://www.aha.voyager06.tech/p/network-proxychains.html">链式代理：把代理串成糖葫芦</a> <span>一跳不够，串三跳</span></li></ul>
+
+<a class="spa" href="https://www.aha.voyager06.tech/#/p/network-proxy-protocols">在站内打开本篇（完整交互版）→</a>
+<div class="pn"><a href="https://www.aha.voyager06.tech/p/network-proxy-slang.html">← 上一个：万人梯：机场黑话词典</a><a href="https://www.aha.voyager06.tech/p/network-proxychains.html">下一个：链式代理：把代理串成糖葫芦 →</a></div>
+<footer>原来如此 · 把听说过的技术讲透 · 内容为科普解读，具体接入请以各服务官方文档为准</footer>
+</body>
+</html>

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SDK：开箱即用的开发工具包 · 原来如此</title>
+<meta name="description" content="官方给你打包好的工具箱。API 是接口约定（告诉你怎么调），SDK 是官方按约定写好的代码包——把签名、重试、解析全包了。">
+<link rel="canonical" href="https://www.aha.voyager06.tech/p/eng-sdk.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="SDK：开箱即用的开发工具包 · 原来如此">
+<meta property="og:description" content="官方给你打包好的工具箱。API 是接口约定（告诉你怎么调），SDK 是官方按约定写好的代码包——把签名、重试、解析全包了。">
+<meta property="og:url" content="https://www.aha.voyager06.tech/p/eng-sdk.html">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>">
+<style>
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;max-width:760px;margin:0 auto;padding:24px 20px 60px;color:#1c2b3a;line-height:1.8;background:#FDFCF9}
+a{color:#2563EB;text-decoration:none} a:hover{text-decoration:underline}
+.crumb{font-size:13px;color:#8A8A93;margin-bottom:18px}
+h1{font-size:30px;line-height:1.35;margin:6px 0 8px}
+.tagline{color:#5B6470;font-size:16px;margin-bottom:20px}
+.kick{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.1em;background:#EEF3F8;color:#31597F;border-radius:999px;padding:4px 12px}
+.scene{background:#FFF8EC;border:1px solid #F0E2C4;border-radius:12px;padding:16px 20px}
+.sum{background:#EEF4FF;border:1px solid #C9DBF5;border-radius:12px;padding:16px 20px;font-weight:600}
+h2{font-size:20px;margin:34px 0 12px}
+.steps li,.rel li{margin:6px 0}
+.cf{background:#F5F3FF;border:1px dashed #C4B5FD;border-radius:12px;padding:14px 20px;margin-top:22px}
+.mis{background:#FFF5F5;border:1px solid #F3C2C2;border-radius:12px;padding:14px 20px;margin-top:14px}
+.cf h3,.mis h3,.conf h3{margin:0 0 6px;font-size:16px}
+.cf p,.mis p{margin:0}
+.conf{border:1px solid #E3E0D8;border-radius:12px;padding:14px 20px;margin-top:22px}
+.conf p{margin:6px 0} .conf span,.rel span{color:#8A8A93;font-size:13.5px}
+.cap{color:#8A8A93;font-size:14px}
+.pn{display:flex;justify-content:space-between;gap:16px;margin-top:40px;border-top:1px solid #E3E0D8;padding-top:18px;font-size:14.5px}
+.spa{display:block;text-align:center;margin-top:28px;background:#1c2b3a;color:#fff;border-radius:12px;padding:12px}
+footer{margin-top:34px;color:#8A8A93;font-size:13px;text-align:center}
+</style>
+</head>
+<body>
+<div class="crumb"><a href="https://www.aha.voyager06.tech/">原来如此</a> / 工程与协作 / SDK：开箱即用的开发工具包</div>
+<span class="kick">工程与协作</span>
+<h1>SDK：开箱即用的开发工具包</h1>
+<div class="tagline">官方给你打包好的工具箱</div>
+<div class="scene"><b>👀 日常场景</b><p>要接微信支付、地图、短信，文档第一句话往往是“请先接入官方 SDK”。几行代码：初始化、调方法，完事。要是裸调 HTTP 接口，光签名算法就得啃半天文档。这个“官方给你打包好的工具箱”，就是 SDK。</p></div>
+
+<h2>原理：它是怎么运作的</h2>
+<div class="sum">💡 API 是接口约定（告诉你怎么调），SDK 是官方按约定写好的代码包——把签名、重试、解析全包了。</div>
+<h2>先看全过程</h2><ol class="steps"><li>看文档，选对应语言的 SDK</li><li>装包：pip/npm 一行引入</li><li>填密钥初始化客户端</li><li>调封装好的方法</li><li>SDK 内部拼请求、签名、重试</li><li>拿到结构化返回直接用</li></ol>
+<p>一句话区分：API 是接口约定（告诉你“有什么接口、参数怎么传”），SDK 是官方按这个约定写好的代码包（“我都替你写好了，直接调”）。比如短信服务的 API 文档会告诉你：POST 哪个地址、带哪些参数、签名算法是什么；而它的 Python SDK 里，这些全写好了，你调一个 send_sms() 就行。</p><p>为什么用 SDK 而不是裸调 API？签名算法（微信支付的 sign、AWS 的 SigV4）手写极易错；重试、超时、分页拉取、错误码翻译，官方都替你踩过坑了；还有类型提示和文档，开发体验好一个量级。</p><p>代价也要知道：体积（一个 SDK 拖进几十 MB 依赖）、黑盒（出问题要翻源码）、更新滞后（新 API 上了，SDK 还没跟上）。还要分清服务端 SDK 和客户端 SDK：服务端的跑在自己服务器上，可以放心放 secret；客户端的跑在用户设备上，绝不能放 secret——前端里出现的密钥等于公开。</p><p>选型原则：官方 SDK 优先（维护最及时），没有官方的找社区口碑好的，核心链路或 SDK 臃肿时再考虑裸调。记住 SDK 只是“官方推荐的捷径”，不是必经之路。</p>
+
+<h2>开发者：应该如何接入</h2><ul><li><b>官方 SDK</b>：微信支付、阿里云、Stripe 官方出品</li><li><b>社区 SDK</b>：开源社区维护的版本</li><li><b>裸调 HTTP API</b>：完全掌控，无依赖</li></ul><ol><li>读官方文档的“快速开始”，确认 SDK 支持你的语言版本</li><li>用包管理器安装，别手动拷文件</li><li>密钥放环境变量或密钥管理，初始化时传入</li><li>先调一个只读接口（如查询）验证通路</li><li>封装一层自己的适配器，别让 SDK 类型渗透全项目</li><li>锁定 SDK 版本号，大版本升级先看 changelog</li></ol>
+
+<h2>相关条目</h2><ul class="rel"><li><a href="https://www.aha.voyager06.tech/p/eng-tdd.html">TDD：先写测试再写代码</a> <span>先写考卷，再写答案</span></li><li><a href="https://www.aha.voyager06.tech/p/eng-prd.html">PRD：需求从这里开始</a> <span>需求的出生证明</span></li><li><a href="https://www.aha.voyager06.tech/p/ai-rsi.html">RSI：当 AI 开始改进 AI 自己</a> <span>当 AI 开始改进 AI 自己</span></li></ul>
+
+<a class="spa" href="https://www.aha.voyager06.tech/#/p/eng-sdk">在站内打开本篇（完整交互版）→</a>
+<div class="pn"><a href="https://www.aha.voyager06.tech/p/eng-ux-ui.html">← 上一个：UX 与 UI</a><a href="https://www.aha.voyager06.tech/p/eng-e2e.html">下一个：端到端：全流程测试与加密 →</a></div>
+<footer>原来如此 · 把听说过的技术讲透 · 内容为科普解读，具体接入请以各服务官方文档为准</footer>
+</body>
+</html>

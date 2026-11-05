@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>网页二维码生成 · 原来如此</title>
+<meta name="description" content="一行链接，变成手机能扫的码。把网址按 QR 编码规则转成黑白方块矩阵，前端用库画在 canvas 上，扫码即还原原文。">
+<link rel="canonical" href="https://www.aha.voyager06.tech/p/feat-qr-code.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="网页二维码生成 · 原来如此">
+<meta property="og:description" content="一行链接，变成手机能扫的码。把网址按 QR 编码规则转成黑白方块矩阵，前端用库画在 canvas 上，扫码即还原原文。">
+<meta property="og:url" content="https://www.aha.voyager06.tech/p/feat-qr-code.html">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>">
+<style>
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;max-width:760px;margin:0 auto;padding:24px 20px 60px;color:#1c2b3a;line-height:1.8;background:#FDFCF9}
+a{color:#2563EB;text-decoration:none} a:hover{text-decoration:underline}
+.crumb{font-size:13px;color:#8A8A93;margin-bottom:18px}
+h1{font-size:30px;line-height:1.35;margin:6px 0 8px}
+.tagline{color:#5B6470;font-size:16px;margin-bottom:20px}
+.kick{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.1em;background:#EEF3F8;color:#31597F;border-radius:999px;padding:4px 12px}
+.scene{background:#FFF8EC;border:1px solid #F0E2C4;border-radius:12px;padding:16px 20px}
+.sum{background:#EEF4FF;border:1px solid #C9DBF5;border-radius:12px;padding:16px 20px;font-weight:600}
+h2{font-size:20px;margin:34px 0 12px}
+.steps li,.rel li{margin:6px 0}
+.cf{background:#F5F3FF;border:1px dashed #C4B5FD;border-radius:12px;padding:14px 20px;margin-top:22px}
+.mis{background:#FFF5F5;border:1px solid #F3C2C2;border-radius:12px;padding:14px 20px;margin-top:14px}
+.cf h3,.mis h3,.conf h3{margin:0 0 6px;font-size:16px}
+.cf p,.mis p{margin:0}
+.conf{border:1px solid #E3E0D8;border-radius:12px;padding:14px 20px;margin-top:22px}
+.conf p{margin:6px 0} .conf span,.rel span{color:#8A8A93;font-size:13.5px}
+.cap{color:#8A8A93;font-size:14px}
+.pn{display:flex;justify-content:space-between;gap:16px;margin-top:40px;border-top:1px solid #E3E0D8;padding-top:18px;font-size:14.5px}
+.spa{display:block;text-align:center;margin-top:28px;background:#1c2b3a;color:#fff;border-radius:12px;padding:12px}
+footer{margin-top:34px;color:#8A8A93;font-size:13px;text-align:center}
+</style>
+</head>
+<body>
+<div class="crumb"><a href="https://www.aha.voyager06.tech/">原来如此</a> / 小功能大智慧 / 网页二维码生成</div>
+<span class="kick">小功能大智慧</span>
+<h1>网页二维码生成</h1>
+<div class="tagline">一行链接，变成手机能扫的码</div>
+<div class="scene"><b>👀 日常场景</b><p>电脑上看到活动页面，旁边放着一个二维码，手机一扫就打开了——不用手动一字字输网址。会议签到、海报引流、WiFi 分享，凡是“电脑有链接、手机要打开”的地方，都有它在 bridge 一下。</p></div>
+
+<h2>原理：它是怎么运作的</h2>
+<div class="sum">💡 把网址按 QR 编码规则转成黑白方块矩阵，前端用库画在 canvas 上，扫码即还原原文。</div>
+<h2>先看全过程</h2><ol class="steps"><li>拿到要分享的网址文本</li><li>按 QR 编码规则转成二进制</li><li>选择纠错等级与尺寸</li><li>用库绘制黑白方块矩阵</li><li>渲染到 canvas 或图片展示</li><li>支持下载或打印分享</li></ol>
+<p>二维码本质是“把文字画成图”。QR 码有一套公开的编码规则：先把网址按模式（数字/字母/字节）转成二进制，再按纠错等级（L/M/Q/H，最高可容忍 30% 的污损）加上纠错码，最后排进一个黑白方块矩阵，周围留一圈空白（quiet zone，静区，扫码定位用）。前端生成完全不需要服务器：qrcodejs 这类库在浏览器里算出矩阵，用 canvas 把方块画出来就行，所以“网页二维码”通常是纯前端功能，离线都能用。为什么手机一扫就知道是网址？因为编码时就约定好了内容格式，扫码 App 解码后看到 http 开头就直接打开。两个实用知识点：一是“动态码 vs 静态码”——静态码内容写死，网址变了码就废；动态码背后是个短链接，改短链指向就能换目标，还能统计扫码量，营销场景都用动态码。二是美化二维码（中间放 logo、改颜色）会遮挡部分方块，必须用高纠错等级兜底，否则扫不出来。</p>
+
+<h2>我该怎么生成二维码</h2><ul><li><b>微信 / 支付宝里搜</b>：搜“二维码生成”就有小程序，粘贴链接点生成，存到手机相册就能用。最顺手。</li><li><b>浏览器在线工具</b>：电脑上打开二维码生成网站，粘贴网址就能生成，还能调尺寸、下载高清 PNG 拿去印刷。</li><li><b>动态码（长期用选它）</b>：二维码背后藏的是短链接，目标网址变了改短链指向就行，还能统计被扫了多少次。</li></ul><ol><li>先把链接准备好：越短越好，长链接先压成短链</li><li>打开生成工具（小程序或网站），把链接粘贴进去</li><li>要往中间放 logo？把纠错等级选到最高（H 级），否则遮挡后扫不出</li><li>生成后别急着发布：拿两三款不同手机实测都能扫出来</li><li>下载高清 PNG，需要印刷的直接给印刷厂</li></ol>
+<h2>延伸阅读</h2><ul><li><a href="https://blog.csdn.net/gitblog_00013/article/details/153823413" rel="noopener">CSDN：使用 QRCode.js 在网页生成二维码完整指南</a></li><li><a href="https://zh.wikipedia.org/wiki/QR%E7%A2%BC" rel="noopener">维基百科：QR码（编码原理与容错等级）</a></li></ul>
+<h2>相关条目</h2><ul class="rel"><li><a href="https://www.aha.voyager06.tech/p/feat-dark-mode.html">暗黑模式</a> <span>一键换肤，深夜刷手机不刺眼</span></li><li><a href="https://www.aha.voyager06.tech/p/nav-qr-jump.html">扫码跳转</a> <span>二维码里藏着网址，扫一扫就打开</span></li><li><a href="https://www.aha.voyager06.tech/p/feat-cookie-consent.html">Cookie 同意弹窗</a> <span>第一次打开网站，先问你同不同意</span></li></ul>
+
+<a class="spa" href="https://www.aha.voyager06.tech/#/p/feat-qr-code">在站内打开本篇（完整交互版）→</a>
+<div class="pn"><a href="https://www.aha.voyager06.tech/p/feat-realtime-push.html">← 上一个：实时推送</a><a href="https://www.aha.voyager06.tech/p/feat-social-share.html">下一个：社交分享 →</a></div>
+<footer>原来如此 · 把听说过的技术讲透 · 内容为科普解读，具体接入请以各服务官方文档为准</footer>
+</body>
+</html>

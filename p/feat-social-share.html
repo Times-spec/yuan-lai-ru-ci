@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>社交分享 · 原来如此</title>
+<meta name="description" content="一键把页面发到微信、微博。移动端调用系统分享面板（navigator.share），桌面端拼接各平台的分享链接跳转，标题摘要通过 Open Graph 标签提供。">
+<link rel="canonical" href="https://www.aha.voyager06.tech/p/feat-social-share.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="社交分享 · 原来如此">
+<meta property="og:description" content="一键把页面发到微信、微博。移动端调用系统分享面板（navigator.share），桌面端拼接各平台的分享链接跳转，标题摘要通过 Open Graph 标签提供。">
+<meta property="og:url" content="https://www.aha.voyager06.tech/p/feat-social-share.html">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>">
+<style>
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;max-width:760px;margin:0 auto;padding:24px 20px 60px;color:#1c2b3a;line-height:1.8;background:#FDFCF9}
+a{color:#2563EB;text-decoration:none} a:hover{text-decoration:underline}
+.crumb{font-size:13px;color:#8A8A93;margin-bottom:18px}
+h1{font-size:30px;line-height:1.35;margin:6px 0 8px}
+.tagline{color:#5B6470;font-size:16px;margin-bottom:20px}
+.kick{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.1em;background:#EEF3F8;color:#31597F;border-radius:999px;padding:4px 12px}
+.scene{background:#FFF8EC;border:1px solid #F0E2C4;border-radius:12px;padding:16px 20px}
+.sum{background:#EEF4FF;border:1px solid #C9DBF5;border-radius:12px;padding:16px 20px;font-weight:600}
+h2{font-size:20px;margin:34px 0 12px}
+.steps li,.rel li{margin:6px 0}
+.cf{background:#F5F3FF;border:1px dashed #C4B5FD;border-radius:12px;padding:14px 20px;margin-top:22px}
+.mis{background:#FFF5F5;border:1px solid #F3C2C2;border-radius:12px;padding:14px 20px;margin-top:14px}
+.cf h3,.mis h3,.conf h3{margin:0 0 6px;font-size:16px}
+.cf p,.mis p{margin:0}
+.conf{border:1px solid #E3E0D8;border-radius:12px;padding:14px 20px;margin-top:22px}
+.conf p{margin:6px 0} .conf span,.rel span{color:#8A8A93;font-size:13.5px}
+.cap{color:#8A8A93;font-size:14px}
+.pn{display:flex;justify-content:space-between;gap:16px;margin-top:40px;border-top:1px solid #E3E0D8;padding-top:18px;font-size:14.5px}
+.spa{display:block;text-align:center;margin-top:28px;background:#1c2b3a;color:#fff;border-radius:12px;padding:12px}
+footer{margin-top:34px;color:#8A8A93;font-size:13px;text-align:center}
+</style>
+</head>
+<body>
+<div class="crumb"><a href="https://www.aha.voyager06.tech/">原来如此</a> / 小功能大智慧 / 社交分享</div>
+<span class="kick">小功能大智慧</span>
+<h1>社交分享</h1>
+<div class="tagline">一键把页面发到微信、微博</div>
+<div class="scene"><b>👀 日常场景</b><p>看到一篇好文章点“分享”，弹出微信、微博、QQ 几个选项，点一下就跳过去，标题和链接都已经填好了。你在微信里看到的那些带标题、摘要、配图的链接卡片，也是这套机制的功劳。</p></div>
+
+<h2>原理：它是怎么运作的</h2>
+<div class="sum">💡 移动端调用系统分享面板（navigator.share），桌面端拼接各平台的分享链接跳转，标题摘要通过 Open Graph 标签提供。</div>
+<h2>先看全过程</h2><ol class="steps"><li>准备好标题、摘要与配图</li><li>页面加上 Open Graph 标签</li><li>移动端调 navigator.share 拉起面板</li><li>桌面端拼接平台分享链接</li><li>用户选平台完成分享</li><li>统计分享带来的回流</li></ol>
+<p>分享功能分“系统级”和“手工拼”两路。移动端有系统级方案：Web Share API，调用 navigator.share({title, text, url})，浏览器直接拉起手机原生的分享面板，体验最顺，但它要求 HTTPS 且必须由用户点击触发，桌面端支持不一，所以要做特性检测。桌面端主要靠“手工拼”：各平台都提供了分享跳转链接，比如微博是 service.weibo.com/share/share.php?url=...&amp;title=...，把当前页面的标题和地址拼进去，用户一点就跳到该平台的发布页，内容已经填好。想让分享出去的链接显示漂亮的标题+摘要+配图卡片，靠的是 Open Graph 标签（og:title、og:description、og:image）：平台爬虫抓取页面时读这些标签生成卡片。微信是个特例：在微信内置浏览器里，navigator.share 不可用，得用微信 JS-SDK 的 updateAppMessageShareData 来自定义右上角分享出去的内容，还要先配置 JS 安全域名。兜底方案永远是“复制链接”，分享面板调不起来时至少让用户能手动发。</p>
+
+<h2>网站是怎么做到的</h2><ul><li><b>Web Share API：系统的分享面板</b>：调一下 navigator.share，浏览器直接拉起手机原生的分享面板，微信、微博、备忘录都在里面，体验最顺。</li><li><b>手工拼接：各平台的分享链接</b>：微博、QQ 都有现成的分享跳转地址，把标题和网址拼进去就行。点一下跳到对应平台的发布页，内容已填好。</li><li><b>Open Graph：链接卡片的化妆师</b>：og:title、og:description、og:image 这几个标签，是平台爬虫生成“标题+摘要+配图”卡片的原料。</li><li><b>微信例外：JS-SDK</b>：微信内置浏览器里系统分享不可用，得接微信 JS-SDK，还要配置安全域名。</li></ul><ol><li>你点“分享”，页面先检查支不支持系统分享 API</li><li>移动端：拉起手机原生分享面板，你选微信/微博</li><li>桌面端：弹出分享菜单，每个图标背后都是一条拼好的平台分享链接</li><li>你选定平台，跳转过去，标题和链接已经填好</li><li>对方点开你分享的链接：平台爬虫早就读过 OG 标签，展示出漂亮卡片</li></ol>
+<h2>延伸阅读</h2><ul><li><a href="https://blog.csdn.net/Ed7zgeE9X/article/details/155829364" rel="noopener">Web Share API 分享实践（CSDN）</a></li><li><a href="https://github.com/maqi1520/nextjs-tailwind-blog/blob/HEAD/data/blog/uniapp-user-sharing.md" rel="noopener">uniapp 用户分享实践（GitHub）</a></li></ul>
+<h2>相关条目</h2><ul class="rel"><li><a href="https://www.aha.voyager06.tech/p/feat-copy-link.html">复制链接</a> <span>点一下，链接就进了剪贴板</span></li><li><a href="https://www.aha.voyager06.tech/p/feat-dark-mode.html">暗黑模式</a> <span>一键换肤，深夜刷手机不刺眼</span></li><li><a href="https://www.aha.voyager06.tech/p/features-open-with-apps.html">「用其他应用打开」：推荐名单是怎么算出来的</a> <span>不是系统随便排的，是每个 App 自己「报名」的结果</span></li></ul>
+
+<a class="spa" href="https://www.aha.voyager06.tech/#/p/feat-social-share">在站内打开本篇（完整交互版）→</a>
+<div class="pn"><a href="https://www.aha.voyager06.tech/p/feat-qr-code.html">← 上一个：网页二维码生成</a><a href="https://www.aha.voyager06.tech/p/feat-copy-link.html">下一个：复制链接 →</a></div>
+<footer>原来如此 · 把听说过的技术讲透 · 内容为科普解读，具体接入请以各服务官方文档为准</footer>
+</body>
+</html>

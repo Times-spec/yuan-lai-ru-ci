@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>本机号码一键登录 · 原来如此</title>
+<meta name="description" content="点一下就登录，连短信都不用等。走数据网络经运营商网关“取号”：运营商认 SIM 卡，把加密后的号码回传给 App。">
+<link rel="canonical" href="https://www.aha.voyager06.tech/p/security-carrier-one-tap-login.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="本机号码一键登录 · 原来如此">
+<meta property="og:description" content="点一下就登录，连短信都不用等。走数据网络经运营商网关“取号”：运营商认 SIM 卡，把加密后的号码回传给 App。">
+<meta property="og:url" content="https://www.aha.voyager06.tech/p/security-carrier-one-tap-login.html">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>">
+<style>
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;max-width:760px;margin:0 auto;padding:24px 20px 60px;color:#1c2b3a;line-height:1.8;background:#FDFCF9}
+a{color:#2563EB;text-decoration:none} a:hover{text-decoration:underline}
+.crumb{font-size:13px;color:#8A8A93;margin-bottom:18px}
+h1{font-size:30px;line-height:1.35;margin:6px 0 8px}
+.tagline{color:#5B6470;font-size:16px;margin-bottom:20px}
+.kick{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.1em;background:#EEF3F8;color:#31597F;border-radius:999px;padding:4px 12px}
+.scene{background:#FFF8EC;border:1px solid #F0E2C4;border-radius:12px;padding:16px 20px}
+.sum{background:#EEF4FF;border:1px solid #C9DBF5;border-radius:12px;padding:16px 20px;font-weight:600}
+h2{font-size:20px;margin:34px 0 12px}
+.steps li,.rel li{margin:6px 0}
+.cf{background:#F5F3FF;border:1px dashed #C4B5FD;border-radius:12px;padding:14px 20px;margin-top:22px}
+.mis{background:#FFF5F5;border:1px solid #F3C2C2;border-radius:12px;padding:14px 20px;margin-top:14px}
+.cf h3,.mis h3,.conf h3{margin:0 0 6px;font-size:16px}
+.cf p,.mis p{margin:0}
+.conf{border:1px solid #E3E0D8;border-radius:12px;padding:14px 20px;margin-top:22px}
+.conf p{margin:6px 0} .conf span,.rel span{color:#8A8A93;font-size:13.5px}
+.cap{color:#8A8A93;font-size:14px}
+.pn{display:flex;justify-content:space-between;gap:16px;margin-top:40px;border-top:1px solid #E3E0D8;padding-top:18px;font-size:14.5px}
+.spa{display:block;text-align:center;margin-top:28px;background:#1c2b3a;color:#fff;border-radius:12px;padding:12px}
+footer{margin-top:34px;color:#8A8A93;font-size:13px;text-align:center}
+</style>
+</head>
+<body>
+<div class="crumb"><a href="https://www.aha.voyager06.tech/">原来如此</a> / 验证与安全 / 本机号码一键登录</div>
+<span class="kick">验证与安全</span>
+<h1>本机号码一键登录</h1>
+<div class="tagline">点一下就登录，连短信都不用等</div>
+<div class="scene"><b>👀 日常场景</b><p>打开某个 App，登录页一个大按钮“本机号码一键登录”，下面已经自动填好了你的手机号（138****8888），点一下直接进去了。你没收短信、没输密码——它怎么知道这个号码是你的？</p></div>
+
+<h2>原理：它是怎么运作的</h2>
+<div class="sum">💡 走数据网络经运营商网关“取号”：运营商认 SIM 卡，把加密后的号码回传给 App。</div>
+<h2>先看全过程</h2><ol class="steps"><li>App 初始化时向取号 SDK 注册</li><li>用户点一键登录（需关闭 Wi-Fi 走蜂窝数据）</li><li>SDK 经运营商网关发起取号请求</li><li>运营商识别 SIM 卡对应的手机号</li><li>返回加密的号码凭证 token</li><li>App 后端用 token 换取真实号码完成登录</li></ol>
+<p>一键登录的魔法来自运营商的一个特权：当手机走蜂窝数据（关闭 Wi-Fi）访问运营商网关时，运营商能直接识别出这张 SIM 卡对应的手机号——这是网络层的能力，不需要 App 做任何事。流程是：App 集成取号 SDK，用户点击一键登录后，SDK 通过数据网络向运营商网关发起取号请求，运营商确认 SIM 卡身份后，返回一个加密的 token（注意：明文号码不会经过 App 前端）；App 把 token 发给自己的后端，后端再调用运营商/服务商的接口，用 token 换取真实手机号，然后完成登录或注册。为什么必须关 Wi-Fi？因为取号依赖的是运营商数据通道的身份识别，走 Wi-Fi 时运营商看不到你的 SIM 卡。这项能力的本质是“运营商为你的手机号背书”，安全性和短信验证码相当，但体验是秒级的，还省了短信费用。缺点是只认“本机+数据网络”：双卡手机、平板、Wi-Fi 环境都会降级回短信验证。</p>
+
+<h2>网站该如何实现</h2><ul><li><b>阿里云号码认证 PNVS</b>：阿里云官方一键登录/号码认证产品。</li><li><b>极光认证</b>：极光的一键登录方案，覆盖三网。</li><li><b>个推 / 友盟一键登录</b>：推送厂商附带的一键登录能力。</li><li><b>运营商能力开放平台</b>：移动/联通/电信各自的直连接口。</li></ul><ol><li>在服务商后台开通一键登录，配置 App 包名、签名和应用信息。</li><li>App 集成 SDK，启动时做预取号（预先向网关拿 token，缩短点击后等待）。</li><li>登录页展示“一键登录”按钮，调用 SDK 拉起运营商授权页（含号码明示）。</li><li>用户点同意后，SDK 返回 token，App 把 token 发给自己后端。</li><li>后端调用服务商“token 换手机号”接口，拿到明文号码。</li><li>按号码查找/创建账号并建立登录态；取号失败时降级为短信验证码。</li></ol>
+<h2>延伸阅读</h2><ul><li><a href="https://blog.csdn.net/shirleyhuang1993/article/details/154445088" rel="noopener">阿里云号码认证 PNVS 产品体系</a></li></ul>
+<h2>相关条目</h2><ul class="rel"><li><a href="https://www.aha.voyager06.tech/p/security-email-otp-magic-link.html">邮箱验证码/魔法链接</a> <span>点一下邮件里的链接，直接登录不用输密码</span></li><li><a href="https://www.aha.voyager06.tech/p/security-webauthn-passkey.html">WebAuthn/指纹面容登录</a> <span>按一下指纹就登录，密码从此可以消失</span></li><li><a href="https://www.aha.voyager06.tech/p/security-remember-me.html">「记住我」持久登录</a> <span>勾一下，下次打开直接是登录态</span></li></ul>
+
+<a class="spa" href="https://www.aha.voyager06.tech/#/p/security-carrier-one-tap-login">在站内打开本篇（完整交互版）→</a>
+<div class="pn"><a href="https://www.aha.voyager06.tech/p/security-csrf-token.html">← 上一个：CSRF Token：表单里的防伪暗记</a><a href="https://www.aha.voyager06.tech/p/security-remember-me.html">下一个：「记住我」持久登录 →</a></div>
+<footer>原来如此 · 把听说过的技术讲透 · 内容为科普解读，具体接入请以各服务官方文档为准</footer>
+</body>
+</html>

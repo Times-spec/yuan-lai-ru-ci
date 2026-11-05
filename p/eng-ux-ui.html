@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UX 与 UI · 原来如此</title>
+<meta name="description" content="好看是 UI，好用是 UX。UI 是看得见的界面（颜色、排版、图标），UX 是用起来的全部感受（流程顺不顺、找不找得到）；UI 是 UX 的子集。">
+<link rel="canonical" href="https://www.aha.voyager06.tech/p/eng-ux-ui.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="UX 与 UI · 原来如此">
+<meta property="og:description" content="好看是 UI，好用是 UX。UI 是看得见的界面（颜色、排版、图标），UX 是用起来的全部感受（流程顺不顺、找不找得到）；UI 是 UX 的子集。">
+<meta property="og:url" content="https://www.aha.voyager06.tech/p/eng-ux-ui.html">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>">
+<style>
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;max-width:760px;margin:0 auto;padding:24px 20px 60px;color:#1c2b3a;line-height:1.8;background:#FDFCF9}
+a{color:#2563EB;text-decoration:none} a:hover{text-decoration:underline}
+.crumb{font-size:13px;color:#8A8A93;margin-bottom:18px}
+h1{font-size:30px;line-height:1.35;margin:6px 0 8px}
+.tagline{color:#5B6470;font-size:16px;margin-bottom:20px}
+.kick{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.1em;background:#EEF3F8;color:#31597F;border-radius:999px;padding:4px 12px}
+.scene{background:#FFF8EC;border:1px solid #F0E2C4;border-radius:12px;padding:16px 20px}
+.sum{background:#EEF4FF;border:1px solid #C9DBF5;border-radius:12px;padding:16px 20px;font-weight:600}
+h2{font-size:20px;margin:34px 0 12px}
+.steps li,.rel li{margin:6px 0}
+.cf{background:#F5F3FF;border:1px dashed #C4B5FD;border-radius:12px;padding:14px 20px;margin-top:22px}
+.mis{background:#FFF5F5;border:1px solid #F3C2C2;border-radius:12px;padding:14px 20px;margin-top:14px}
+.cf h3,.mis h3,.conf h3{margin:0 0 6px;font-size:16px}
+.cf p,.mis p{margin:0}
+.conf{border:1px solid #E3E0D8;border-radius:12px;padding:14px 20px;margin-top:22px}
+.conf p{margin:6px 0} .conf span,.rel span{color:#8A8A93;font-size:13.5px}
+.cap{color:#8A8A93;font-size:14px}
+.pn{display:flex;justify-content:space-between;gap:16px;margin-top:40px;border-top:1px solid #E3E0D8;padding-top:18px;font-size:14.5px}
+.spa{display:block;text-align:center;margin-top:28px;background:#1c2b3a;color:#fff;border-radius:12px;padding:12px}
+footer{margin-top:34px;color:#8A8A93;font-size:13px;text-align:center}
+</style>
+</head>
+<body>
+<div class="crumb"><a href="https://www.aha.voyager06.tech/">原来如此</a> / 工程与协作 / UX 与 UI</div>
+<span class="kick">工程与协作</span>
+<h1>UX 与 UI</h1>
+<div class="tagline">好看是 UI，好用是 UX</div>
+<div class="scene"><b>👀 日常场景</b><p>有人说“这个 App 真好看”，有人说“这个 App 真好用”——前者在夸 UI，后者在夸 UX。招聘时“UI/UX 设计师”总被写在一起，很多人以为是一个东西。其实它们分工完全不同：一个管长相，一个管全程的感受。</p></div>
+
+<h2>原理：它是怎么运作的</h2>
+<div class="sum">💡 UI 是看得见的界面（颜色、排版、图标），UX 是用起来的全部感受（流程顺不顺、找不找得到）；UI 是 UX 的子集。</div>
+<h2>先看全过程</h2><ol class="steps"><li>用户研究：搞清用户是谁</li><li>画线框图定信息结构</li><li>做可点击原型走流程</li><li>视觉设计定稿 UI</li><li>标注切图交付开发</li><li>可用性测试验证 UX</li></ol>
+<p>先分清楚：UX（用户体验）是“从产生需求到完成任务”的全程感受，UI（用户界面）只是其中“看得见摸得着”的一层——颜色、排版、图标、动效。UI 是 UX 的子集：一个按钮做得再好看（UI 满分），如果藏在三级菜单里找不到（UX 零分），用户照样骂。</p><p>为什么总被放在一起说？因为都向“用户体验”负责，而且工作流连贯：UX 定骨架（信息架构、任务流程），UI 填血肉（视觉风格）。招聘时写“UI/UX 设计师”，招的往往是一个人干两件事。</p><p>设计师的产出物沿着一条线流向开发：线框图（低保真，只定结构不谈美观）→ 高保真原型（可点击，走通流程）→ 视觉稿（定样式）→ 标注加切图加设计系统（Design System：组件库加使用规范，开发照着拼）。现代协作在 Figma 里一次完成：设计、标注、切图、评论都在同一份文件，开发不用再问“这个间距是多少”。</p><p>最后记住：UX 不止视觉。文案写得清不清楚、报错提示给不给退路、加载要等几秒、空状态放什么图——用户感知到的每一处，处处是 UX。</p>
+
+<h2>想深入了解怎么办</h2><ul><li><b>《Don&#x27;t Make Me Think》</b>：UX 入门圣经，薄薄一本，核心就一句：别让用户思考。先读它，再谈别的。</li><li><b>NN/g 的免费文章</b>：尼尔森诺曼集团的可用性研究报告，公认的 UX 方法论源头，官网有大量免费内容。</li><li><b>Figma 官方教程 + 社区</b>：边学边练：从线框图到高保真原型，官方教程带你走完一遍真实工作流。</li></ul><ol><li>先分清边界：UX 是全程感受，UI 是看得见的界面——UI 只是 UX 的子集</li><li>学信息架构：用户要完成任务，信息该怎么组织、流程该有几步</li><li>练线框图和可点击原型：低保真先把流程走通，别一上来就调颜色</li><li>补视觉基础：排版、色彩、间距、对齐——UI 的“基本功四件套”</li><li>学做可用性测试：找 5 个真实用户，看他们在哪卡住（比看 10 本书管用）</li><li>研究优秀产品的设计系统：看它们如何把组件和规范沉淀成团队资产</li></ol>
+
+<h2>相关条目</h2><ul class="rel"><li><a href="https://www.aha.voyager06.tech/p/ai-agent.html">智能体 Agent</a> <span>从只会说，到会动手做事</span></li><li><a href="https://www.aha.voyager06.tech/p/eng-linear-jira.html">Linear/Jira：需求的任务看板</a> <span>一个需求从出生到上线的旅行记录</span></li><li><a href="https://www.aha.voyager06.tech/p/ai-inference-deploy.html">推理部署：让模型跑起来</a> <span>权重会思考了，怎么把它端上桌</span></li></ul>
+
+<a class="spa" href="https://www.aha.voyager06.tech/#/p/eng-ux-ui">在站内打开本篇（完整交互版）→</a>
+<div class="pn"><a href="https://www.aha.voyager06.tech/p/eng-prd.html">← 上一个：PRD：需求从这里开始</a><a href="https://www.aha.voyager06.tech/p/eng-sdk.html">下一个：SDK：开箱即用的开发工具包 →</a></div>
+<footer>原来如此 · 把听说过的技术讲透 · 内容为科普解读，具体接入请以各服务官方文档为准</footer>
+</body>
+</html>

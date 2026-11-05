@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>订阅链接：节点通讯录 · 原来如此</title>
+<meta name="description" content="一串会自动更新的节点通讯录。订阅链接指向一份节点信息的编码文本，客户端定期拉取、解析，刷新本地节点列表。">
+<link rel="canonical" href="https://www.aha.voyager06.tech/p/network-subscription.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="订阅链接：节点通讯录 · 原来如此">
+<meta property="og:description" content="一串会自动更新的节点通讯录。订阅链接指向一份节点信息的编码文本，客户端定期拉取、解析，刷新本地节点列表。">
+<meta property="og:url" content="https://www.aha.voyager06.tech/p/network-subscription.html">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>">
+<style>
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;max-width:760px;margin:0 auto;padding:24px 20px 60px;color:#1c2b3a;line-height:1.8;background:#FDFCF9}
+a{color:#2563EB;text-decoration:none} a:hover{text-decoration:underline}
+.crumb{font-size:13px;color:#8A8A93;margin-bottom:18px}
+h1{font-size:30px;line-height:1.35;margin:6px 0 8px}
+.tagline{color:#5B6470;font-size:16px;margin-bottom:20px}
+.kick{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.1em;background:#EEF3F8;color:#31597F;border-radius:999px;padding:4px 12px}
+.scene{background:#FFF8EC;border:1px solid #F0E2C4;border-radius:12px;padding:16px 20px}
+.sum{background:#EEF4FF;border:1px solid #C9DBF5;border-radius:12px;padding:16px 20px;font-weight:600}
+h2{font-size:20px;margin:34px 0 12px}
+.steps li,.rel li{margin:6px 0}
+.cf{background:#F5F3FF;border:1px dashed #C4B5FD;border-radius:12px;padding:14px 20px;margin-top:22px}
+.mis{background:#FFF5F5;border:1px solid #F3C2C2;border-radius:12px;padding:14px 20px;margin-top:14px}
+.cf h3,.mis h3,.conf h3{margin:0 0 6px;font-size:16px}
+.cf p,.mis p{margin:0}
+.conf{border:1px solid #E3E0D8;border-radius:12px;padding:14px 20px;margin-top:22px}
+.conf p{margin:6px 0} .conf span,.rel span{color:#8A8A93;font-size:13.5px}
+.cap{color:#8A8A93;font-size:14px}
+.pn{display:flex;justify-content:space-between;gap:16px;margin-top:40px;border-top:1px solid #E3E0D8;padding-top:18px;font-size:14.5px}
+.spa{display:block;text-align:center;margin-top:28px;background:#1c2b3a;color:#fff;border-radius:12px;padding:12px}
+footer{margin-top:34px;color:#8A8A93;font-size:13px;text-align:center}
+</style>
+</head>
+<body>
+<div class="crumb"><a href="https://www.aha.voyager06.tech/">原来如此</a> / 网络与协议 / 订阅链接：节点通讯录</div>
+<span class="kick">网络与协议</span>
+<h1>订阅链接：节点通讯录</h1>
+<div class="tagline">一串会自动更新的节点通讯录</div>
+<div class="scene"><b>👀 日常场景</b><p>每次点“更新订阅”，节点列表就刷新了，延迟数字也变了，偶尔还多出几个新节点。这个链接里到底装了什么？为什么节点会越用越多，又莫名其妙集体变红？</p></div>
+
+<h2>原理：它是怎么运作的</h2>
+<div class="sum">💡 订阅链接指向一份节点信息的编码文本，客户端定期拉取、解析，刷新本地节点列表。</div>
+<h2>先看全过程</h2><ol class="steps"><li>在客户端粘贴订阅链接</li><li>客户端发起 HTTPS 请求</li><li>服务端返回节点列表文本</li><li>客户端解码并解析每个节点</li><li>更新本地 proxies 列表</li><li>策略组按新节点重新生成</li></ol>
+<p>订阅链接的本质，就是一份“节点通讯录”的下载地址。服务端返回的通常是一段编码文本（base64 或 YAML）：里面是每个节点的地址、端口、协议类型、加密方式和别名。客户端的工作就是定期去这个地址拉取、解码、解析，然后替换掉本地的旧节点列表。</p><p>为什么需要“订阅”而不是一次导入？因为节点是会变的：IP 会轮换、服务器会维护下线、新的地区会加入。订阅机制让这份通讯录永远是新鲜的，你点一下更新，客户端就和服务端对一次账。</p><p>在 Clash 的配置文件里，订阅对应的是 proxy-providers 一节：类型、拉取地址、更新间隔、保存路径都在这里声明。还有一种“订阅转换”：把一种客户端格式的订阅解析后重组成另一种格式（比如转成 Clash 的 YAML），原理就是“解析→重组”，换了个包装。</p><p>最后是安全提醒：订阅链接里藏着你的账号凭证，截图发群、转发给朋友，等于把账号共享了出去。妥善保管，别外传。</p>
+
+<h2>订阅链接怎么用</h2><ul><li><b>手动更新</b>：想起来就点一下“更新订阅”，完全掌控时机</li><li><b>自动更新</b>：设个间隔（如 24 小时），客户端自己去拉新列表</li><li><b>订阅转换</b>：把一种格式的订阅转成另一种客户端能用的</li></ul><ol><li>从服务商那里拿到订阅链接（保管好，别外传）</li><li>在客户端“订阅管理”里添加链接，点更新</li><li>确认节点列表正常加载、延迟数字出来了</li><li>设个自动更新间隔（24 小时比较常见）</li><li>节点集体变红：先点更新订阅，大概率是节点换了不是软件坏了</li><li>自己加过自定义节点/规则：更新前备份，别被覆盖掉</li></ol>
+<h2>延伸阅读</h2><ul><li><a href="https://github.com/87730/flclash-script/blob/HEAD/README.md" rel="noopener">FlClash Mihomo 覆写脚本：订阅管理与节点解析说明</a></li></ul>
+<h2>相关条目</h2><ul class="rel"><li><a href="https://www.aha.voyager06.tech/p/network-policy-groups.html">策略组：自动选最快节点</a> <span>手动挡、自动挡、四驱，任你挑选</span></li><li><a href="https://www.aha.voyager06.tech/p/network-proxychains.html">链式代理：把代理串成糖葫芦</a> <span>一跳不够，串三跳</span></li><li><a href="https://www.aha.voyager06.tech/p/network-proxy-chain.html">直连与链式代理</a> <span>你的请求，中间转了几道手？</span></li></ul>
+
+<a class="spa" href="https://www.aha.voyager06.tech/#/p/network-subscription">在站内打开本篇（完整交互版）→</a>
+<div class="pn"><a href="https://www.aha.voyager06.tech/p/network-tun-mode.html">← 上一个：TUN 模式：接管所有流量的虚拟网卡</a><a href="https://www.aha.voyager06.tech/p/network-fake-ip.html">下一个：Fake-IP：Clash 的 DNS 骗术 →</a></div>
+<footer>原来如此 · 把听说过的技术讲透 · 内容为科普解读，具体接入请以各服务官方文档为准</footer>
+</body>
+</html>

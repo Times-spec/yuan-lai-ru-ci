@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Harness：铁面无私的 AI 监考官 · 原来如此</title>
+<meta name="description" content="给考试配一个铁面无私的监考官。统一 prompt、few-shot 数、任务版本和打分指标的&quot;执考框架&quot;，让不同模型的分数站在同一起跑线上。">
+<link rel="canonical" href="https://www.aha.voyager06.tech/p/ai-harness.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Harness：铁面无私的 AI 监考官 · 原来如此">
+<meta property="og:description" content="给考试配一个铁面无私的监考官。统一 prompt、few-shot 数、任务版本和打分指标的&quot;执考框架&quot;，让不同模型的分数站在同一起跑线上。">
+<meta property="og:url" content="https://www.aha.voyager06.tech/p/ai-harness.html">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>">
+<style>
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;max-width:760px;margin:0 auto;padding:24px 20px 60px;color:#1c2b3a;line-height:1.8;background:#FDFCF9}
+a{color:#2563EB;text-decoration:none} a:hover{text-decoration:underline}
+.crumb{font-size:13px;color:#8A8A93;margin-bottom:18px}
+h1{font-size:30px;line-height:1.35;margin:6px 0 8px}
+.tagline{color:#5B6470;font-size:16px;margin-bottom:20px}
+.kick{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.1em;background:#EEF3F8;color:#31597F;border-radius:999px;padding:4px 12px}
+.scene{background:#FFF8EC;border:1px solid #F0E2C4;border-radius:12px;padding:16px 20px}
+.sum{background:#EEF4FF;border:1px solid #C9DBF5;border-radius:12px;padding:16px 20px;font-weight:600}
+h2{font-size:20px;margin:34px 0 12px}
+.steps li,.rel li{margin:6px 0}
+.cf{background:#F5F3FF;border:1px dashed #C4B5FD;border-radius:12px;padding:14px 20px;margin-top:22px}
+.mis{background:#FFF5F5;border:1px solid #F3C2C2;border-radius:12px;padding:14px 20px;margin-top:14px}
+.cf h3,.mis h3,.conf h3{margin:0 0 6px;font-size:16px}
+.cf p,.mis p{margin:0}
+.conf{border:1px solid #E3E0D8;border-radius:12px;padding:14px 20px;margin-top:22px}
+.conf p{margin:6px 0} .conf span,.rel span{color:#8A8A93;font-size:13.5px}
+.cap{color:#8A8A93;font-size:14px}
+.pn{display:flex;justify-content:space-between;gap:16px;margin-top:40px;border-top:1px solid #E3E0D8;padding-top:18px;font-size:14.5px}
+.spa{display:block;text-align:center;margin-top:28px;background:#1c2b3a;color:#fff;border-radius:12px;padding:12px}
+footer{margin-top:34px;color:#8A8A93;font-size:13px;text-align:center}
+</style>
+</head>
+<body>
+<div class="crumb"><a href="https://www.aha.voyager06.tech/">原来如此</a> / AI 与大模型 / Harness：铁面无私的 AI 监考官</div>
+<span class="kick">AI 与大模型</span>
+<h1>Harness：铁面无私的 AI 监考官</h1>
+<div class="tagline">给考试配一个铁面无私的监考官</div>
+<div class="scene"><b>👀 日常场景</b><p>开发者&quot;给新出的开源模型跑个分，看看是不是吹牛&quot;——但同样的卷子，换个问法分数就变。怎么保证你跑的分和官方公布的是同一个&quot;分&quot;？这就需要 Harness 来统一&quot;执考&quot;。</p></div>
+
+<h2>原理：它是怎么运作的</h2>
+<div class="sum">💡 统一 prompt、few-shot 数、任务版本和打分指标的&quot;执考框架&quot;，让不同模型的分数站在同一起跑线上。</div>
+<h2>先看全过程</h2><ol class="steps"><li>选任务：mmlu、gsm8k 等</li><li>harness 按统一模板发卷</li><li>固定 few-shot 数和 prompt</li><li>收集所有模型输出</li><li>按同一套指标打分</li><li>分数可比、可复现、可进 CI</li></ol>
+<p>有了考卷，还需要铁面无私的监考官。LLM 评测有个恼人特性：prompt 写法稍变，分数就崩。同样测 MMLU，题目前加&quot;请回答：&quot;和不加能差好几个点；few-shot 给 5 个和给 0 个更是天壤之别——A 模型 75 分、B 模型 78 分，姿势不同根本没法比。</p><p>Harness 就是来统一姿势的：EleutherAI 的 lm-evaluation-harness 把 prompt 模板、few-shot 数、任务版本、打分指标全部标准化，一行命令跑分，任何模型都站在同一起跑线上。它内置 300+ 学术任务，支持 HuggingFace、vLLM、OpenAI API 等后端，是 HF Open LLM Leaderboard 背后的标准工具。</p><p>在逻辑链上，Harness 承接 Benchmark 的&quot;有卷无官&quot;：考卷解决&quot;考什么&quot;，它解决&quot;怎么考才公平&quot;。注意边界：它测的是学术基准上的&quot;裸能力&quot;，RAG、Agent 行为需要另一类 harness（如 SWE-bench 的执行沙箱）。</p>
+
+<h2>开发者：应该如何接入</h2><ul><li><b>lm-evaluation-harness</b>：EleutherAI 出品，pip install lm-eval</li><li><b>Open LLM Leaderboard</b>：Hugging Face 官方排行榜背后的标准</li><li><b>评测进 CI</b>：接入 CI，每次更新模型自动跑回归</li></ul><ol><li>选任务：mmlu、gsm8k…</li><li>harness 统一发卷</li><li>固定 few-shot 数和 prompt</li><li>收集模型输出</li><li>按同一指标打分</li><li>结果可复现、可发表</li></ol>
+<h2>延伸阅读</h2><ul><li><a href="https://github.com/EleutherAI/lm-evaluation-harness" rel="noopener">lm-evaluation-harness 官方仓库（EleutherAI）</a></li><li><a href="https://qaskills.sh/blog/lm-evaluation-harness-tutorial-2026" rel="noopener">lm-evaluation-harness 教程 2026</a></li><li><a href="https://huggingface.co/spaces/HuggingFaceH4/open_llm_leaderboard" rel="noopener">Open LLM Leaderboard（Hugging Face）</a></li></ul>
+<h2>相关条目</h2><ul class="rel"><li><a href="https://www.aha.voyager06.tech/p/ai-benchmark.html">Benchmark：给大模型的标准化考试</a> <span>大模型的高考，分数也会通胀</span></li><li><a href="https://www.aha.voyager06.tech/p/ai-rag.html">RAG：给大模型外挂知识库</a> <span>给大模型外挂一个知识库</span></li><li><a href="https://www.aha.voyager06.tech/p/network-agent-protocol.html">个人智能体协议 PAP：AI 替你下单时，商家怎么认出它</a> <span>给 AI 代理办一张&quot;身份证 + 授权书&quot;</span></li></ul>
+
+<a class="spa" href="https://www.aha.voyager06.tech/#/p/ai-harness">在站内打开本篇（完整交互版）→</a>
+<div class="pn"><a href="https://www.aha.voyager06.tech/p/ai-benchmark.html">← 上一个：Benchmark：给大模型的标准化考试</a><a href="https://www.aha.voyager06.tech/p/ai-rag.html">下一个：RAG：给大模型外挂知识库 →</a></div>
+<footer>原来如此 · 把听说过的技术讲透 · 内容为科普解读，具体接入请以各服务官方文档为准</footer>
+</body>
+</html>

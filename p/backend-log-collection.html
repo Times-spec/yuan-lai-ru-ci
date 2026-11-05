@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>日志收集 · 原来如此</title>
+<meta name="description" content="出问题时，先看日志。把分散的日志汇总到中央存储，可检索、可告警，ELK 是经典方案。">
+<link rel="canonical" href="https://www.aha.voyager06.tech/p/backend-log-collection.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="日志收集 · 原来如此">
+<meta property="og:description" content="出问题时，先看日志。把分散的日志汇总到中央存储，可检索、可告警，ELK 是经典方案。">
+<meta property="og:url" content="https://www.aha.voyager06.tech/p/backend-log-collection.html">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>">
+<style>
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;max-width:760px;margin:0 auto;padding:24px 20px 60px;color:#1c2b3a;line-height:1.8;background:#FDFCF9}
+a{color:#2563EB;text-decoration:none} a:hover{text-decoration:underline}
+.crumb{font-size:13px;color:#8A8A93;margin-bottom:18px}
+h1{font-size:30px;line-height:1.35;margin:6px 0 8px}
+.tagline{color:#5B6470;font-size:16px;margin-bottom:20px}
+.kick{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.1em;background:#EEF3F8;color:#31597F;border-radius:999px;padding:4px 12px}
+.scene{background:#FFF8EC;border:1px solid #F0E2C4;border-radius:12px;padding:16px 20px}
+.sum{background:#EEF4FF;border:1px solid #C9DBF5;border-radius:12px;padding:16px 20px;font-weight:600}
+h2{font-size:20px;margin:34px 0 12px}
+.steps li,.rel li{margin:6px 0}
+.cf{background:#F5F3FF;border:1px dashed #C4B5FD;border-radius:12px;padding:14px 20px;margin-top:22px}
+.mis{background:#FFF5F5;border:1px solid #F3C2C2;border-radius:12px;padding:14px 20px;margin-top:14px}
+.cf h3,.mis h3,.conf h3{margin:0 0 6px;font-size:16px}
+.cf p,.mis p{margin:0}
+.conf{border:1px solid #E3E0D8;border-radius:12px;padding:14px 20px;margin-top:22px}
+.conf p{margin:6px 0} .conf span,.rel span{color:#8A8A93;font-size:13.5px}
+.cap{color:#8A8A93;font-size:14px}
+.pn{display:flex;justify-content:space-between;gap:16px;margin-top:40px;border-top:1px solid #E3E0D8;padding-top:18px;font-size:14.5px}
+.spa{display:block;text-align:center;margin-top:28px;background:#1c2b3a;color:#fff;border-radius:12px;padding:12px}
+footer{margin-top:34px;color:#8A8A93;font-size:13px;text-align:center}
+</style>
+</head>
+<body>
+<div class="crumb"><a href="https://www.aha.voyager06.tech/">原来如此</a> / 后端基建 / 日志收集</div>
+<span class="kick">后端基建</span>
+<h1>日志收集</h1>
+<div class="tagline">出问题时，先看日志</div>
+<div class="scene"><b>👀 日常场景</b><p>凌晨三点告警响了：支付成功率下跌。十几台服务器，日志散落在各台机器上，一个个 SSH 上去翻要翻到天亮。日志收集系统把所有日志汇到一处，搜一个订单号，全链路的报错按时间排好——定位问题从小时级变成分钟级。</p></div>
+
+<h2>原理：它是怎么运作的</h2>
+<div class="sum">💡 把分散的日志汇总到中央存储，可检索、可告警，ELK 是经典方案。</div>
+<h2>先看全过程</h2><ol class="steps"><li>应用输出结构化日志</li><li>采集器 tail 日志文件</li><li>传输到中央队列/存储</li><li>索引后可全文检索</li><li>配置错误关键字告警</li><li>按订单号串联全链路</li></ol>
+<p>单机时代看日志就是 tail -f，分布式时代不行了：请求被负载到 A 机器，DB 在 B 机器，日志散得到处都是。集中式日志做三件事：收集（Filebeat/Fluentd tail 每个容器的日志文件）、传输（经 Kafka 缓冲防丢）、存储检索（Elasticsearch 建索引，Kibana 查）。</p><p>想让日志好查，输出时就要「结构化」：JSON 格式，带时间、级别、traceId（链路追踪 ID，一个请求从头到尾都带同一个 ID，跨服务也能串起来）、userId、orderId。搜 orderId=10086，全链路日志按时间排好，这就是可观测性的底座。</p><p>日志也有成本：全量 DEBUG 日志一天几个 TB，存储账单惊人。做法是分级：INFO 进索引保留 7 天，DEBUG 只留本地；错误日志配关键字告警，5 分钟内出现 10 次直接电话告警。Loki 是轻量替代：只索引标签不索引内容，省 10 倍存储，适合预算有限的团队。</p>
+
+<h2>开发者：应该如何接入</h2><ul><li><b>ELK（ES+Logstash+Kibana）</b>：功能最全，检索强大</li><li><b>Loki + Grafana</b>：轻量，存储成本低一个数量级</li><li><b>云日志服务（SLS/CLS）</b>：开箱即用，按量付费</li></ul><ol><li>统一日志格式：JSON，带时间、级别、traceId</li><li>每个服务部署采集器（Filebeat/Fluentd）</li><li>日志经 Kafka 缓冲，写入 ES 或 Loki</li><li>Kibana/Grafana 配好常用查询面板</li><li>错误关键字配告警规则</li><li>定保留策略：热数据 7 天，冷数据转低成本存储</li></ol>
+
+<h2>相关条目</h2><ul class="rel"><li><a href="https://www.aha.voyager06.tech/p/network-ip-types.html">机房 IP vs 住宅 IP：差的不是速度，是“出身”</a> <span>网站看 IP，先看“户口本”</span></li><li><a href="https://www.aha.voyager06.tech/p/ai-open-weights.html">开放权重：Mistral Large 4 的 1T 参数到底&quot;开放&quot;了什么</a> <span>开放权重≠开源，先看清三张不同的通行证</span></li></ul>
+
+<a class="spa" href="https://www.aha.voyager06.tech/#/p/backend-log-collection">在站内打开本篇（完整交互版）→</a>
+<div class="pn"><a href="https://www.aha.voyager06.tech/p/backend-api-gateway.html">← 上一个：API 网关：所有请求的统一入口</a><a href="https://www.aha.voyager06.tech/p/backend-health-check.html">下一个：健康检查与优雅停机 →</a></div>
+<footer>原来如此 · 把听说过的技术讲透 · 内容为科普解读，具体接入请以各服务官方文档为准</footer>
+</body>
+</html>

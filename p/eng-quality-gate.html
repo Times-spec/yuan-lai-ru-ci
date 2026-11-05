@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>门禁：89 道检查一道不能少 · 原来如此</title>
+<meta name="description" content="流水线上的安检仪。门禁是流水线里的强制检查点：代码扫描、单测覆盖率、安全漏洞、性能基线……任何一项不达标，流水线就地拦下，不许发布。">
+<link rel="canonical" href="https://www.aha.voyager06.tech/p/eng-quality-gate.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="门禁：89 道检查一道不能少 · 原来如此">
+<meta property="og:description" content="流水线上的安检仪。门禁是流水线里的强制检查点：代码扫描、单测覆盖率、安全漏洞、性能基线……任何一项不达标，流水线就地拦下，不许发布。">
+<meta property="og:url" content="https://www.aha.voyager06.tech/p/eng-quality-gate.html">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>">
+<style>
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;max-width:760px;margin:0 auto;padding:24px 20px 60px;color:#1c2b3a;line-height:1.8;background:#FDFCF9}
+a{color:#2563EB;text-decoration:none} a:hover{text-decoration:underline}
+.crumb{font-size:13px;color:#8A8A93;margin-bottom:18px}
+h1{font-size:30px;line-height:1.35;margin:6px 0 8px}
+.tagline{color:#5B6470;font-size:16px;margin-bottom:20px}
+.kick{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.1em;background:#EEF3F8;color:#31597F;border-radius:999px;padding:4px 12px}
+.scene{background:#FFF8EC;border:1px solid #F0E2C4;border-radius:12px;padding:16px 20px}
+.sum{background:#EEF4FF;border:1px solid #C9DBF5;border-radius:12px;padding:16px 20px;font-weight:600}
+h2{font-size:20px;margin:34px 0 12px}
+.steps li,.rel li{margin:6px 0}
+.cf{background:#F5F3FF;border:1px dashed #C4B5FD;border-radius:12px;padding:14px 20px;margin-top:22px}
+.mis{background:#FFF5F5;border:1px solid #F3C2C2;border-radius:12px;padding:14px 20px;margin-top:14px}
+.cf h3,.mis h3,.conf h3{margin:0 0 6px;font-size:16px}
+.cf p,.mis p{margin:0}
+.conf{border:1px solid #E3E0D8;border-radius:12px;padding:14px 20px;margin-top:22px}
+.conf p{margin:6px 0} .conf span,.rel span{color:#8A8A93;font-size:13.5px}
+.cap{color:#8A8A93;font-size:14px}
+.pn{display:flex;justify-content:space-between;gap:16px;margin-top:40px;border-top:1px solid #E3E0D8;padding-top:18px;font-size:14.5px}
+.spa{display:block;text-align:center;margin-top:28px;background:#1c2b3a;color:#fff;border-radius:12px;padding:12px}
+footer{margin-top:34px;color:#8A8A93;font-size:13px;text-align:center}
+</style>
+</head>
+<body>
+<div class="crumb"><a href="https://www.aha.voyager06.tech/">原来如此</a> / 工程与协作 / 门禁：89 道检查一道不能少</div>
+<span class="kick">工程与协作</span>
+<h1>门禁：89 道检查一道不能少</h1>
+<div class="tagline">流水线上的安检仪</div>
+<div class="scene"><b>👀 日常场景</b><p>你的发布流水线跑了 20 分钟，89 项检查全绿，你点了发布。上线后风控报警：一个 SQL 注入漏洞混进了生产环境。你回头看流水线：安全扫描那项，有人上周为了“赶时间”把它关了。门禁的意义，就在于“不能关”。</p></div>
+
+<h2>原理：它是怎么运作的</h2>
+<div class="sum">💡 门禁是流水线里的强制检查点：代码扫描、单测覆盖率、安全漏洞、性能基线……任何一项不达标，流水线就地拦下，不许发布。</div>
+<h2>先看全过程</h2><ol class="steps"><li>门禁=流水线的安检仪</li><li>查什么：代码、测试、安全、性能</li><li>不达标就拦下，不许绕过</li><li>门禁规则要版本化管理</li><li>误报也要修规则，不关门禁</li></ol>
+<p>门禁（quality gate）是 CI/CD 流水线里的强制关卡，灵感来自工厂的质检：零件不合格，不许流到下一道工序。常见的门禁有：代码规范扫描、单元测试覆盖率（比如不低于 80%）、安全漏洞扫描（高危漏洞零容忍）、依赖漏洞检查、性能基线对比（这次比上次慢 20% 就拦）。</p><p>门禁和测试的区别：测试告诉你“哪里有问题”，门禁决定“能不能过”。最关键的一条纪律：门禁只能调规则、不能关——上周关掉安全扫描“赶时间”，这周就要为漏洞买单。</p><p>89 个门禁听起来多，但都是机器自动跑的，20 分钟出结果；真正贵的是没有门禁时，一次生产事故的代价。门禁也会误报，正确做法是修规则（加白名单、调阈值），而不是关门禁：规则要版本化管理，和代码一起评审。记住：门禁拦下你 10 次误报，成本是 10 次排查；放过 1 次真漏洞，成本是一次生产事故。</p>
+
+<h2>门禁该检查什么</h2><ul><li><b>代码门禁</b>：规范扫描、重复率、复杂度</li><li><b>测试门禁</b>：单测覆盖率、冒烟用例全过</li><li><b>安全门禁</b>：漏洞扫描、依赖检查、密钥泄露</li><li><b>性能门禁</b>：和基线对比，退化超阈值就拦</li></ul><ol><li>列出你们的发布风险清单</li><li>每条风险对应一个自动检查</li><li>定阈值：覆盖率多少、漏洞几级</li><li>门禁规则入版本库，和代码一起评审</li><li>定期复盘：误报修规则，不关门禁</li></ol>
+
+<h2>相关条目</h2><ul class="rel"><li><a href="https://www.aha.voyager06.tech/p/eng-adr.html">ADR：给技术选型留的字条</a> <span>给未来的自己留一张纸条</span></li><li><a href="https://www.aha.voyager06.tech/p/security-ip-rate-limit.html">IP 限流</a> <span>“操作频繁请稍后再试”背后的看门人</span></li><li><a href="https://www.aha.voyager06.tech/p/eng-github.html">GitHub：把开源项目玩明白</a> <span>改后缀、找宝藏、看证书、攒星标</span></li></ul>
+
+<a class="spa" href="https://www.aha.voyager06.tech/#/p/eng-quality-gate">在站内打开本篇（完整交互版）→</a>
+<div class="pn"><a href="https://www.aha.voyager06.tech/p/eng-evidence.html">← 上一个：证据：发布要留“案底”</a><a href="https://www.aha.voyager06.tech/p/eng-fixture.html">下一个：夹具：测试的“道具组” →</a></div>
+<footer>原来如此 · 把听说过的技术讲透 · 内容为科普解读，具体接入请以各服务官方文档为准</footer>
+</body>
+</html>

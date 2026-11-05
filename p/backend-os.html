@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>操作系统（OS） · 原来如此</title>
+<meta name="description" content="所有软件脚下的大地。内核是硬件与软件之间的唯一中介：CPU、内存、磁盘、网络全由它分配，程序通过系统调用向它申请资源。">
+<link rel="canonical" href="https://www.aha.voyager06.tech/p/backend-os.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="操作系统（OS） · 原来如此">
+<meta property="og:description" content="所有软件脚下的大地。内核是硬件与软件之间的唯一中介：CPU、内存、磁盘、网络全由它分配，程序通过系统调用向它申请资源。">
+<meta property="og:url" content="https://www.aha.voyager06.tech/p/backend-os.html">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>">
+<style>
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;max-width:760px;margin:0 auto;padding:24px 20px 60px;color:#1c2b3a;line-height:1.8;background:#FDFCF9}
+a{color:#2563EB;text-decoration:none} a:hover{text-decoration:underline}
+.crumb{font-size:13px;color:#8A8A93;margin-bottom:18px}
+h1{font-size:30px;line-height:1.35;margin:6px 0 8px}
+.tagline{color:#5B6470;font-size:16px;margin-bottom:20px}
+.kick{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.1em;background:#EEF3F8;color:#31597F;border-radius:999px;padding:4px 12px}
+.scene{background:#FFF8EC;border:1px solid #F0E2C4;border-radius:12px;padding:16px 20px}
+.sum{background:#EEF4FF;border:1px solid #C9DBF5;border-radius:12px;padding:16px 20px;font-weight:600}
+h2{font-size:20px;margin:34px 0 12px}
+.steps li,.rel li{margin:6px 0}
+.cf{background:#F5F3FF;border:1px dashed #C4B5FD;border-radius:12px;padding:14px 20px;margin-top:22px}
+.mis{background:#FFF5F5;border:1px solid #F3C2C2;border-radius:12px;padding:14px 20px;margin-top:14px}
+.cf h3,.mis h3,.conf h3{margin:0 0 6px;font-size:16px}
+.cf p,.mis p{margin:0}
+.conf{border:1px solid #E3E0D8;border-radius:12px;padding:14px 20px;margin-top:22px}
+.conf p{margin:6px 0} .conf span,.rel span{color:#8A8A93;font-size:13.5px}
+.cap{color:#8A8A93;font-size:14px}
+.pn{display:flex;justify-content:space-between;gap:16px;margin-top:40px;border-top:1px solid #E3E0D8;padding-top:18px;font-size:14.5px}
+.spa{display:block;text-align:center;margin-top:28px;background:#1c2b3a;color:#fff;border-radius:12px;padding:12px}
+footer{margin-top:34px;color:#8A8A93;font-size:13px;text-align:center}
+</style>
+</head>
+<body>
+<div class="crumb"><a href="https://www.aha.voyager06.tech/">原来如此</a> / 工程与协作 / 操作系统（OS）</div>
+<span class="kick">工程与协作</span>
+<h1>操作系统（OS）</h1>
+<div class="tagline">所有软件脚下的大地</div>
+<div class="scene"><b>👀 日常场景</b><p>买云服务器要选系统：Ubuntu、Debian 还是 Windows？都说“生产环境用 Linux”；Docker 号称“比虚拟机轻得多”。这些选择背后都是操作系统在起作用——它是所有软件脚下的大地，程序想干任何事，都得先经过它批准。</p></div>
+
+<h2>原理：它是怎么运作的</h2>
+<div class="sum">💡 内核是硬件与软件之间的唯一中介：CPU、内存、磁盘、网络全由它分配，程序通过系统调用向它申请资源。</div>
+<h2>先看全过程</h2><ol class="steps"><li>程序发起系统调用申请资源</li><li>内核分配 CPU 时间片调度</li><li>内存分页隔离各个进程</li><li>磁盘与网络 IO 统一调度</li><li>一个进程崩溃不影响其他</li><li>用户态与内核态权限隔离</li></ol>
+<p>操作系统分三层：硬件（CPU、内存、磁盘、网卡）、内核（kernel）、应用程序。内核是软硬件之间的唯一中介——程序想干任何事（读写文件、发网络包、申请内存），都不能直接碰硬件，必须通过“系统调用”（syscall）向内核申请。</p><p>内核干四件事：进程管理（分配 CPU 时间片，营造“同时运行”的假象）、内存管理（分页加虚拟内存，每个进程看到独立地址空间）、文件系统（把磁盘块抽象成文件和目录）、设备与网络（统一调度 IO）。用户态和内核态的隔离是关键：应用跑在用户态权限受限，只有内核能执行特权指令。</p><p>为什么服务器都用 Linux？免费开源、可裁剪、极度稳定、包管理器一条命令装软件、云原生生态全围绕它生长。</p><p>容器和虚拟机的区别也在这里：容器共享宿主机内核，只用 namespace（视角隔离）加 cgroup（资源配额）造出“独立机器”的假象，所以轻、秒级启动；虚拟机自带完整内核，所以重、隔离更彻底。选操作系统，本质上是在选生态。</p>
+
+<h2>该怎么选系统</h2><ul><li><b>Ubuntu Server LTS</b>：资料最多、云厂商默认选项，遇到问题一搜就有答案</li><li><b>Debian</b>：极简、稳定、不折腾，装好能跑十年</li><li><b>Alpine Linux</b>：只有几 MB，容器镜像专用</li><li><b>Windows Server</b>：跑老 .NET Framework 应用或必须图形界面的场景</li></ul><ol><li>先看跑什么：Web/数据库/容器→Linux；老旧 .NET 应用→Windows Server</li><li>再看团队：大家熟哪个就用哪个，深夜排障时熟悉度就是生命</li><li>容器场景直接 Alpine；物理机/虚拟机长期跑选 Ubuntu LTS 或 Debian</li><li>只装 Server/最小化版本：桌面环境是浪费资源+扩大攻击面</li><li>建普通用户、配 SSH 密钥登录，禁用 root 远程登录</li><li>把自动安全更新打开：“能跑就别动”迟早变成肉鸡</li></ol>
+
+<h2>相关条目</h2><ul class="rel"><li><a href="https://www.aha.voyager06.tech/p/ai-jev.html">Jev：不聊天的 AI 决策模型</a> <span>不聊天不写代码，只做判断题的 AI</span></li><li><a href="https://www.aha.voyager06.tech/p/security-ip-rate-limit.html">IP 限流</a> <span>“操作频繁请稍后再试”背后的看门人</span></li><li><a href="https://www.aha.voyager06.tech/p/features-open-with-apps.html">「用其他应用打开」：推荐名单是怎么算出来的</a> <span>不是系统随便排的，是每个 App 自己「报名」的结果</span></li></ul>
+
+<a class="spa" href="https://www.aha.voyager06.tech/#/p/backend-os">在站内打开本篇（完整交互版）→</a>
+<div class="pn"><a href="https://www.aha.voyager06.tech/p/eng-github.html">← 上一个：GitHub：把开源项目玩明白</a><a href="https://www.aha.voyager06.tech/p/eng-prd.html">下一个：PRD：需求从这里开始 →</a></div>
+<footer>原来如此 · 把听说过的技术讲透 · 内容为科普解读，具体接入请以各服务官方文档为准</footer>
+</body>
+</html>

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>支付异步通知：服务器间的到账确认 · 原来如此</title>
+<meta name="description" content="服务器之间悄悄对账，才是真凭据。支付成功后，支付平台服务端直接向商户的 notify_url 发 POST 通知；商户验签、保证幂等后更新订单，这才是可信的支付凭证。">
+<link rel="canonical" href="https://www.aha.voyager06.tech/p/nav-payment-notify.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="支付异步通知：服务器间的到账确认 · 原来如此">
+<meta property="og:description" content="服务器之间悄悄对账，才是真凭据。支付成功后，支付平台服务端直接向商户的 notify_url 发 POST 通知；商户验签、保证幂等后更新订单，这才是可信的支付凭证。">
+<meta property="og:url" content="https://www.aha.voyager06.tech/p/nav-payment-notify.html">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>">
+<style>
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;max-width:760px;margin:0 auto;padding:24px 20px 60px;color:#1c2b3a;line-height:1.8;background:#FDFCF9}
+a{color:#2563EB;text-decoration:none} a:hover{text-decoration:underline}
+.crumb{font-size:13px;color:#8A8A93;margin-bottom:18px}
+h1{font-size:30px;line-height:1.35;margin:6px 0 8px}
+.tagline{color:#5B6470;font-size:16px;margin-bottom:20px}
+.kick{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.1em;background:#EEF3F8;color:#31597F;border-radius:999px;padding:4px 12px}
+.scene{background:#FFF8EC;border:1px solid #F0E2C4;border-radius:12px;padding:16px 20px}
+.sum{background:#EEF4FF;border:1px solid #C9DBF5;border-radius:12px;padding:16px 20px;font-weight:600}
+h2{font-size:20px;margin:34px 0 12px}
+.steps li,.rel li{margin:6px 0}
+.cf{background:#F5F3FF;border:1px dashed #C4B5FD;border-radius:12px;padding:14px 20px;margin-top:22px}
+.mis{background:#FFF5F5;border:1px solid #F3C2C2;border-radius:12px;padding:14px 20px;margin-top:14px}
+.cf h3,.mis h3,.conf h3{margin:0 0 6px;font-size:16px}
+.cf p,.mis p{margin:0}
+.conf{border:1px solid #E3E0D8;border-radius:12px;padding:14px 20px;margin-top:22px}
+.conf p{margin:6px 0} .conf span,.rel span{color:#8A8A93;font-size:13.5px}
+.cap{color:#8A8A93;font-size:14px}
+.pn{display:flex;justify-content:space-between;gap:16px;margin-top:40px;border-top:1px solid #E3E0D8;padding-top:18px;font-size:14.5px}
+.spa{display:block;text-align:center;margin-top:28px;background:#1c2b3a;color:#fff;border-radius:12px;padding:12px}
+footer{margin-top:34px;color:#8A8A93;font-size:13px;text-align:center}
+</style>
+</head>
+<body>
+<div class="crumb"><a href="https://www.aha.voyager06.tech/">原来如此</a> / 跳转与导航 / 支付异步通知：服务器间的到账确认</div>
+<span class="kick">跳转与导航</span>
+<h1>支付异步通知：服务器间的到账确认</h1>
+<div class="tagline">服务器之间悄悄对账，才是真凭据</div>
+<div class="scene"><b>👀 日常场景</b><p>你付完款关掉了支付页面，商家 App 却照样显示“已支付”并发货了。因为真正的支付结果不是靠你浏览器带回来的，而是支付平台服务器直接发请求告诉商家服务器的。这条服务器之间的“悄悄话”，才是订单状态的唯一真凭据。</p></div>
+
+<h2>原理：它是怎么运作的</h2>
+<div class="sum">💡 支付成功后，支付平台服务端直接向商户的 notify_url 发 POST 通知；商户验签、保证幂等后更新订单，这才是可信的支付凭证。</div>
+<h2>先看全过程</h2><ol class="steps"><li>用户在支付平台完成付款</li><li>支付平台服务端发 POST 通知</li><li>商户校验签名防伪造</li><li>按订单号幂等更新订单状态</li><li>返回成功标识，平台停止重发</li></ol>
+<p>异步通知才是支付结果的“真凭据”：用户付完款后，支付平台的服务器直接向商户预设的 notify_url 发一个 POST 请求，全程不经过用户浏览器，所以关页面、断网都不影响。商户收到后做三件事：第一验签，用平台的公钥验证签名，签名不对直接拒绝——这是防伪造的生命线；第二幂等，通知可能会重发多次，按订单号查库，处理过的直接返回成功，避免重复发货；第三尽快返回平台约定的成功标识（如支付宝的 success 字符串），否则平台会按退避策略反复推送。notify_url 必须是公网可访问的 HTTPS 接口，开发时可以用内网穿透联调，上线前务必切到正式域名。记住分工：return_url 管展示，notify_url 管记账。联调时建议先用支付平台提供的沙箱环境，签名算法、成功标识的字符串一个都不能错。生产环境的 notify_url 一定要做幂等和验签双保险：历史上出现过不少“伪造回调薅羊毛”的案例，根因都是服务端轻信了没验签的通知。</p>
+
+<h2>开发者：应该如何接入</h2><ul><li><b>支付宝异步通知</b>：签约时配 notify_url，RSA2 验签</li><li><b>微信支付回调</b>：API v3 回调，解密加验签</li><li><b>聚合支付</b>：Ping++、PayJS 等封装多渠道回调</li></ul><ol><li>准备一个公网可访问的 HTTPS 接口作为 notify_url</li><li>在支付平台后台配置该地址</li><li>收到通知先验签，签名不对直接拒绝</li><li>按订单号查库：已处理过的直接返回成功（幂等）</li><li>更新订单为已支付，执行业务（发货或充值）</li><li>尽快返回约定的成功标识，避免平台重复推送</li></ol>
+<h2>延伸阅读</h2><ul><li><a href="https://blog.csdn.net/2401_82540083/article/details/152255074" rel="noopener">CSDN：支付同步与异步通知对比</a></li><li><a href="https://blog.csdn.net/weixin_52474996/article/details/149814317" rel="noopener">CSDN：支付回调验签与幂等实践</a></li></ul>
+<h2>相关条目</h2><ul class="rel"><li><a href="https://www.aha.voyager06.tech/p/nav-payment-return.html">支付成功回跳：回到商户页面</a> <span>付完钱，先给你看个“支付成功”页面</span></li><li><a href="https://www.aha.voyager06.tech/p/nav-client-redirect.html">页面自动跳转：meta 与 JS</a> <span>服务器不说话，浏览器自己数完秒就走</span></li><li><a href="https://www.aha.voyager06.tech/p/backend-trellis.html">Trellis：一键配出生产服务器</a> <span>一条命令，WordPress 服务器全自动上线</span></li></ul>
+
+<a class="spa" href="https://www.aha.voyager06.tech/#/p/nav-payment-notify">在站内打开本篇（完整交互版）→</a>
+<div class="pn"><a href="https://www.aha.voyager06.tech/p/nav-payment-return.html">← 上一个：支付成功回跳：回到商户页面</a><a href="https://www.aha.voyager06.tech/p/nav-hsts.html">下一个：HSTS：强制全站 HTTPS →</a></div>
+<footer>原来如此 · 把听说过的技术讲透 · 内容为科普解读，具体接入请以各服务官方文档为准</footer>
+</body>
+</html>

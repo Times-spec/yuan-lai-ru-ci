@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TDD：先写测试再写代码 · 原来如此</title>
+<meta name="description" content="先写考卷，再写答案。红（写失败的测试）→ 绿（写最少代码让测试通过）→ 重构（保持测试通过下优化），小步循环逼出清晰的接口设计。">
+<link rel="canonical" href="https://www.aha.voyager06.tech/p/eng-tdd.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="TDD：先写测试再写代码 · 原来如此">
+<meta property="og:description" content="先写考卷，再写答案。红（写失败的测试）→ 绿（写最少代码让测试通过）→ 重构（保持测试通过下优化），小步循环逼出清晰的接口设计。">
+<meta property="og:url" content="https://www.aha.voyager06.tech/p/eng-tdd.html">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>">
+<style>
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;max-width:760px;margin:0 auto;padding:24px 20px 60px;color:#1c2b3a;line-height:1.8;background:#FDFCF9}
+a{color:#2563EB;text-decoration:none} a:hover{text-decoration:underline}
+.crumb{font-size:13px;color:#8A8A93;margin-bottom:18px}
+h1{font-size:30px;line-height:1.35;margin:6px 0 8px}
+.tagline{color:#5B6470;font-size:16px;margin-bottom:20px}
+.kick{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.1em;background:#EEF3F8;color:#31597F;border-radius:999px;padding:4px 12px}
+.scene{background:#FFF8EC;border:1px solid #F0E2C4;border-radius:12px;padding:16px 20px}
+.sum{background:#EEF4FF;border:1px solid #C9DBF5;border-radius:12px;padding:16px 20px;font-weight:600}
+h2{font-size:20px;margin:34px 0 12px}
+.steps li,.rel li{margin:6px 0}
+.cf{background:#F5F3FF;border:1px dashed #C4B5FD;border-radius:12px;padding:14px 20px;margin-top:22px}
+.mis{background:#FFF5F5;border:1px solid #F3C2C2;border-radius:12px;padding:14px 20px;margin-top:14px}
+.cf h3,.mis h3,.conf h3{margin:0 0 6px;font-size:16px}
+.cf p,.mis p{margin:0}
+.conf{border:1px solid #E3E0D8;border-radius:12px;padding:14px 20px;margin-top:22px}
+.conf p{margin:6px 0} .conf span,.rel span{color:#8A8A93;font-size:13.5px}
+.cap{color:#8A8A93;font-size:14px}
+.pn{display:flex;justify-content:space-between;gap:16px;margin-top:40px;border-top:1px solid #E3E0D8;padding-top:18px;font-size:14.5px}
+.spa{display:block;text-align:center;margin-top:28px;background:#1c2b3a;color:#fff;border-radius:12px;padding:12px}
+footer{margin-top:34px;color:#8A8A93;font-size:13px;text-align:center}
+</style>
+</head>
+<body>
+<div class="crumb"><a href="https://www.aha.voyager06.tech/">原来如此</a> / 工程与协作 / TDD：先写测试再写代码</div>
+<span class="kick">工程与协作</span>
+<h1>TDD：先写测试再写代码</h1>
+<div class="tagline">先写考卷，再写答案</div>
+<div class="scene"><b>👀 日常场景</b><p>你接了个需求：给订单系统加“满 200 减 20”。老手先埋头写代码再补测试；TDD 反过来：先写测试——“满 200 应减 20”，运行失败（功能还没写）；再写刚好通过的代码；最后重构。循环往复，功能长出来了，测试网也织好了。</p></div>
+
+<h2>原理：它是怎么运作的</h2>
+<div class="sum">💡 红（写失败的测试）→ 绿（写最少代码让测试通过）→ 重构（保持测试通过下优化），小步循环逼出清晰的接口设计。</div>
+<h2>先看全过程</h2><ol class="steps"><li>红：写一个测试，描述期望行为</li><li>运行测试，确认它是失败的</li><li>绿：写刚好能通过的最少代码</li><li>运行测试，确认全部通过</li><li>重构：消除重复，保持测试通过</li><li>循环：下一个小功能重复以上</li></ol>
+<p>TDD（Kent Beck 推广）的反直觉之处在于：测试不是目的，设计才是。先写测试逼你在动手前想清楚三件事：这个函数的输入输出长什么样？边界情况有哪些？名字怎么起才合理？——这些恰恰是“先写代码”时最容易糊弄过去的。</p><p>“红-绿-重构”是它的心跳：红，写一个注定失败的测试（功能还没实现）；绿，用最笨、最少的代码让它变绿（先求对，再求好）；重构，在测试网的保护下放心地消除重复、优化结构。因为每一步都有测试兜底，重构不再是“改出 bug 的勇敢者的游戏”。</p><p>适用场景很明确：逻辑复杂、边界多的核心代码（计费、优惠计算、解析器），测试即文档，新人看测试就知道这函数该干嘛。不适用场景也明确：探索中的 UI、需求一天三变的原型——测试写得比代码还快，纯属内耗。最大的误区是把 TDD 等同于“覆盖率 100%”：覆盖率是副产品，为凑数字而写的测试，本身就是一种浪费。</p>
+
+<h2>开发者：应该如何接入</h2><ul><li><b>pytest（Python）</b>：断言即测试，写起来最接近自然语言</li><li><b>Jest / Vitest（JS）</b>：前端生态的测试运行器，开箱即用</li><li><b>JUnit / Go testing</b>：各语言标准测试框架</li></ul><ol><li>挑一个最小的功能点，明确它的输入输出</li><li>先写测试：只描述期望，不写实现</li><li>运行确认失败（红），避免测试本身是错的</li><li>写最少代码让测试通过（绿）</li><li>重构实现，测试保持全绿</li><li>提交：测试和实现一起进仓库</li></ol>
+
+<h2>相关条目</h2><ul class="rel"><li><a href="https://www.aha.voyager06.tech/p/eng-sdk.html">SDK：开箱即用的开发工具包</a> <span>官方给你打包好的工具箱</span></li><li><a href="https://www.aha.voyager06.tech/p/eng-prd.html">PRD：需求从这里开始</a> <span>需求的出生证明</span></li><li><a href="https://www.aha.voyager06.tech/p/eng-smoke-test.html">冒烟测试：先点火看看冒不冒烟</a> <span>主流程不通，别谈细节</span></li></ul>
+
+<a class="spa" href="https://www.aha.voyager06.tech/#/p/eng-tdd">在站内打开本篇（完整交互版）→</a>
+<div class="pn"><a href="https://www.aha.voyager06.tech/p/eng-linear-jira.html">← 上一个：Linear/Jira：需求的任务看板</a><a href="https://www.aha.voyager06.tech/p/eng-adr.html">下一个：ADR：给技术选型留的字条 →</a></div>
+<footer>原来如此 · 把听说过的技术讲透 · 内容为科普解读，具体接入请以各服务官方文档为准</footer>
+</body>
+</html>

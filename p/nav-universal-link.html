@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Universal Link：直达 App 内页 · 原来如此</title>
+<meta name="description" content="用普通 https 链接，优雅地直达 App。用普通 https 网址做深度链接：网站根目录放一份官方认可的关联文件，证明“这个域名归这个 App”，系统验证通过后就让 App 直接接管链接。">
+<link rel="canonical" href="https://www.aha.voyager06.tech/p/nav-universal-link.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Universal Link：直达 App 内页 · 原来如此">
+<meta property="og:description" content="用普通 https 链接，优雅地直达 App。用普通 https 网址做深度链接：网站根目录放一份官方认可的关联文件，证明“这个域名归这个 App”，系统验证通过后就让 App 直接接管链接。">
+<meta property="og:url" content="https://www.aha.voyager06.tech/p/nav-universal-link.html">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>">
+<style>
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;max-width:760px;margin:0 auto;padding:24px 20px 60px;color:#1c2b3a;line-height:1.8;background:#FDFCF9}
+a{color:#2563EB;text-decoration:none} a:hover{text-decoration:underline}
+.crumb{font-size:13px;color:#8A8A93;margin-bottom:18px}
+h1{font-size:30px;line-height:1.35;margin:6px 0 8px}
+.tagline{color:#5B6470;font-size:16px;margin-bottom:20px}
+.kick{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.1em;background:#EEF3F8;color:#31597F;border-radius:999px;padding:4px 12px}
+.scene{background:#FFF8EC;border:1px solid #F0E2C4;border-radius:12px;padding:16px 20px}
+.sum{background:#EEF4FF;border:1px solid #C9DBF5;border-radius:12px;padding:16px 20px;font-weight:600}
+h2{font-size:20px;margin:34px 0 12px}
+.steps li,.rel li{margin:6px 0}
+.cf{background:#F5F3FF;border:1px dashed #C4B5FD;border-radius:12px;padding:14px 20px;margin-top:22px}
+.mis{background:#FFF5F5;border:1px solid #F3C2C2;border-radius:12px;padding:14px 20px;margin-top:14px}
+.cf h3,.mis h3,.conf h3{margin:0 0 6px;font-size:16px}
+.cf p,.mis p{margin:0}
+.conf{border:1px solid #E3E0D8;border-radius:12px;padding:14px 20px;margin-top:22px}
+.conf p{margin:6px 0} .conf span,.rel span{color:#8A8A93;font-size:13.5px}
+.cap{color:#8A8A93;font-size:14px}
+.pn{display:flex;justify-content:space-between;gap:16px;margin-top:40px;border-top:1px solid #E3E0D8;padding-top:18px;font-size:14.5px}
+.spa{display:block;text-align:center;margin-top:28px;background:#1c2b3a;color:#fff;border-radius:12px;padding:12px}
+footer{margin-top:34px;color:#8A8A93;font-size:13px;text-align:center}
+</style>
+</head>
+<body>
+<div class="crumb"><a href="https://www.aha.voyager06.tech/">原来如此</a> / 跳转与导航 / Universal Link：直达 App 内页</div>
+<span class="kick">跳转与导航</span>
+<h1>Universal Link：直达 App 内页</h1>
+<div class="tagline">用普通 https 链接，优雅地直达 App</div>
+<div class="scene"><b>👀 日常场景</b><p>朋友微信里分享一条小红书笔记，你一点，直接在小红书 App 里打开了那篇笔记，而不是先打开浏览器再提示“用 App 打开”。链接看起来就是普通网址，但系统知道该用 App 接管。</p></div>
+
+<h2>原理：它是怎么运作的</h2>
+<div class="sum">💡 用普通 https 网址做深度链接：网站根目录放一份官方认可的关联文件，证明“这个域名归这个 App”，系统验证通过后就让 App 直接接管链接。</div>
+<h2>先看全过程</h2><ol class="steps"><li>网站根目录放置关联文件</li><li>App 内声明关联的域名</li><li>系统首次联网校验归属关系</li><li>用户点击该域名的链接</li><li>系统直接唤起 App 打开对应页面</li></ol>
+<p>Universal Link（iOS）和 App Links（Android）解决的是 URL Scheme 的归属问题：凭什么证明这个域名归你的 App？答案是网站根目录下的一份关联文件。iOS 要求在 https 根目录放 apple-app-site-association，Android 要求放 .well-known/assetlinks.json（里面写着 App 包名和签名指纹），文件必须能直接访问、不能跳转。App 安装后，系统会联网去校验这份文件，确认“域名和 App 是同一家人”，之后用户点击该域名的普通 https 链接，系统就直接唤起 App 打开对应页面。好处有三：链接就是普通网址，分享、SEO 都不受影响；归属可验证，山寨 App 抢不走；用户没装 App 时，链接就只是一个普通网页，优雅降级。但要注意：微信内置浏览器会拦截 Universal Link，只在 Safari 和系统浏览器里生效；关联文件一旦被 CDN 缓存成跳转，校验就会失败。</p>
+
+<h2>开发者：应该如何接入</h2><ul><li><b>iOS Universal Links</b>：配 apple-app-site-association 加 Associated Domains</li><li><b>Android App Links</b>：配 assetlinks.json 加 autoVerify intent-filter</li><li><b>第三方深度链接平台</b>：Branch、AppsFlyer OneLink 封装跨平台逻辑</li></ul><ol><li>在网站 https 根目录放置 apple-app-site-association（iOS）或 .well-known/assetlinks.json（安卓）</li><li>确保文件可直接访问、不跳转、走 HTTPS</li><li>App 工程里声明 Associated Domains 或 autoVerify intent-filter</li><li>App 内实现链接参数解析与页面路由</li><li>真机测试：装 App 点链接进 App，卸 App 点链接进浏览器</li></ol>
+<h2>延伸阅读</h2><ul><li><a href="https://zh.wikipedia.org/wiki/%E7%A7%BB%E5%8A%A8%E6%B7%B1%E5%BA%A6%E9%80%A3%E7%B5%90" rel="noopener">维基百科：移动深度链接</a></li><li><a href="https://blog.csdn.net/weixin_42584586/article/details/153706109" rel="noopener">CSDN：Universal Link 与 App Links 配置</a></li></ul>
+<h2>相关条目</h2><ul class="rel"><li><a href="https://www.aha.voyager06.tech/p/nav-deferred-deeplink.html">延迟深度链接：先装 App 再进对的页</a> <span>先装 App 再打开，照样直达当初那个页面</span></li><li><a href="https://www.aha.voyager06.tech/p/nav-url-scheme.html">URL Scheme：一键唤起 App</a> <span>twitter:// 这样的怪网址，能直接唤起 App</span></li><li><a href="https://www.aha.voyager06.tech/p/security-email-otp-magic-link.html">邮箱验证码/魔法链接</a> <span>点一下邮件里的链接，直接登录不用输密码</span></li></ul>
+
+<a class="spa" href="https://www.aha.voyager06.tech/#/p/nav-universal-link">在站内打开本篇（完整交互版）→</a>
+<div class="pn"><a href="https://www.aha.voyager06.tech/p/nav-url-scheme.html">← 上一个：URL Scheme：一键唤起 App</a><a href="https://www.aha.voyager06.tech/p/nav-deferred-deeplink.html">下一个：延迟深度链接：先装 App 再进对的页 →</a></div>
+<footer>原来如此 · 把听说过的技术讲透 · 内容为科普解读，具体接入请以各服务官方文档为准</footer>
+</body>
+</html>

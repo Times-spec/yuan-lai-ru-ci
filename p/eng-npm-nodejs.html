@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>npm / Node.js · 原来如此</title>
+<meta name="description" content="让 JS 走出浏览器的两个人。Node.js 把 V8 引擎搬出浏览器，让 JS 能读写文件、开服务；npm 是它的应用商店，一行命令装走全世界开源代码。">
+<link rel="canonical" href="https://www.aha.voyager06.tech/p/eng-npm-nodejs.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="npm / Node.js · 原来如此">
+<meta property="og:description" content="让 JS 走出浏览器的两个人。Node.js 把 V8 引擎搬出浏览器，让 JS 能读写文件、开服务；npm 是它的应用商店，一行命令装走全世界开源代码。">
+<meta property="og:url" content="https://www.aha.voyager06.tech/p/eng-npm-nodejs.html">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>">
+<style>
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;max-width:760px;margin:0 auto;padding:24px 20px 60px;color:#1c2b3a;line-height:1.8;background:#FDFCF9}
+a{color:#2563EB;text-decoration:none} a:hover{text-decoration:underline}
+.crumb{font-size:13px;color:#8A8A93;margin-bottom:18px}
+h1{font-size:30px;line-height:1.35;margin:6px 0 8px}
+.tagline{color:#5B6470;font-size:16px;margin-bottom:20px}
+.kick{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.1em;background:#EEF3F8;color:#31597F;border-radius:999px;padding:4px 12px}
+.scene{background:#FFF8EC;border:1px solid #F0E2C4;border-radius:12px;padding:16px 20px}
+.sum{background:#EEF4FF;border:1px solid #C9DBF5;border-radius:12px;padding:16px 20px;font-weight:600}
+h2{font-size:20px;margin:34px 0 12px}
+.steps li,.rel li{margin:6px 0}
+.cf{background:#F5F3FF;border:1px dashed #C4B5FD;border-radius:12px;padding:14px 20px;margin-top:22px}
+.mis{background:#FFF5F5;border:1px solid #F3C2C2;border-radius:12px;padding:14px 20px;margin-top:14px}
+.cf h3,.mis h3,.conf h3{margin:0 0 6px;font-size:16px}
+.cf p,.mis p{margin:0}
+.conf{border:1px solid #E3E0D8;border-radius:12px;padding:14px 20px;margin-top:22px}
+.conf p{margin:6px 0} .conf span,.rel span{color:#8A8A93;font-size:13.5px}
+.cap{color:#8A8A93;font-size:14px}
+.pn{display:flex;justify-content:space-between;gap:16px;margin-top:40px;border-top:1px solid #E3E0D8;padding-top:18px;font-size:14.5px}
+.spa{display:block;text-align:center;margin-top:28px;background:#1c2b3a;color:#fff;border-radius:12px;padding:12px}
+footer{margin-top:34px;color:#8A8A93;font-size:13px;text-align:center}
+</style>
+</head>
+<body>
+<div class="crumb"><a href="https://www.aha.voyager06.tech/">原来如此</a> / 工程与协作 / npm / Node.js</div>
+<span class="kick">工程与协作</span>
+<h1>npm / Node.js</h1>
+<div class="tagline">让 JS 走出浏览器的两个人</div>
+<div class="scene"><b>👀 日常场景</b><p>你想写个小工具批量改文件名，敲下 npm install，几秒钟后依赖装好，工具跑起来了。十几年前不可想象：JS 只能活在浏览器，想复用代码只能复制粘贴。Node.js 和 npm 联手终结了那个时代。</p></div>
+
+<h2>原理：它是怎么运作的</h2>
+<div class="sum">💡 Node.js 把 V8 引擎搬出浏览器，让 JS 能读写文件、开服务；npm 是它的应用商店，一行命令装走全世界开源代码。</div>
+<h2>先看全过程</h2><ol class="steps"><li>2009 年：Node.js 发布</li><li>V8 引擎 + 事件循环 + 系统 API</li><li>JS 第一次能读写文件、监听端口</li><li>开源包爆发式增长，复用成刚需</li><li>npm 诞生：统一的包仓库 + 安装命令</li><li>package.json 成为项目的身份证</li></ol>
+<p>Node.js 的本质是“换了宿主的 JS”：浏览器里的 JS 能操作 DOM 但碰不到文件系统；Node.js 把 Chrome 的 V8 引擎抽出来，配上事件循环（event loop，一种“单线程处理高并发”的模型）和文件、网络等系统 API，JS 从此能写服务端、写脚本、写工具。</p><p>但语言能跑只是第一步。很快大家发现：每个项目都要处理日期、发 HTTP 请求、解析 Excel，重复造轮子太蠢。npm（Node Package Manager）就是答案：一个中央仓库 + 一条安装命令，`npm install dayjs`，全世界的开源代码任你取用。今天 npm 上有数百万个包，前端工程化的地基。</p><p>package.json 是每个 Node 项目的“身份证”：name/version 标识身份，scripts 把常用命令起别名（`npm run dev`），dependencies/devDependencies 记录依赖及版本。配合 lock 文件（package-lock.json），保证“你装的和我装的是同一套版本”——终结了“在我电脑上是好的”这句经典甩锅。</p>
+
+<h2>开发者：应该如何接入</h2><ul><li><b>npm</b>：Node 官方自带，最通用</li><li><b>pnpm</b>：硬链接共享依赖，又快又省磁盘</li><li><b>yarn</b>：老牌替代品，berry 版特性激进</li></ul><ol><li>官网装 LTS 版 Node.js，自带 npm</li><li>项目根目录 npm init，一路回车生成 package.json</li><li>npm install &lt;包名&gt; 装依赖，--save-dev 装开发依赖</li><li>把常用命令写进 scripts，一句 npm run 启动</li><li>提交代码时带上 lock 文件，不提交 node_modules</li></ol>
+<h2>延伸阅读</h2><ul><li><a href="https://docs.npmjs.com/cli/v11/configuring-npm/package-json" rel="noopener">npm 官方文档：package.json</a></li></ul>
+<h2>相关条目</h2><ul class="rel"><li><a href="https://www.aha.voyager06.tech/p/nav-client-redirect.html">页面自动跳转：meta 与 JS</a> <span>服务器不说话，浏览器自己数完秒就走</span></li><li><a href="https://www.aha.voyager06.tech/p/network-fake-ip.html">Fake-IP：Clash 的 DNS 骗术</a> <span>先给浏览器一个假地址，稳住它</span></li><li><a href="https://www.aha.voyager06.tech/p/eng-linear-jira.html">Linear/Jira：需求的任务看板</a> <span>一个需求从出生到上线的旅行记录</span></li></ul>
+
+<a class="spa" href="https://www.aha.voyager06.tech/#/p/eng-npm-nodejs">在站内打开本篇（完整交互版）→</a>
+<div class="pn"><a href="https://www.aha.voyager06.tech/p/eng-wiki.html">← 上一个：Wiki（团队知识库）</a><a href="https://www.aha.voyager06.tech/p/eng-tauri-electron.html">下一个：Tauri/Electron：用网页技术做桌面 App →</a></div>
+<footer>原来如此 · 把听说过的技术讲透 · 内容为科普解读，具体接入请以各服务官方文档为准</footer>
+</body>
+</html>

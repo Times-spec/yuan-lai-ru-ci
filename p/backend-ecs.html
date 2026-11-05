@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>云服务器 ECS：租一台弹性电脑 · 原来如此</title>
+<meta name="description" content="随开随关、随时升降配的电脑。ECS（阿里云叫法，腾讯云叫 CVM、AWS 叫 EC2）是云上的虚拟电脑：按需租用，配置随时升降，开机即用。">
+<link rel="canonical" href="https://www.aha.voyager06.tech/p/backend-ecs.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="云服务器 ECS：租一台弹性电脑 · 原来如此">
+<meta property="og:description" content="随开随关、随时升降配的电脑。ECS（阿里云叫法，腾讯云叫 CVM、AWS 叫 EC2）是云上的虚拟电脑：按需租用，配置随时升降，开机即用。">
+<meta property="og:url" content="https://www.aha.voyager06.tech/p/backend-ecs.html">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>">
+<style>
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;max-width:760px;margin:0 auto;padding:24px 20px 60px;color:#1c2b3a;line-height:1.8;background:#FDFCF9}
+a{color:#2563EB;text-decoration:none} a:hover{text-decoration:underline}
+.crumb{font-size:13px;color:#8A8A93;margin-bottom:18px}
+h1{font-size:30px;line-height:1.35;margin:6px 0 8px}
+.tagline{color:#5B6470;font-size:16px;margin-bottom:20px}
+.kick{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.1em;background:#EEF3F8;color:#31597F;border-radius:999px;padding:4px 12px}
+.scene{background:#FFF8EC;border:1px solid #F0E2C4;border-radius:12px;padding:16px 20px}
+.sum{background:#EEF4FF;border:1px solid #C9DBF5;border-radius:12px;padding:16px 20px;font-weight:600}
+h2{font-size:20px;margin:34px 0 12px}
+.steps li,.rel li{margin:6px 0}
+.cf{background:#F5F3FF;border:1px dashed #C4B5FD;border-radius:12px;padding:14px 20px;margin-top:22px}
+.mis{background:#FFF5F5;border:1px solid #F3C2C2;border-radius:12px;padding:14px 20px;margin-top:14px}
+.cf h3,.mis h3,.conf h3{margin:0 0 6px;font-size:16px}
+.cf p,.mis p{margin:0}
+.conf{border:1px solid #E3E0D8;border-radius:12px;padding:14px 20px;margin-top:22px}
+.conf p{margin:6px 0} .conf span,.rel span{color:#8A8A93;font-size:13.5px}
+.cap{color:#8A8A93;font-size:14px}
+.pn{display:flex;justify-content:space-between;gap:16px;margin-top:40px;border-top:1px solid #E3E0D8;padding-top:18px;font-size:14.5px}
+.spa{display:block;text-align:center;margin-top:28px;background:#1c2b3a;color:#fff;border-radius:12px;padding:12px}
+footer{margin-top:34px;color:#8A8A93;font-size:13px;text-align:center}
+</style>
+</head>
+<body>
+<div class="crumb"><a href="https://www.aha.voyager06.tech/">原来如此</a> / 后端基建 / 云服务器 ECS：租一台弹性电脑</div>
+<span class="kick">后端基建</span>
+<h1>云服务器 ECS：租一台弹性电脑</h1>
+<div class="tagline">随开随关、随时升降配的电脑</div>
+<div class="scene"><b>👀 日常场景</b><p>网站做好了，别人说“去租台服务器部署一下”。你打开阿里云，CPU、内存、带宽、镜像、地域一堆选项直接懵了：第一台服务器到底怎么租、配置怎么选、会不会买贵？其实 ECS 就是一台放在云上的电脑，随开随关，配置不够随时加钱升级。</p></div>
+
+<h2>原理：它是怎么运作的</h2>
+<div class="sum">💡 ECS（阿里云叫法，腾讯云叫 CVM、AWS 叫 EC2）是云上的虚拟电脑：按需租用，配置随时升降，开机即用。</div>
+<h2>先看全过程</h2><ol class="steps"><li>云厂商机房里躺着成千上万台物理机</li><li>虚拟化切出“电脑”，你租其中一台</li><li>选地域：离你的用户越近访问越快</li><li>选配置：CPU、内存、带宽按需搭配</li><li>选镜像：装好系统的“出厂设置”</li><li>开机：拿到 IP 和密码，远程连上即用</li></ol>
+<p>ECS、腾讯云的 CVM、AWS 的 EC2，说的是同一种东西，只是各家叫法不同：云上的虚拟电脑。和自己买电脑最大的区别是“弹性”——配置不够了不用换机器，控制台点几下就能加 CPU 加内存；不用了直接关机释放，不花冤枉钱。</p><p>租的时候真正要做决定的就四样：地域（用户在哪选哪，国内业务还能顺手备案）、配置（个人博客 2 核 2G 起步，不够再升，别一次买顶配）、镜像（操作系统的“出厂设置”，新手可以直接选带宝塔面板的镜像）、带宽（决定同时多少人能流畅访问，1M 带宽跑图片站会卡）。</p><p>和传统 VPS 相比，ECS 贵的那部分钱买的是“独享”和“省心”：CPU 内存是你的就是你的，不会被邻居抢；硬盘可以打快照，误删数据能回滚；挂了可以一键迁移。对第一次租服务器的人来说，记住一句就行：先买小，不够再升，云服务器最大的优点就是不用一次做对选择。</p>
+
+<h2>我该怎么租一台</h2><ul><li><b>按量付费</b>：开机计费、关机停服，用多少算多少</li><li><b>包年包月</b>：一次买 1-3 年，单价最便宜</li><li><b>抢占式实例</b>：买云厂商的闲置算力，低至 1 折，但可能被随时回收</li></ul><ol><li>选地域：用户在哪就选哪，国内业务选国内节点</li><li>选配置：小博客 2 核 2G 起步，不够再升</li><li>选镜像：Alibaba Cloud Linux，或带宝塔面板的镜像</li><li>设好密码（或密钥），拿到公网 IP</li><li>远程连上：装网站环境、传代码、配域名解析</li><li>设个快照自动备份，删库前先想想备份</li></ol>
+<h2>延伸阅读</h2><ul><li><a href="https://www.aliyun.com/product/ecs" rel="noopener">阿里云 ECS 产品页</a></li></ul>
+<h2>相关条目</h2><ul class="rel"><li><a href="https://www.aha.voyager06.tech/p/backend-vps.html">VPS：合租一台服务器</a> <span>一台机器，N 个人分着用</span></li><li><a href="https://www.aha.voyager06.tech/p/backend-iaas-paas-saas.html">IaaS/PaaS/SaaS：一张披萨讲明白</a> <span>你想管多少事，决定用哪一层</span></li><li><a href="https://www.aha.voyager06.tech/p/backend-trellis.html">Trellis：一键配出生产服务器</a> <span>一条命令，WordPress 服务器全自动上线</span></li></ul>
+
+<a class="spa" href="https://www.aha.voyager06.tech/#/p/backend-ecs">在站内打开本篇（完整交互版）→</a>
+<div class="pn"><a href="https://www.aha.voyager06.tech/p/backend-vps.html">← 上一个：VPS：合租一台服务器</a><a href="https://www.aha.voyager06.tech/p/backend-iaas-paas-saas.html">下一个：IaaS/PaaS/SaaS：一张披萨讲明白 →</a></div>
+<footer>原来如此 · 把听说过的技术讲透 · 内容为科普解读，具体接入请以各服务官方文档为准</footer>
+</body>
+</html>

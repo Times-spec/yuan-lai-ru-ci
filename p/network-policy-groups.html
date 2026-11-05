@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>策略组：自动选最快节点 · 原来如此</title>
+<meta name="description" content="手动挡、自动挡、四驱，任你挑选。策略组 = 一组节点 + 一种挑选策略：手动指定、自动测速选最快、故障时自动切换、把流量打散分摊。">
+<link rel="canonical" href="https://www.aha.voyager06.tech/p/network-policy-groups.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="策略组：自动选最快节点 · 原来如此">
+<meta property="og:description" content="手动挡、自动挡、四驱，任你挑选。策略组 = 一组节点 + 一种挑选策略：手动指定、自动测速选最快、故障时自动切换、把流量打散分摊。">
+<meta property="og:url" content="https://www.aha.voyager06.tech/p/network-policy-groups.html">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>">
+<style>
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;max-width:760px;margin:0 auto;padding:24px 20px 60px;color:#1c2b3a;line-height:1.8;background:#FDFCF9}
+a{color:#2563EB;text-decoration:none} a:hover{text-decoration:underline}
+.crumb{font-size:13px;color:#8A8A93;margin-bottom:18px}
+h1{font-size:30px;line-height:1.35;margin:6px 0 8px}
+.tagline{color:#5B6470;font-size:16px;margin-bottom:20px}
+.kick{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.1em;background:#EEF3F8;color:#31597F;border-radius:999px;padding:4px 12px}
+.scene{background:#FFF8EC;border:1px solid #F0E2C4;border-radius:12px;padding:16px 20px}
+.sum{background:#EEF4FF;border:1px solid #C9DBF5;border-radius:12px;padding:16px 20px;font-weight:600}
+h2{font-size:20px;margin:34px 0 12px}
+.steps li,.rel li{margin:6px 0}
+.cf{background:#F5F3FF;border:1px dashed #C4B5FD;border-radius:12px;padding:14px 20px;margin-top:22px}
+.mis{background:#FFF5F5;border:1px solid #F3C2C2;border-radius:12px;padding:14px 20px;margin-top:14px}
+.cf h3,.mis h3,.conf h3{margin:0 0 6px;font-size:16px}
+.cf p,.mis p{margin:0}
+.conf{border:1px solid #E3E0D8;border-radius:12px;padding:14px 20px;margin-top:22px}
+.conf p{margin:6px 0} .conf span,.rel span{color:#8A8A93;font-size:13.5px}
+.cap{color:#8A8A93;font-size:14px}
+.pn{display:flex;justify-content:space-between;gap:16px;margin-top:40px;border-top:1px solid #E3E0D8;padding-top:18px;font-size:14.5px}
+.spa{display:block;text-align:center;margin-top:28px;background:#1c2b3a;color:#fff;border-radius:12px;padding:12px}
+footer{margin-top:34px;color:#8A8A93;font-size:13px;text-align:center}
+</style>
+</head>
+<body>
+<div class="crumb"><a href="https://www.aha.voyager06.tech/">原来如此</a> / 网络与协议 / 策略组：自动选最快节点</div>
+<span class="kick">网络与协议</span>
+<h1>策略组：自动选最快节点</h1>
+<div class="tagline">手动挡、自动挡、四驱，任你挑选</div>
+<div class="scene"><b>👀 日常场景</b><p>代理页面里躺着一堆分组：节点选择、自动选择、故障转移、负载均衡……每个都能点，但点了有什么区别？选错了，轻则网速打折，重则视频看到一半卡住、游戏掉线。</p></div>
+
+<h2>原理：它是怎么运作的</h2>
+<div class="sum">💡 策略组 = 一组节点 + 一种挑选策略：手动指定、自动测速选最快、故障时自动切换、把流量打散分摊。</div>
+<h2>先看全过程</h2><ol class="steps"><li>规则命中了某个策略组</li><li>select：用你手动选中的节点</li><li>url-test：定期测速，自动切延迟最低的</li><li>fallback：按顺序试，坏了换下一个</li><li>load-balance：把连接分散到多个节点</li></ol>
+<p>一个个说。select 是“手动挡”：组里列出一堆节点，你点哪个就用哪个，所见即所得，日常主力。url-test 是“自动挡”：按你设定的间隔（interval）自动测速，永远用延迟最低的那个，适合懒人，代价是后台测速会消耗一点点流量。fallback 是“备胎制”：按你排的顺序依次尝试，第一个挂了自动顺延到下一个，直播、开会这种求稳场景最爱它。load-balance 是“分摊制”：按策略（比如轮询）把连接打散到多个节点，大文件下载能跑满带宽，但同一会话的出口 IP 会跳变，有些网站会判定异常而触发风控，看视频、登录账号时慎用。</p><p>策略组还可以嵌套：组的成员可以是另一个组，比如“国外网站”组里引用“自动选择”组，层层调度。</p><p>怎么选？记住：日常用手动，懒人用自动测速，求稳用故障转移，下载用负载均衡。没有银弹，只有 trade-off（权衡）。</p>
+
+<h2>策略组怎么配</h2><ul><li><b>select 手动选择</b>：组里列节点，你点哪个用哪个，所见即所得</li><li><b>url-test 自动测速</b>：按间隔自动测延迟，永远用最快的</li><li><b>fallback 故障转移</b>：按顺序排备胎，挂了自动顺延</li><li><b>load-balance 负载均衡</b>：把连接打散到多个节点，下载跑满带宽</li></ul><ol><li>先定目标：求稳、求快，还是求省心</li><li>日常：建一个 select 组，手动选延迟最低的节点</li><li>懒人：建 url-test 组，测速间隔设 300 秒以上（别太短，费流量）</li><li>重要场合前：切到 fallback 组，把备胎顺序排好</li><li>下载大文件：可以试 load-balance，但别拿它登录账号</li><li>进阶：组里可以嵌套组，比如“国外网站”组引用“自动选择”组</li></ol>
+<h2>延伸阅读</h2><ul><li><a href="https://github.com/crt0810/ai-skills/blob/HEAD/clash-verge-routing/references/clash-verge-rev.md" rel="noopener">Clash Verge Rev 路由配置参考：策略组与规则</a></li></ul>
+<h2>相关条目</h2><ul class="rel"><li><a href="https://www.aha.voyager06.tech/p/network-subscription.html">订阅链接：节点通讯录</a> <span>一串会自动更新的节点通讯录</span></li><li><a href="https://www.aha.voyager06.tech/p/network-clash-modes.html">代理模式：直连 / 全局 / 规则</a> <span>记住一句就够：该直连的直连，该代理的代理</span></li><li><a href="https://www.aha.voyager06.tech/p/network-proxychains.html">链式代理：把代理串成糖葫芦</a> <span>一跳不够，串三跳</span></li></ul>
+
+<a class="spa" href="https://www.aha.voyager06.tech/#/p/network-policy-groups">在站内打开本篇（完整交互版）→</a>
+<div class="pn"><a href="https://www.aha.voyager06.tech/p/network-clash-rules.html">← 上一个：分流规则：流量听谁的</a><a href="https://www.aha.voyager06.tech/p/network-tun-mode.html">下一个：TUN 模式：接管所有流量的虚拟网卡 →</a></div>
+<footer>原来如此 · 把听说过的技术讲透 · 内容为科普解读，具体接入请以各服务官方文档为准</footer>
+</body>
+</html>

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>定时任务 Cron · 原来如此</title>
+<meta name="description" content="每天凌晨三点，准时干活。按时间表达式周期性触发任务，备份、报表、对账这些脏活累活都靠它。">
+<link rel="canonical" href="https://www.aha.voyager06.tech/p/backend-cron.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="定时任务 Cron · 原来如此">
+<meta property="og:description" content="每天凌晨三点，准时干活。按时间表达式周期性触发任务，备份、报表、对账这些脏活累活都靠它。">
+<meta property="og:url" content="https://www.aha.voyager06.tech/p/backend-cron.html">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>">
+<style>
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;max-width:760px;margin:0 auto;padding:24px 20px 60px;color:#1c2b3a;line-height:1.8;background:#FDFCF9}
+a{color:#2563EB;text-decoration:none} a:hover{text-decoration:underline}
+.crumb{font-size:13px;color:#8A8A93;margin-bottom:18px}
+h1{font-size:30px;line-height:1.35;margin:6px 0 8px}
+.tagline{color:#5B6470;font-size:16px;margin-bottom:20px}
+.kick{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.1em;background:#EEF3F8;color:#31597F;border-radius:999px;padding:4px 12px}
+.scene{background:#FFF8EC;border:1px solid #F0E2C4;border-radius:12px;padding:16px 20px}
+.sum{background:#EEF4FF;border:1px solid #C9DBF5;border-radius:12px;padding:16px 20px;font-weight:600}
+h2{font-size:20px;margin:34px 0 12px}
+.steps li,.rel li{margin:6px 0}
+.cf{background:#F5F3FF;border:1px dashed #C4B5FD;border-radius:12px;padding:14px 20px;margin-top:22px}
+.mis{background:#FFF5F5;border:1px solid #F3C2C2;border-radius:12px;padding:14px 20px;margin-top:14px}
+.cf h3,.mis h3,.conf h3{margin:0 0 6px;font-size:16px}
+.cf p,.mis p{margin:0}
+.conf{border:1px solid #E3E0D8;border-radius:12px;padding:14px 20px;margin-top:22px}
+.conf p{margin:6px 0} .conf span,.rel span{color:#8A8A93;font-size:13.5px}
+.cap{color:#8A8A93;font-size:14px}
+.pn{display:flex;justify-content:space-between;gap:16px;margin-top:40px;border-top:1px solid #E3E0D8;padding-top:18px;font-size:14.5px}
+.spa{display:block;text-align:center;margin-top:28px;background:#1c2b3a;color:#fff;border-radius:12px;padding:12px}
+footer{margin-top:34px;color:#8A8A93;font-size:13px;text-align:center}
+</style>
+</head>
+<body>
+<div class="crumb"><a href="https://www.aha.voyager06.tech/">原来如此</a> / 后端基建 / 定时任务 Cron</div>
+<span class="kick">后端基建</span>
+<h1>定时任务 Cron</h1>
+<div class="tagline">每天凌晨三点，准时干活</div>
+<div class="scene"><b>👀 日常场景</b><p>每天凌晨，系统自动备份数据库、生成昨日报表；每月 1 号，账单准时推送到你邮箱。这些没人值守却从不迟到的活，都是定时任务干的——它就像一个不知疲倦的闹钟，到点就执行，风雨无阻，全年无休。</p></div>
+
+<h2>原理：它是怎么运作的</h2>
+<div class="sum">💡 按时间表达式周期性触发任务，备份、报表、对账这些脏活累活都靠它。</div>
+<h2>先看全过程</h2><ol class="steps"><li>写好要执行的脚本或接口</li><li>用 cron 表达式定执行时间</li><li>注册到调度器</li><li>到点调度器触发执行</li><li>记录日志与执行结果</li><li>失败告警，人工介入</li></ol>
+<p>Cron 来自 Unix，表达式「分 时 日 月 周」五个字段描述周期，比如 0 3 * * * 就是每天凌晨 3 点。操作系统级的 crond 常驻后台，到点 fork 进程执行；应用层的调度器（Spring Scheduler、APScheduler、云函数触发器）原理相同，只是更贴近业务代码。</p><p>单机时代很简单，分布式时代就麻烦了：三台机器同时跑「每天清理过期订单」，就会清理三遍。解法有三种：只让一台机器跑（单点，有挂的风险）、抢分布式锁（谁抢到谁跑）、用分布式调度器（XXL-Job、ElasticJob，任务分片到多台）。</p><p>定时任务最怕「静默失败」：脚本挂了没人知道，三个月后才发现报表停更。所以每条定时任务都要有执行日志、成功率监控和失败告警。幂等也很重要——凌晨的任务如果因超时被重跑一次，不能重复发账单。</p>
+
+<h2>开发者：应该如何接入</h2><ul><li><b>Linux crontab</b>：系统自带，零依赖</li><li><b>XXL-Job / ElasticJob</b>：分布式调度，管理界面可查日志</li><li><b>云函数触发器</b>：按调用次数计费，免运维</li></ul><ol><li>把任务写成独立脚本，保证可重复执行（幂等）</li><li>用 cron 表达式确定执行周期，避开业务高峰</li><li>单机用 crontab -e 注册，集群用分布式调度器</li><li>输出日志到文件，关键步骤打点记录</li><li>配置失败告警：短信/邮件/群机器人</li><li>定期检查任务存活，别让它悄悄停了三个月</li></ol>
+
+<h2>相关条目</h2><ul class="rel"><li><a href="https://www.aha.voyager06.tech/p/backend-db-connection-pool.html">数据库连接池</a> <span>建一次连接，复用一万次</span></li><li><a href="https://www.aha.voyager06.tech/p/backend-docker-compose.html">Docker Compose：一键启动整套服务</a> <span>一条命令，拉起整个开发环境</span></li><li><a href="https://www.aha.voyager06.tech/p/backend-jwt-session.html">JWT vs Session：两种登录态</a> <span>登录状态，到底存在哪儿？</span></li></ul>
+
+<a class="spa" href="https://www.aha.voyager06.tech/#/p/backend-cron">在站内打开本篇（完整交互版）→</a>
+<div class="pn"><a href="https://www.aha.voyager06.tech/p/backend-elasticsearch.html">← 上一个：Elasticsearch 全文搜索</a><a href="https://www.aha.voyager06.tech/p/backend-jwt-session.html">下一个：JWT vs Session：两种登录态 →</a></div>
+<footer>原来如此 · 把听说过的技术讲透 · 内容为科普解读，具体接入请以各服务官方文档为准</footer>
+</body>
+</html>

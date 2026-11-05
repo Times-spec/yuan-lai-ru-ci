@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>离线/弱网提示 · 原来如此</title>
+<meta name="description" content="断网了，页面会主动告诉你。监听浏览器的 online/offline 事件，配合请求失败重试，断网时给出明确提示并缓存关键操作。">
+<link rel="canonical" href="https://www.aha.voyager06.tech/p/feat-offline-detection.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="离线/弱网提示 · 原来如此">
+<meta property="og:description" content="断网了，页面会主动告诉你。监听浏览器的 online/offline 事件，配合请求失败重试，断网时给出明确提示并缓存关键操作。">
+<meta property="og:url" content="https://www.aha.voyager06.tech/p/feat-offline-detection.html">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>">
+<style>
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;max-width:760px;margin:0 auto;padding:24px 20px 60px;color:#1c2b3a;line-height:1.8;background:#FDFCF9}
+a{color:#2563EB;text-decoration:none} a:hover{text-decoration:underline}
+.crumb{font-size:13px;color:#8A8A93;margin-bottom:18px}
+h1{font-size:30px;line-height:1.35;margin:6px 0 8px}
+.tagline{color:#5B6470;font-size:16px;margin-bottom:20px}
+.kick{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.1em;background:#EEF3F8;color:#31597F;border-radius:999px;padding:4px 12px}
+.scene{background:#FFF8EC;border:1px solid #F0E2C4;border-radius:12px;padding:16px 20px}
+.sum{background:#EEF4FF;border:1px solid #C9DBF5;border-radius:12px;padding:16px 20px;font-weight:600}
+h2{font-size:20px;margin:34px 0 12px}
+.steps li,.rel li{margin:6px 0}
+.cf{background:#F5F3FF;border:1px dashed #C4B5FD;border-radius:12px;padding:14px 20px;margin-top:22px}
+.mis{background:#FFF5F5;border:1px solid #F3C2C2;border-radius:12px;padding:14px 20px;margin-top:14px}
+.cf h3,.mis h3,.conf h3{margin:0 0 6px;font-size:16px}
+.cf p,.mis p{margin:0}
+.conf{border:1px solid #E3E0D8;border-radius:12px;padding:14px 20px;margin-top:22px}
+.conf p{margin:6px 0} .conf span,.rel span{color:#8A8A93;font-size:13.5px}
+.cap{color:#8A8A93;font-size:14px}
+.pn{display:flex;justify-content:space-between;gap:16px;margin-top:40px;border-top:1px solid #E3E0D8;padding-top:18px;font-size:14.5px}
+.spa{display:block;text-align:center;margin-top:28px;background:#1c2b3a;color:#fff;border-radius:12px;padding:12px}
+footer{margin-top:34px;color:#8A8A93;font-size:13px;text-align:center}
+</style>
+</head>
+<body>
+<div class="crumb"><a href="https://www.aha.voyager06.tech/">原来如此</a> / 小功能大智慧 / 离线/弱网提示</div>
+<span class="kick">小功能大智慧</span>
+<h1>离线/弱网提示</h1>
+<div class="tagline">断网了，页面会主动告诉你</div>
+<div class="scene"><b>👀 日常场景</b><p>地铁里刷 App 刷着刷着，顶部弹出一条“网络连接已断开”，再点内容也不再是无尽转圈，而是有明确提示。之前你填了半天的表单也没白填——联网后它自己把数据发出去了。</p></div>
+
+<h2>原理：它是怎么运作的</h2>
+<div class="sum">💡 监听浏览器的 online/offline 事件，配合请求失败重试，断网时给出明确提示并缓存关键操作。</div>
+<h2>先看全过程</h2><ol class="steps"><li>监听 online/offline 事件</li><li>网络变化时更新全局状态</li><li>断网弹出明显提示条</li><li>请求失败进入重试队列</li><li>恢复后自动重发请求</li><li>关键数据本地缓存展示</li></ol>
+<p>浏览器其实自带“断网感知”：window 上有 online/offline 两个事件，网线一拔、WiFi 一断就会触发，配合 navigator.onLine 读当前状态。但 navigator.onLine 是个“大忽悠”：它只表示“设备连上了网络”，连上没网的 WiFi、欠费断网的宽带，它都报告 true。靠谱的做法是“用业务请求当探针”：定期发一个轻量心跳请求（或观察正常请求的失败），连续失败才判定真断网。断网后的体验分三层：第一层是“告知”——顶部弹出明显的离线提示条，别让用户对着转圈圈发呆；第二层是“保护”——提交按钮禁用或把操作收进重试队列，联网后自动重发，别让用户填了半天白填；第三层是“可用”——用 Service Worker 把关键页面和数据缓存到本地（这就是 PWA 的离线能力），断网也能看已加载过的内容。弱网同理：请求超时时间设短一点，超时就降级（比如图片加载低清版），别让用户在 2G 下等一张 5MB 的原图。</p>
+
+<h2>网站是怎么做到的</h2><ul><li><b>online/offline 事件：浏览器的断网感知</b>：网线一拔、WiFi 一断，window 上的这两个事件就会触发。这是浏览器自带的“断网报警器”。</li><li><b>navigator.onLine：是个“大忽悠”</b>：它只表示“设备连上了网络”。连上没网的 WiFi、欠费的宽带，它都报告 true，不能全信。</li><li><b>业务探针：用真请求验真假</b>：定期发一个轻量心跳请求（或看正常请求是否连续失败），才是真断网的可靠判定。</li><li><b>三层体验：告知、保护、可用</b>：断网后先“告知”（提示条），再“保护”（操作进重试队列），最后“可用”（Service Worker 缓存关键页面，断网也能看）。</li></ul><ol><li>你在地铁里，网络断了，浏览器触发 offline 事件</li><li>App 先不轻信：用业务心跳请求确认是真断网</li><li>顶部弹出明显的“网络连接已断开”提示条</li><li>你点的提交被收进重试队列，而不是直接报错丢失</li><li>之前加载过的内容照常看（Service Worker 缓存）</li><li>出地铁联网：队列里的请求自动重发，表单发出去了</li></ol>
+<h2>延伸阅读</h2><ul><li><a href="https://blog.csdn.net/m0_47119963/article/details/155807175" rel="noopener">CSDN：前端离线状态检测与弱网兜底（navigator.onLine 实战）</a></li></ul>
+<h2>相关条目</h2><ul class="rel"><li><a href="https://www.aha.voyager06.tech/p/network-ip-purity.html">IP 纯净度：8% 和 53% 是怎么算出来的</a> <span>没有权威分数，只有各家算法</span></li></ul>
+
+<a class="spa" href="https://www.aha.voyager06.tech/#/p/feat-offline-detection">在站内打开本篇（完整交互版）→</a>
+<div class="pn"><a href="https://www.aha.voyager06.tech/p/feat-sticky-nav.html">← 上一个：吸顶导航</a><a href="https://www.aha.voyager06.tech/p/network-json-yaml.html">下一个：JSON / YAML →</a></div>
+<footer>原来如此 · 把听说过的技术讲透 · 内容为科普解读，具体接入请以各服务官方文档为准</footer>
+</body>
+</html>

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>短链接跳转 · 原来如此</title>
+<meta name="description" content="一串乱码背后，藏着完整网址和统计。短码到长网址的映射存在数据库里，访问短链时查表找到原网址，再做一次 302 跳转，顺带记录点击数据。">
+<link rel="canonical" href="https://www.aha.voyager06.tech/p/nav-short-link.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="短链接跳转 · 原来如此">
+<meta property="og:description" content="一串乱码背后，藏着完整网址和统计。短码到长网址的映射存在数据库里，访问短链时查表找到原网址，再做一次 302 跳转，顺带记录点击数据。">
+<meta property="og:url" content="https://www.aha.voyager06.tech/p/nav-short-link.html">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>">
+<style>
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;max-width:760px;margin:0 auto;padding:24px 20px 60px;color:#1c2b3a;line-height:1.8;background:#FDFCF9}
+a{color:#2563EB;text-decoration:none} a:hover{text-decoration:underline}
+.crumb{font-size:13px;color:#8A8A93;margin-bottom:18px}
+h1{font-size:30px;line-height:1.35;margin:6px 0 8px}
+.tagline{color:#5B6470;font-size:16px;margin-bottom:20px}
+.kick{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.1em;background:#EEF3F8;color:#31597F;border-radius:999px;padding:4px 12px}
+.scene{background:#FFF8EC;border:1px solid #F0E2C4;border-radius:12px;padding:16px 20px}
+.sum{background:#EEF4FF;border:1px solid #C9DBF5;border-radius:12px;padding:16px 20px;font-weight:600}
+h2{font-size:20px;margin:34px 0 12px}
+.steps li,.rel li{margin:6px 0}
+.cf{background:#F5F3FF;border:1px dashed #C4B5FD;border-radius:12px;padding:14px 20px;margin-top:22px}
+.mis{background:#FFF5F5;border:1px solid #F3C2C2;border-radius:12px;padding:14px 20px;margin-top:14px}
+.cf h3,.mis h3,.conf h3{margin:0 0 6px;font-size:16px}
+.cf p,.mis p{margin:0}
+.conf{border:1px solid #E3E0D8;border-radius:12px;padding:14px 20px;margin-top:22px}
+.conf p{margin:6px 0} .conf span,.rel span{color:#8A8A93;font-size:13.5px}
+.cap{color:#8A8A93;font-size:14px}
+.pn{display:flex;justify-content:space-between;gap:16px;margin-top:40px;border-top:1px solid #E3E0D8;padding-top:18px;font-size:14.5px}
+.spa{display:block;text-align:center;margin-top:28px;background:#1c2b3a;color:#fff;border-radius:12px;padding:12px}
+footer{margin-top:34px;color:#8A8A93;font-size:13px;text-align:center}
+</style>
+</head>
+<body>
+<div class="crumb"><a href="https://www.aha.voyager06.tech/">原来如此</a> / 跳转与导航 / 短链接跳转</div>
+<span class="kick">跳转与导航</span>
+<h1>短链接跳转</h1>
+<div class="tagline">一串乱码背后，藏着完整网址和统计</div>
+<div class="scene"><b>👀 日常场景</b><p>微博里的 t.cn 链接、短信收到的营销短链、二维码里藏着的短网址，点一下就到了目标页面。你有没有好奇过，那几个字符是怎么变成一个完整网址的？今天我们就把这层窗户纸捅破。</p></div>
+
+<h2>原理：它是怎么运作的</h2>
+<div class="sum">💡 短码到长网址的映射存在数据库里，访问短链时查表找到原网址，再做一次 302 跳转，顺带记录点击数据。</div>
+<h2>先看全过程</h2><ol class="steps"><li>长网址存入数据库生成短码</li><li>用户访问短链接</li><li>服务端查短码找原网址</li><li>返回 302 跳到原网址</li><li>同时记录点击时间设备地域</li></ol>
+<p>短链接的本质是一个“查表游戏”。服务方维护一张“短码→长网址”的映射表：用户提交长网址，系统拿一个自增 ID 做 base62 编码（0-9、a-z、A-Z 共 62 个字符，6 位就能表示 568 亿个 ID），得到几位乱码般的短码，存进 Redis 或数据库。别人访问短链接时，服务端查表找到原网址，返回 302 跳过去——之所以多用 302 而不用 301，是因为要统计每一次点击，而且运营随时可能更换短码指向的目标页，301 的缓存会坏事。短链接顺带解决了三个问题：短信、微博这种按字数计费的场景省字符；二维码里字符越少越好扫；每一次跳转都能记录时间、设备、地域，营销同学拿它做渠道归因。但也要警惕：短链掩盖了真实地址，是钓鱼的重灾区；而且短链服务一旦挂掉，所有链接集体失效。另外注意：有些短链服务会先判断你的设备再决定跳哪个版本（比如 iOS 跳 App Store、安卓跳应用宝），这叫跨端分流，也是短链跳转的常见玩法。</p>
+
+<h2>我该怎么生成短链接</h2><ul><li><b>在线工具现成生成</b>：把长链接粘贴进去，点一下就吐出短链。最省事。</li><li><b>微博 / 微信自带</b>：微博发链接自动变 t.cn 短链，微信里也有小程序能做。</li><li><b>带统计的短链</b>：有些工具能统计每条短链被点了多少次、什么设备点的。</li></ul><ol><li>复制你的长链接</li><li>打开短链工具，把长链接粘贴进去</li><li>点生成，拿到短链</li><li>发到短信、微博、二维码里用</li><li>想换目标地址？去工具后台改指向就行（动态短链）</li></ol>
+<h2>延伸阅读</h2><ul><li><a href="https://juejin.cn/post/7110136697806913544" rel="noopener">掘金：短链加 UA 判断加 301 分流的跨端架构</a></li></ul>
+<h2>相关条目</h2><ul class="rel"><li><a href="https://www.aha.voyager06.tech/p/nav-url-scheme.html">URL Scheme：一键唤起 App</a> <span>twitter:// 这样的怪网址，能直接唤起 App</span></li><li><a href="https://www.aha.voyager06.tech/p/nav-qr-jump.html">扫码跳转</a> <span>二维码里藏着网址，扫一扫就打开</span></li><li><a href="https://www.aha.voyager06.tech/p/nav-http-301.html">HTTP 301 永久重定向</a> <span>这个地址永久搬家了，以后直接去新地址</span></li></ul>
+
+<a class="spa" href="https://www.aha.voyager06.tech/#/p/nav-short-link">在站内打开本篇（完整交互版）→</a>
+<div class="pn"><a href="https://www.aha.voyager06.tech/p/nav-client-redirect.html">← 上一个：页面自动跳转：meta 与 JS</a><a href="https://www.aha.voyager06.tech/p/nav-qr-jump.html">下一个：扫码跳转 →</a></div>
+<footer>原来如此 · 把听说过的技术讲透 · 内容为科普解读，具体接入请以各服务官方文档为准</footer>
+</body>
+</html>

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HSTS：强制全站 HTTPS · 原来如此</title>
+<meta name="description" content="告诉浏览器：以后只许走加密通道。网站通过 Strict-Transport-Security 响应头告诉浏览器：未来一段时间内，这个域名只许用 HTTPS 访问，浏览器会自动把 http 升级成 https。">
+<link rel="canonical" href="https://www.aha.voyager06.tech/p/nav-hsts.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="HSTS：强制全站 HTTPS · 原来如此">
+<meta property="og:description" content="告诉浏览器：以后只许走加密通道。网站通过 Strict-Transport-Security 响应头告诉浏览器：未来一段时间内，这个域名只许用 HTTPS 访问，浏览器会自动把 http 升级成 https。">
+<meta property="og:url" content="https://www.aha.voyager06.tech/p/nav-hsts.html">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>">
+<style>
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;max-width:760px;margin:0 auto;padding:24px 20px 60px;color:#1c2b3a;line-height:1.8;background:#FDFCF9}
+a{color:#2563EB;text-decoration:none} a:hover{text-decoration:underline}
+.crumb{font-size:13px;color:#8A8A93;margin-bottom:18px}
+h1{font-size:30px;line-height:1.35;margin:6px 0 8px}
+.tagline{color:#5B6470;font-size:16px;margin-bottom:20px}
+.kick{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.1em;background:#EEF3F8;color:#31597F;border-radius:999px;padding:4px 12px}
+.scene{background:#FFF8EC;border:1px solid #F0E2C4;border-radius:12px;padding:16px 20px}
+.sum{background:#EEF4FF;border:1px solid #C9DBF5;border-radius:12px;padding:16px 20px;font-weight:600}
+h2{font-size:20px;margin:34px 0 12px}
+.steps li,.rel li{margin:6px 0}
+.cf{background:#F5F3FF;border:1px dashed #C4B5FD;border-radius:12px;padding:14px 20px;margin-top:22px}
+.mis{background:#FFF5F5;border:1px solid #F3C2C2;border-radius:12px;padding:14px 20px;margin-top:14px}
+.cf h3,.mis h3,.conf h3{margin:0 0 6px;font-size:16px}
+.cf p,.mis p{margin:0}
+.conf{border:1px solid #E3E0D8;border-radius:12px;padding:14px 20px;margin-top:22px}
+.conf p{margin:6px 0} .conf span,.rel span{color:#8A8A93;font-size:13.5px}
+.cap{color:#8A8A93;font-size:14px}
+.pn{display:flex;justify-content:space-between;gap:16px;margin-top:40px;border-top:1px solid #E3E0D8;padding-top:18px;font-size:14.5px}
+.spa{display:block;text-align:center;margin-top:28px;background:#1c2b3a;color:#fff;border-radius:12px;padding:12px}
+footer{margin-top:34px;color:#8A8A93;font-size:13px;text-align:center}
+</style>
+</head>
+<body>
+<div class="crumb"><a href="https://www.aha.voyager06.tech/">原来如此</a> / 跳转与导航 / HSTS：强制全站 HTTPS</div>
+<span class="kick">跳转与导航</span>
+<h1>HSTS：强制全站 HTTPS</h1>
+<div class="tagline">告诉浏览器：以后只许走加密通道</div>
+<div class="scene"><b>👀 日常场景</b><p>你在咖啡馆连公共 Wi-Fi 打开银行网站，明明输入的是 http，浏览器却自动变成了 https，而且不让你改回去。这就是 HSTS 在保护你：它让浏览器记住“这个站只许用 https 访问”。</p></div>
+
+<h2>原理：它是怎么运作的</h2>
+<div class="sum">💡 网站通过 Strict-Transport-Security 响应头告诉浏览器：未来一段时间内，这个域名只许用 HTTPS 访问，浏览器会自动把 http 升级成 https。</div>
+<h2>先看全过程</h2><ol class="steps"><li>用户首次用 HTTPS 访问网站</li><li>服务器返回 HSTS 响应头</li><li>浏览器记住该域名只许 HTTPS</li><li>之后敲 http 也被强制转 https</li><li>证书无效时浏览器直接拒绝访问</li></ol>
+<p>HSTS 是网站给浏览器下的一道“死命令”：响应头 Strict-Transport-Security 告诉浏览器，“未来 N 秒内，这个域名只许用 HTTPS 访问”。浏览器记住后，即使用户手动敲 http，浏览器也会在本地直接升级成 https 再发请求，连服务器都不问。它的存在是为了堵住 SSL 剥离攻击——攻击者在公共 Wi-Fi 上把“跳 https”的 301 拦截掉，让用户全程走明文 http；有了 HSTS，浏览器根本不给攻击者这个机会。代价是“说出去的话收不回”：一旦开启，在 max-age 过期前，证书配错或过期会导致网站彻底打不开，连临时放行都不行。所以上线姿势是先用短 max-age 灰度，确认全站 HTTPS 无死角后再加到一年、加上 includeSubDomains。银行、政务这类站点还会申请加入浏览器的 HSTS Preload 内置名单，连第一次访问都受到保护。</p>
+
+<h2>开发者：应该如何接入</h2><ul><li><b>Nginx 响应头</b>：add_header 一行配置</li><li><b>CDN 一键开启</b>：Cloudflare、阿里云 CDN 控制台开关</li><li><b>HSTS Preload</b>：提交到 hstspreload.org，进浏览器内置名单</li></ul><ol><li>全站确认 HTTPS 可用，证书链完整</li><li>先用较短的 max-age（如 1 天）灰度验证</li><li>在 Nginx 或网关加 Strict-Transport-Security 响应头</li><li>确认无误后把 max-age 加到 1 年，加 includeSubDomains</li><li>高安全站点可申请加入 HSTS Preload 名单</li></ol>
+<h2>延伸阅读</h2><ul><li><a href="https://www.rfc-editor.org/info/rfc6797/" rel="noopener">RFC 6797：HTTP Strict Transport Security（HSTS）</a></li><li><a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Strict-Transport-Security" rel="noopener">MDN：Strict-Transport-Security 响应头</a></li></ul>
+<h2>相关条目</h2><ul class="rel"><li><a href="https://www.aha.voyager06.tech/p/nav-http-307.html">HTTP 307/308 严格重定向</a> <span>跳转也不改请求方法，POST 还是 POST</span></li><li><a href="https://www.aha.voyager06.tech/p/nav-http-301.html">HTTP 301 永久重定向</a> <span>这个地址永久搬家了，以后直接去新地址</span></li><li><a href="https://www.aha.voyager06.tech/p/network-tcp-tls.html">TCP/TLS：建立安全连接的握手</a> <span>先握三次手，再说悄悄话</span></li></ul>
+
+<a class="spa" href="https://www.aha.voyager06.tech/#/p/nav-hsts">在站内打开本篇（完整交互版）→</a>
+<div class="pn"><a href="https://www.aha.voyager06.tech/p/nav-payment-notify.html">← 上一个：支付异步通知：服务器间的到账确认</a><a href="https://www.aha.voyager06.tech/p/nav-anchor.html">下一个：锚点跳转 →</a></div>
+<footer>原来如此 · 把听说过的技术讲透 · 内容为科普解读，具体接入请以各服务官方文档为准</footer>
+</body>
+</html>

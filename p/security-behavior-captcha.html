@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>行为验证码/无感验证 · 原来如此</title>
+<meta name="description" content="什么都不用点，“验证通过”一闪而过。采集鼠标、触屏、设备等多维行为信号，用 AI 风控模型实时判定是人是机。">
+<link rel="canonical" href="https://www.aha.voyager06.tech/p/security-behavior-captcha.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="行为验证码/无感验证 · 原来如此">
+<meta property="og:description" content="什么都不用点，“验证通过”一闪而过。采集鼠标、触屏、设备等多维行为信号，用 AI 风控模型实时判定是人是机。">
+<meta property="og:url" content="https://www.aha.voyager06.tech/p/security-behavior-captcha.html">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>">
+<style>
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;max-width:760px;margin:0 auto;padding:24px 20px 60px;color:#1c2b3a;line-height:1.8;background:#FDFCF9}
+a{color:#2563EB;text-decoration:none} a:hover{text-decoration:underline}
+.crumb{font-size:13px;color:#8A8A93;margin-bottom:18px}
+h1{font-size:30px;line-height:1.35;margin:6px 0 8px}
+.tagline{color:#5B6470;font-size:16px;margin-bottom:20px}
+.kick{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.1em;background:#EEF3F8;color:#31597F;border-radius:999px;padding:4px 12px}
+.scene{background:#FFF8EC;border:1px solid #F0E2C4;border-radius:12px;padding:16px 20px}
+.sum{background:#EEF4FF;border:1px solid #C9DBF5;border-radius:12px;padding:16px 20px;font-weight:600}
+h2{font-size:20px;margin:34px 0 12px}
+.steps li,.rel li{margin:6px 0}
+.cf{background:#F5F3FF;border:1px dashed #C4B5FD;border-radius:12px;padding:14px 20px;margin-top:22px}
+.mis{background:#FFF5F5;border:1px solid #F3C2C2;border-radius:12px;padding:14px 20px;margin-top:14px}
+.cf h3,.mis h3,.conf h3{margin:0 0 6px;font-size:16px}
+.cf p,.mis p{margin:0}
+.conf{border:1px solid #E3E0D8;border-radius:12px;padding:14px 20px;margin-top:22px}
+.conf p{margin:6px 0} .conf span,.rel span{color:#8A8A93;font-size:13.5px}
+.cap{color:#8A8A93;font-size:14px}
+.pn{display:flex;justify-content:space-between;gap:16px;margin-top:40px;border-top:1px solid #E3E0D8;padding-top:18px;font-size:14.5px}
+.spa{display:block;text-align:center;margin-top:28px;background:#1c2b3a;color:#fff;border-radius:12px;padding:12px}
+footer{margin-top:34px;color:#8A8A93;font-size:13px;text-align:center}
+</style>
+</head>
+<body>
+<div class="crumb"><a href="https://www.aha.voyager06.tech/">原来如此</a> / 验证与安全 / 行为验证码/无感验证</div>
+<span class="kick">验证与安全</span>
+<h1>行为验证码/无感验证</h1>
+<div class="tagline">什么都不用点，“验证通过”一闪而过</div>
+<div class="scene"><b>👀 日常场景</b><p>在某些 App 登录时，按钮下方闪过一行小字“验证通过”，你什么都没点、没拖、没选图。它怎么知道我是人的？你甚至怀疑它到底验了没有。连个勾都没打，就这么水灵灵地通过了。</p></div>
+
+<h2>原理：它是怎么运作的</h2>
+<div class="sum">💡 采集鼠标、触屏、设备等多维行为信号，用 AI 风控模型实时判定是人是机。</div>
+<h2>先看全过程</h2><ol class="steps"><li>SDK 在页面静默采集行为数据</li><li>记录触屏轨迹、点击节奏、传感器</li><li>叠加设备指纹与 IP 信誉</li><li>AI 风控模型实时打分</li><li>低风险无感通过</li><li>高风险自动升级为滑块/点选</li></ol>
+<p>无感验证是把“考试”彻底取消，改为全程“行为侧写”。SDK 在后台采集的信号比你想象的多：鼠标移动的贝塞尔曲线特征、触屏的压力与接触面积变化、点击的时间间隔分布、页面滚动的惯性，甚至手机陀螺仪的轻微抖动——真人拿着手机时手永远在微微晃动，模拟器则稳得可怕。这些特征连同设备指纹、IP 画像、账号历史一起喂给风控模型，毫秒级输出风险分。低风险用户全程无感知；可疑的才会被“升级”要求拖滑块或点选。这种设计的核心 trade-off（权衡）是体验与安全的再平衡：把 95% 正常用户的验证成本降到零，把对抗火力集中在 5% 的可疑流量上。但它也意味着网站在收集相当多的行为数据，隐私合规（告知用户采集了什么）是开发者不能跳过的一环。对开发者来说，接入无感验证的最大工作量不在前端 SDK，而在后端：要为“低风险放行/中风险加验/高风险拦截”三档结果分别设计业务路径。</p>
+
+<h2>网站该如何接入</h2><ul><li><b>极验 GeeTest（无感验证）</b>：国内无感验证代表，行为+设备指纹+AI 风控。</li><li><b>阿里云验证码（无感模式）</b>：阿里云官方方案，与云上风控联动。</li><li><b>网易易盾（智能无感）</b>：网易系无感验证方案。</li><li><b>顶象无感验证</b>：主打设备指纹联动的无感方案。</li></ul><ol><li>在服务商后台开通无感验证，获取 id/key 并配置风险策略（通过率/拦截阈值）。</li><li>前端/客户端集成 SDK，SDK 自动静默采集行为数据并生成验证凭证。</li><li>关键业务请求把凭证带给后端。</li><li>后端调用服务商二次验证接口，拿到风险等级判定结果。</li><li>根据结果决策：直接放行、要求短信二次验证、或直接拦截。</li><li>定期复盘风控报表，调整策略阈值，平衡通过率与安全性。</li></ol>
+<h2>延伸阅读</h2><ul><li><a href="https://github.com/yijiu2025/coreflow/commit/006ff8a71e8404ac0eea6bb9f3e765e22536054c" rel="noopener">Turnstile/hCaptcha 接入实践对比（含后端校验）</a></li></ul>
+<h2>相关条目</h2><ul class="rel"><li><a href="https://www.aha.voyager06.tech/p/security-recaptcha-v3.html">reCAPTCHA v3 无感知评分</a> <span>全程无弹窗，它在后台给你打了个分</span></li><li><a href="https://www.aha.voyager06.tech/p/security-email-otp-magic-link.html">邮箱验证码/魔法链接</a> <span>点一下邮件里的链接，直接登录不用输密码</span></li><li><a href="https://www.aha.voyager06.tech/p/security-slider-captcha.html">滑块拼图验证</a> <span>拖一下滑块，它看的其实是你的手</span></li></ul>
+
+<a class="spa" href="https://www.aha.voyager06.tech/#/p/security-behavior-captcha">在站内打开本篇（完整交互版）→</a>
+<div class="pn"><a href="https://www.aha.voyager06.tech/p/security-recaptcha-v3.html">← 上一个：reCAPTCHA v3 无感知评分</a><a href="https://www.aha.voyager06.tech/p/security-sms-otp.html">下一个：短信 OTP 验证码 →</a></div>
+<footer>原来如此 · 把听说过的技术讲透 · 内容为科普解读，具体接入请以各服务官方文档为准</footer>
+</body>
+</html>

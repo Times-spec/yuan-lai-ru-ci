@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>域名绑定网站：买完域名然后呢 · 原来如此</title>
+<meta name="description" content="两边都要配：DNS 指路，服务端认领。绑定域名要做两件事：DNS 告诉全世界“这个域名去哪”，服务端说“我认这个域名”；两边对上，网站才能访问。">
+<link rel="canonical" href="https://www.aha.voyager06.tech/p/network-domain-bind.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="域名绑定网站：买完域名然后呢 · 原来如此">
+<meta property="og:description" content="两边都要配：DNS 指路，服务端认领。绑定域名要做两件事：DNS 告诉全世界“这个域名去哪”，服务端说“我认这个域名”；两边对上，网站才能访问。">
+<meta property="og:url" content="https://www.aha.voyager06.tech/p/network-domain-bind.html">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>">
+<style>
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;max-width:760px;margin:0 auto;padding:24px 20px 60px;color:#1c2b3a;line-height:1.8;background:#FDFCF9}
+a{color:#2563EB;text-decoration:none} a:hover{text-decoration:underline}
+.crumb{font-size:13px;color:#8A8A93;margin-bottom:18px}
+h1{font-size:30px;line-height:1.35;margin:6px 0 8px}
+.tagline{color:#5B6470;font-size:16px;margin-bottom:20px}
+.kick{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.1em;background:#EEF3F8;color:#31597F;border-radius:999px;padding:4px 12px}
+.scene{background:#FFF8EC;border:1px solid #F0E2C4;border-radius:12px;padding:16px 20px}
+.sum{background:#EEF4FF;border:1px solid #C9DBF5;border-radius:12px;padding:16px 20px;font-weight:600}
+h2{font-size:20px;margin:34px 0 12px}
+.steps li,.rel li{margin:6px 0}
+.cf{background:#F5F3FF;border:1px dashed #C4B5FD;border-radius:12px;padding:14px 20px;margin-top:22px}
+.mis{background:#FFF5F5;border:1px solid #F3C2C2;border-radius:12px;padding:14px 20px;margin-top:14px}
+.cf h3,.mis h3,.conf h3{margin:0 0 6px;font-size:16px}
+.cf p,.mis p{margin:0}
+.conf{border:1px solid #E3E0D8;border-radius:12px;padding:14px 20px;margin-top:22px}
+.conf p{margin:6px 0} .conf span,.rel span{color:#8A8A93;font-size:13.5px}
+.cap{color:#8A8A93;font-size:14px}
+.pn{display:flex;justify-content:space-between;gap:16px;margin-top:40px;border-top:1px solid #E3E0D8;padding-top:18px;font-size:14.5px}
+.spa{display:block;text-align:center;margin-top:28px;background:#1c2b3a;color:#fff;border-radius:12px;padding:12px}
+footer{margin-top:34px;color:#8A8A93;font-size:13px;text-align:center}
+</style>
+</head>
+<body>
+<div class="crumb"><a href="https://www.aha.voyager06.tech/">原来如此</a> / 网络与协议 / 域名绑定网站：买完域名然后呢</div>
+<span class="kick">网络与协议</span>
+<h1>域名绑定网站：买完域名然后呢</h1>
+<div class="tagline">两边都要配：DNS 指路，服务端认领</div>
+<div class="scene"><b>👀 日常场景</b><p>你买了个心仪的域名，想让它打开你的网站。在 DNS 控制台点下“添加记录”，面对主机记录、记录类型、记录值一脸懵；好不容易填完，打开还是一片空白——因为绑定域名的工作只做了一半，另一半在网站那边。</p></div>
+
+<h2>原理：它是怎么运作的</h2>
+<div class="sum">💡 绑定域名要做两件事：DNS 告诉全世界“这个域名去哪”，服务端说“我认这个域名”；两边对上，网站才能访问。</div>
+<h2>先看全过程</h2><ol class="steps"><li>域名只是名字，访问要靠 IP</li><li>DNS 记录 = 名字的指向标</li><li>A 记录：裸域名 → 服务器 IP</li><li>CNAME：子域名 → 另一个域名</li><li>服务端也要“认领”这个域名</li><li>对上之后，HTTPS 证书跟上</li></ol>
+<p>为什么配了 DNS 还是打不开？因为绑定域名是“两边”的事。</p><p>第一边在域名这边：DNS 只管“指路”。你在控制台加的每条记录，都是一句“这个名字去哪找”：A 记录说“裸域名去这个 IP”，CNAME 说“这个子域名去问另一个名字”。全世界的 DNS 服务器照着指路，用户才能找到你的服务器。</p><p>第二边在网站这边：服务器要“认领”。互联网上无数网站共用平台（比如 Vercel 上跑着几十万个站），光找到服务器不够，服务器还要知道“这个域名是我的”。所以 Vercel 要在项目里加域名，云服务器要在 Nginx 里写 server_name——都是认领动作。</p><p>共性就一句话：DNS 指路 + 服务端认领。Vercel 把后半段做成了点点鼠标（还顺手把 HTTPS 证书办了）；云服务器则要自己动手：A 记录指到公网 IP，Nginx 配好 server_name，再申请证书。</p><p>本站就是活例子：www.aha.voyager06.tech 一条 CNAME 指向 cname.vercel-dns.com，Vercel 项目里加上域名，几分钟后 https 就通了。</p>
+
+<h2>我该怎么绑定域名</h2><ul><li><b>托管平台（如 Vercel）</b>：子域名 CNAME 指向平台地址，再在项目设置里加上域名，证书自动办好</li><li><b>云服务器（ECS）</b>：A 记录指向服务器公网 IP，Nginx 里配置 server_name 认领域名</li><li><b>裸域名 vs 子域名</b>：裸域名（@）用 A 记录指 IP，子域名（www）用 CNAME</li></ul><ol><li>想好要绑定的完整域名，如 www.aha.voyager06.tech</li><li>去 DNS 控制台添加记录：平台用 CNAME，云服务器用 A</li><li>去服务端认领：Vercel 项目加域名 / Nginx 写 server_name</li><li>等几分钟让 DNS 生效，浏览器访问验证</li><li>确认 https 小锁头正常（Vercel 自动，云服务器需配证书）</li></ol>
+
+<h2>相关条目</h2><ul class="rel"><li><a href="https://www.aha.voyager06.tech/p/network-dns-records.html">DNS：网址的电话簿</a> <span>你输入的每个网址，都要先问它</span></li><li><a href="https://www.aha.voyager06.tech/p/network-doh.html">DOH：加密的 DNS 查询</a> <span>把查域名的请求，装进加密信封</span></li><li><a href="https://www.aha.voyager06.tech/p/network-fake-ip.html">Fake-IP：Clash 的 DNS 骗术</a> <span>先给浏览器一个假地址，稳住它</span></li></ul>
+
+<a class="spa" href="https://www.aha.voyager06.tech/#/p/network-domain-bind">在站内打开本篇（完整交互版）→</a>
+<div class="pn"><a href="https://www.aha.voyager06.tech/p/network-proxy-chain.html">← 上一个：直连与链式代理</a><a href="https://www.aha.voyager06.tech/p/network-domain-money.html">下一个：域名：你买的不是域名，是租约 →</a></div>
+<footer>原来如此 · 把听说过的技术讲透 · 内容为科普解读，具体接入请以各服务官方文档为准</footer>
+</body>
+</html>

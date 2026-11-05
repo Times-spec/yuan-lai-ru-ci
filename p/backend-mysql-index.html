@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MySQL 索引 · 原来如此</title>
+<meta name="description" content="没有它，百万行查询要 10 秒。用 B+ 树给数据建「有序目录」，把全表扫描变成按目录定位。">
+<link rel="canonical" href="https://www.aha.voyager06.tech/p/backend-mysql-index.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MySQL 索引 · 原来如此">
+<meta property="og:description" content="没有它，百万行查询要 10 秒。用 B+ 树给数据建「有序目录」，把全表扫描变成按目录定位。">
+<meta property="og:url" content="https://www.aha.voyager06.tech/p/backend-mysql-index.html">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>">
+<style>
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;max-width:760px;margin:0 auto;padding:24px 20px 60px;color:#1c2b3a;line-height:1.8;background:#FDFCF9}
+a{color:#2563EB;text-decoration:none} a:hover{text-decoration:underline}
+.crumb{font-size:13px;color:#8A8A93;margin-bottom:18px}
+h1{font-size:30px;line-height:1.35;margin:6px 0 8px}
+.tagline{color:#5B6470;font-size:16px;margin-bottom:20px}
+.kick{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.1em;background:#EEF3F8;color:#31597F;border-radius:999px;padding:4px 12px}
+.scene{background:#FFF8EC;border:1px solid #F0E2C4;border-radius:12px;padding:16px 20px}
+.sum{background:#EEF4FF;border:1px solid #C9DBF5;border-radius:12px;padding:16px 20px;font-weight:600}
+h2{font-size:20px;margin:34px 0 12px}
+.steps li,.rel li{margin:6px 0}
+.cf{background:#F5F3FF;border:1px dashed #C4B5FD;border-radius:12px;padding:14px 20px;margin-top:22px}
+.mis{background:#FFF5F5;border:1px solid #F3C2C2;border-radius:12px;padding:14px 20px;margin-top:14px}
+.cf h3,.mis h3,.conf h3{margin:0 0 6px;font-size:16px}
+.cf p,.mis p{margin:0}
+.conf{border:1px solid #E3E0D8;border-radius:12px;padding:14px 20px;margin-top:22px}
+.conf p{margin:6px 0} .conf span,.rel span{color:#8A8A93;font-size:13.5px}
+.cap{color:#8A8A93;font-size:14px}
+.pn{display:flex;justify-content:space-between;gap:16px;margin-top:40px;border-top:1px solid #E3E0D8;padding-top:18px;font-size:14.5px}
+.spa{display:block;text-align:center;margin-top:28px;background:#1c2b3a;color:#fff;border-radius:12px;padding:12px}
+footer{margin-top:34px;color:#8A8A93;font-size:13px;text-align:center}
+</style>
+</head>
+<body>
+<div class="crumb"><a href="https://www.aha.voyager06.tech/">原来如此</a> / 后端基建 / MySQL 索引</div>
+<span class="kick">后端基建</span>
+<h1>MySQL 索引</h1>
+<div class="tagline">没有它，百万行查询要 10 秒</div>
+<div class="scene"><b>👀 日常场景</b><p>同样是查订单，有人一点筛选秒出结果，有人的后台转圈半天。差别往往就在索引上：加了索引的查询走「目录」定位，没加索引的只能逐行翻——一百万行数据，差距就是毫秒和十秒的区别。</p></div>
+
+<h2>原理：它是怎么运作的</h2>
+<div class="sum">💡 用 B+ 树给数据建「有序目录」，把全表扫描变成按目录定位。</div>
+<h2>先看全过程</h2><ol class="steps"><li>查询条件里有 WHERE 字段</li><li>优化器检查该字段有无索引</li><li>有：沿 B+ 树逐层定位</li><li>叶子节点拿到数据位置</li><li>直接读取目标行返回</li><li>无：只能逐行全表扫描</li></ol>
+<p>索引的本质是「以空间换时间」的目录。InnoDB 的索引用 B+ 树实现：一种矮胖的多叉树，所有数据都存在叶子节点，且叶子节点按顺序连成链表。查数据时从根节点一层层二分定位，树高一般只有 3～4 层，意味着查上千万行数据也只需要 3～4 次磁盘 IO——而全表扫描要把每一行都读一遍。</p><p>聚簇索引（一般就是主键）比较特殊：叶子节点直接存着整行数据。普通二级索引的叶子节点只存「索引列 + 主键」，查到主键后还要回聚簇索引再查一次完整行，这叫「回表」。所以 SELECT * 会比只查索引列慢一截。</p><p>索引不是越多越好：每次写入数据都要同步更新所有索引，索引太多写操作会变慢，还占磁盘。经典口诀是「最左前缀」：联合索引 (a,b,c) 能服务 WHERE a=?、WHERE a=? AND b=?，但服务不了 WHERE b=?。建索引前先用 EXPLAIN 看执行计划，让数据说话。</p>
+
+<h2>开发者：应该如何接入</h2><ul><li><b>B-Tree 普通索引</b>：最常用，适合等值和范围查询</li><li><b>唯一索引</b>：值不重复，自带去重约束</li><li><b>全文索引</b>：对文本内容做分词搜索</li></ul><ol><li>用慢查询日志或 EXPLAIN 找出慢 SQL</li><li>看 WHERE、JOIN、ORDER BY 里用到了哪些字段</li><li>给高频查询字段加索引，遵循最左前缀原则</li><li>上线前在测试库验证执行计划确实走了索引</li><li>定期用 EXPLAIN 复查，防止数据量变化后索引失效</li></ol>
+<h2>延伸阅读</h2><ul><li><a href="https://dev.mysql.com/doc/refman/8.0/en/innodb-index-types.html" rel="noopener">MySQL 8.0 官方手册：InnoDB 索引类型</a></li></ul>
+<h2>相关条目</h2><ul class="rel"><li><a href="https://www.aha.voyager06.tech/p/backend-mysql-transaction.html">MySQL 事务</a> <span>转账不能只扣款、不入账</span></li><li><a href="https://www.aha.voyager06.tech/p/backend-redis-cache.html">Redis 缓存</a> <span>内存里的闪电仓库，App 秒开的秘密</span></li><li><a href="https://www.aha.voyager06.tech/p/backend-elasticsearch.html">Elasticsearch 全文搜索</a> <span>全文搜索，快得像查字典</span></li></ul>
+
+<a class="spa" href="https://www.aha.voyager06.tech/#/p/backend-mysql-index">在站内打开本篇（完整交互版）→</a>
+<div class="pn"><a href="https://www.aha.voyager06.tech/p/backend-redis-cache.html">← 上一个：Redis 缓存</a><a href="https://www.aha.voyager06.tech/p/backend-mysql-transaction.html">下一个：MySQL 事务 →</a></div>
+<footer>原来如此 · 把听说过的技术讲透 · 内容为科普解读，具体接入请以各服务官方文档为准</footer>
+</body>
+</html>

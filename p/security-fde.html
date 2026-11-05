@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FDE：给整块硬盘上锁 · 原来如此</title>
+<meta name="description" content="电脑丢了，硬盘里的数据怎么办？。整盘数据先加密再落盘，密钥由开机密码+TPM 芯片守护——硬盘离身也读不出东西。">
+<link rel="canonical" href="https://www.aha.voyager06.tech/p/security-fde.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="FDE：给整块硬盘上锁 · 原来如此">
+<meta property="og:description" content="电脑丢了，硬盘里的数据怎么办？。整盘数据先加密再落盘，密钥由开机密码+TPM 芯片守护——硬盘离身也读不出东西。">
+<meta property="og:url" content="https://www.aha.voyager06.tech/p/security-fde.html">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>">
+<style>
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;max-width:760px;margin:0 auto;padding:24px 20px 60px;color:#1c2b3a;line-height:1.8;background:#FDFCF9}
+a{color:#2563EB;text-decoration:none} a:hover{text-decoration:underline}
+.crumb{font-size:13px;color:#8A8A93;margin-bottom:18px}
+h1{font-size:30px;line-height:1.35;margin:6px 0 8px}
+.tagline{color:#5B6470;font-size:16px;margin-bottom:20px}
+.kick{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.1em;background:#EEF3F8;color:#31597F;border-radius:999px;padding:4px 12px}
+.scene{background:#FFF8EC;border:1px solid #F0E2C4;border-radius:12px;padding:16px 20px}
+.sum{background:#EEF4FF;border:1px solid #C9DBF5;border-radius:12px;padding:16px 20px;font-weight:600}
+h2{font-size:20px;margin:34px 0 12px}
+.steps li,.rel li{margin:6px 0}
+.cf{background:#F5F3FF;border:1px dashed #C4B5FD;border-radius:12px;padding:14px 20px;margin-top:22px}
+.mis{background:#FFF5F5;border:1px solid #F3C2C2;border-radius:12px;padding:14px 20px;margin-top:14px}
+.cf h3,.mis h3,.conf h3{margin:0 0 6px;font-size:16px}
+.cf p,.mis p{margin:0}
+.conf{border:1px solid #E3E0D8;border-radius:12px;padding:14px 20px;margin-top:22px}
+.conf p{margin:6px 0} .conf span,.rel span{color:#8A8A93;font-size:13.5px}
+.cap{color:#8A8A93;font-size:14px}
+.pn{display:flex;justify-content:space-between;gap:16px;margin-top:40px;border-top:1px solid #E3E0D8;padding-top:18px;font-size:14.5px}
+.spa{display:block;text-align:center;margin-top:28px;background:#1c2b3a;color:#fff;border-radius:12px;padding:12px}
+footer{margin-top:34px;color:#8A8A93;font-size:13px;text-align:center}
+</style>
+</head>
+<body>
+<div class="crumb"><a href="https://www.aha.voyager06.tech/">原来如此</a> / 验证与安全 / FDE：给整块硬盘上锁</div>
+<span class="kick">验证与安全</span>
+<h1>FDE：给整块硬盘上锁</h1>
+<div class="tagline">电脑丢了，硬盘里的数据怎么办？</div>
+<div class="scene"><b>👀 日常场景</b><p>笔记本送修、旧电脑挂闲鱼、公司发的电脑要归还——硬盘里躺着微信聊天记录、工资条、客户资料。你以为“删掉”就干净了？数据恢复软件能把删掉的文件捞回来大半。FDE（全盘加密）就是给整块硬盘上的一把锁：没钥匙，硬盘拆下来也是一块“砖头”。</p></div>
+
+<h2>原理：它是怎么运作的</h2>
+<div class="sum">💡 整盘数据先加密再落盘，密钥由开机密码+TPM 芯片守护——硬盘离身也读不出东西。</div>
+<h2>先看全过程</h2><ol class="steps"><li>数据写入硬盘前，先用密钥整盘加密</li><li>密钥存进 TPM 芯片并由开机密码保护</li><li>开机时 TPM 验明硬件无篡改才放行密钥</li><li>系统运行时透明加解密，用户无感</li><li>硬盘被拔走：没有密钥，读出的全是乱码</li></ol>
+<p>FDE（Full Disk Encryption，全盘加密）解决的是一个很具体的问题：电脑丢了、送修了，硬盘里的数据怎么办？删文件、设开机密码都防不住——把硬盘拔下来插到别的电脑上，文件照读不误。FDE 的思路是釜底抽薪：数据写进硬盘之前，先用一把密钥整体加密，读出来时再解密。没有密钥，整盘就是一堆乱码。</p><p>密钥本身由两层保护：第一层是你的开机密码/PIN，第二层是 TPM 芯片（主板上一颗专门存密钥的安全芯片，防拆防读）。开机时 TPM 确认“硬件没被动过”才放行密钥，全程你几乎无感——这就是它和“给单个文件设密码”最大的区别：粒度粗（整盘），但零打扰。</p><p>和它常被混淆的是文件级加密（如 EFS、压缩包密码）：后者只保护挑出来的文件，临时文件、交换分区里的痕迹照样明文躺着；FDE 是连操作系统、虚拟内存、回收站一起锁死。当然它也有边界：只防“硬盘离身”（静态数据），电脑开着、你登录着的时候，数据是解密状态，木马和锁屏绕过照样能偷——所以 FDE + 强锁屏密码才是完整姿势。</p>
+
+<h2>我该怎么开启它</h2><ul><li><b>BitLocker（Windows）</b>：系统自带：设置 → 隐私和安全性 → 设备加密（或控制面板 → BitLocker 加密）</li><li><b>FileVault（macOS）</b>：系统设置 → 隐私与安全性 → FileVault，打开后整盘加密</li><li><b>LUKS（Linux）</b>：装系统时勾选“加密磁盘”，或用 cryptsetup 给数据盘加密</li></ul><ol><li>先备份重要数据：加密本身很安全，但以防万一</li><li>按上面的路径打开对应开关，跟着向导一步步走</li><li>系统会生成一串恢复密钥（Windows 是 48 位数字）——立刻抄下来</li><li>把恢复密钥存到和电脑不同的地方：纸上、靠谱的云笔记，或交给家人</li><li>加密在后台慢慢进行，期间可以正常用电脑；完成后重启验证一次</li></ol>
+
+<h2>相关条目</h2><ul class="rel"><li><a href="https://www.aha.voyager06.tech/p/features-open-with-apps.html">「用其他应用打开」：推荐名单是怎么算出来的</a> <span>不是系统随便排的，是每个 App 自己「报名」的结果</span></li><li><a href="https://www.aha.voyager06.tech/p/backend-docker.html">Docker 容器</a> <span>终结「在我电脑上明明是好的」</span></li><li><a href="https://www.aha.voyager06.tech/p/backend-docker-compose.html">Docker Compose：一键启动整套服务</a> <span>一条命令，拉起整个开发环境</span></li></ul>
+
+<a class="spa" href="https://www.aha.voyager06.tech/#/p/security-fde">在站内打开本篇（完整交互版）→</a>
+<div class="pn"><a href="https://www.aha.voyager06.tech/p/security-remember-me.html">← 上一个：「记住我」持久登录</a><a href="https://www.aha.voyager06.tech/p/security-image-captcha.html">下一个：图形验证码 →</a></div>
+<footer>原来如此 · 把听说过的技术讲透 · 内容为科普解读，具体接入请以各服务官方文档为准</footer>
+</body>
+</html>

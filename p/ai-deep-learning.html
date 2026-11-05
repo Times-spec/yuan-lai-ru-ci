@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>深度学习 · 原来如此</title>
+<meta name="description" content="机器自己学特征，不靠人工喂。用多层神经网络让机器从数据里自动学出特征，不靠人工设计特征。">
+<link rel="canonical" href="https://www.aha.voyager06.tech/p/ai-deep-learning.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="深度学习 · 原来如此">
+<meta property="og:description" content="机器自己学特征，不靠人工喂。用多层神经网络让机器从数据里自动学出特征，不靠人工设计特征。">
+<meta property="og:url" content="https://www.aha.voyager06.tech/p/ai-deep-learning.html">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>">
+<style>
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;max-width:760px;margin:0 auto;padding:24px 20px 60px;color:#1c2b3a;line-height:1.8;background:#FDFCF9}
+a{color:#2563EB;text-decoration:none} a:hover{text-decoration:underline}
+.crumb{font-size:13px;color:#8A8A93;margin-bottom:18px}
+h1{font-size:30px;line-height:1.35;margin:6px 0 8px}
+.tagline{color:#5B6470;font-size:16px;margin-bottom:20px}
+.kick{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.1em;background:#EEF3F8;color:#31597F;border-radius:999px;padding:4px 12px}
+.scene{background:#FFF8EC;border:1px solid #F0E2C4;border-radius:12px;padding:16px 20px}
+.sum{background:#EEF4FF;border:1px solid #C9DBF5;border-radius:12px;padding:16px 20px;font-weight:600}
+h2{font-size:20px;margin:34px 0 12px}
+.steps li,.rel li{margin:6px 0}
+.cf{background:#F5F3FF;border:1px dashed #C4B5FD;border-radius:12px;padding:14px 20px;margin-top:22px}
+.mis{background:#FFF5F5;border:1px solid #F3C2C2;border-radius:12px;padding:14px 20px;margin-top:14px}
+.cf h3,.mis h3,.conf h3{margin:0 0 6px;font-size:16px}
+.cf p,.mis p{margin:0}
+.conf{border:1px solid #E3E0D8;border-radius:12px;padding:14px 20px;margin-top:22px}
+.conf p{margin:6px 0} .conf span,.rel span{color:#8A8A93;font-size:13.5px}
+.cap{color:#8A8A93;font-size:14px}
+.pn{display:flex;justify-content:space-between;gap:16px;margin-top:40px;border-top:1px solid #E3E0D8;padding-top:18px;font-size:14.5px}
+.spa{display:block;text-align:center;margin-top:28px;background:#1c2b3a;color:#fff;border-radius:12px;padding:12px}
+footer{margin-top:34px;color:#8A8A93;font-size:13px;text-align:center}
+</style>
+</head>
+<body>
+<div class="crumb"><a href="https://www.aha.voyager06.tech/">原来如此</a> / AI 与大模型 / 深度学习</div>
+<span class="kick">AI 与大模型</span>
+<h1>深度学习</h1>
+<div class="tagline">机器自己学特征，不靠人工喂</div>
+<div class="scene"><b>👀 日常场景</b><p>新闻里&quot;深度学习三巨头获图灵奖&quot;&quot;AI 看片子超过医生&quot;，说的都是它。同样是&quot;机器学习&quot;，深度学习之前工程师要手工设计特征，之后机器自己从数据里学——这是 AI 近十年爆发的总开关。</p></div>
+
+<h2>原理：它是怎么运作的</h2>
+<div class="sum">💡 用多层神经网络让机器从数据里自动学出特征，不靠人工设计特征。</div>
+<h2>先看全过程</h2><ol class="steps"><li>输入原始数据（图片像素、文本）</li><li>逐层提取特征：边缘→纹理→部件</li><li>输出层给出预测（这是猫的概率）</li><li>预测和标准答案比，算出误差</li><li>反向传播：把误差分摊给每一层</li><li>海量数据上重复百万次，权重渐入佳境</li></ol>
+<p>在深度学习之前，机器学习有个苦力活叫&quot;特征工程&quot;：想让机器识别猫，工程师得手工设计&quot;边缘检测器&quot;&quot;纹理统计量&quot;，一条条告诉机器该看什么。这条路又贵又快到头——人能想到的特征就那么多。</p><p>深度学习的洞见是：别教它看什么，让它自己学。多层神经网络像一条流水线：第一层学边缘，第二层把边缘拼成纹理，第三层拼出眼睛耳朵，最后一层认出&quot;猫&quot;。层数越深，能学到的特征越抽象，这就是&quot;深度&quot;的含义。2012 年 AlexNet 在 ImageNet 图像赛上把错误率砍掉一大截，深度学习从此一战成名。</p><p>为什么是现在才爆发？三个条件同时成熟：海量数据（互联网）、算力（GPU 恰好擅长矩阵运算）、算法（反向传播+ReLU+Dropout 让深层网络训得动）。它解决的是&quot;表示学习自动化&quot;——机器自己决定用什么特征，这是整条 AI 逻辑链的起点：后面的神经网络、Transformer，都是在回答&quot;用什么样的深层结构学得更好&quot;。</p>
+
+<h2>想深入了解怎么办</h2><ul><li><b>经典入门课</b>：吴恩达系课程：从逻辑回归一路讲到 CNN，数学要求友好</li><li><b>动手跑起来</b>：跟着教程用 PyTorch 跑通 MNIST 手写数字识别</li><li><b>ImageNet 与 AlexNet 论文</b>：2012 年一战成名的那篇，看懂&quot;为什么是它引爆了深度学习&quot;</li></ul><ol><li>先补 Python 和一点 numpy：不用精通，能读写数组就行</li><li>上一门经典入门课，重点搞懂：前向传播、损失函数、反向传播</li><li>亲手跑通 MNIST：从数据加载到训练出 95%+ 准确率</li><li>再横向看看 CNN（看图）和 RNN（看序列），理解&quot;结构是为数据形态服务的&quot;</li><li>回头重读本篇的逻辑链：特征工程→自动学特征，这条线就通了</li></ol>
+<h2>延伸阅读</h2><ul><li><a href="https://github.com/kumawatcodes/neural-grindset/blob/HEAD/Ai_Engineering-Course/06-Deep-Learning-Fundamentals/01-Neural-Network-Basics-Perceptron-MLP.md" rel="noopener">神经网络基础：从感知机到 MLP（GitHub 教程）</a></li></ul>
+<h2>相关条目</h2><ul class="rel"><li><a href="https://www.aha.voyager06.tech/p/nav-deferred-deeplink.html">延迟深度链接：先装 App 再进对的页</a> <span>先装 App 再打开，照样直达当初那个页面</span></li><li><a href="https://www.aha.voyager06.tech/p/ai-sft-lora.html">微调：教模型听懂指令</a> <span>把续写机器调成听话助手</span></li><li><a href="https://www.aha.voyager06.tech/p/ai-neural-network.html">神经网络</a> <span>加权求和层层堆，误差分摊回去调</span></li></ul>
+
+<a class="spa" href="https://www.aha.voyager06.tech/#/p/ai-deep-learning">在站内打开本篇（完整交互版）→</a>
+<div class="pn"><a href="https://www.aha.voyager06.tech/p/ai-tts-asr-ocr.html">← 上一个：TTS/ASR/OCR：机器的耳与口</a><a href="https://www.aha.voyager06.tech/p/ai-neural-network.html">下一个：神经网络 →</a></div>
+<footer>原来如此 · 把听说过的技术讲透 · 内容为科普解读，具体接入请以各服务官方文档为准</footer>
+</body>
+</html>

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>智能体 Agent · 原来如此</title>
+<meta name="description" content="从只会说，到会动手做事。LLM（脑）+工具（手）+循环（心跳）：ReAct 循环里模型自己决定下一步调什么工具，从&quot;说&quot;到&quot;做&quot;。">
+<link rel="canonical" href="https://www.aha.voyager06.tech/p/ai-agent.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="智能体 Agent · 原来如此">
+<meta property="og:description" content="从只会说，到会动手做事。LLM（脑）+工具（手）+循环（心跳）：ReAct 循环里模型自己决定下一步调什么工具，从&quot;说&quot;到&quot;做&quot;。">
+<meta property="og:url" content="https://www.aha.voyager06.tech/p/ai-agent.html">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>">
+<style>
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;max-width:760px;margin:0 auto;padding:24px 20px 60px;color:#1c2b3a;line-height:1.8;background:#FDFCF9}
+a{color:#2563EB;text-decoration:none} a:hover{text-decoration:underline}
+.crumb{font-size:13px;color:#8A8A93;margin-bottom:18px}
+h1{font-size:30px;line-height:1.35;margin:6px 0 8px}
+.tagline{color:#5B6470;font-size:16px;margin-bottom:20px}
+.kick{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.1em;background:#EEF3F8;color:#31597F;border-radius:999px;padding:4px 12px}
+.scene{background:#FFF8EC;border:1px solid #F0E2C4;border-radius:12px;padding:16px 20px}
+.sum{background:#EEF4FF;border:1px solid #C9DBF5;border-radius:12px;padding:16px 20px;font-weight:600}
+h2{font-size:20px;margin:34px 0 12px}
+.steps li,.rel li{margin:6px 0}
+.cf{background:#F5F3FF;border:1px dashed #C4B5FD;border-radius:12px;padding:14px 20px;margin-top:22px}
+.mis{background:#FFF5F5;border:1px solid #F3C2C2;border-radius:12px;padding:14px 20px;margin-top:14px}
+.cf h3,.mis h3,.conf h3{margin:0 0 6px;font-size:16px}
+.cf p,.mis p{margin:0}
+.conf{border:1px solid #E3E0D8;border-radius:12px;padding:14px 20px;margin-top:22px}
+.conf p{margin:6px 0} .conf span,.rel span{color:#8A8A93;font-size:13.5px}
+.cap{color:#8A8A93;font-size:14px}
+.pn{display:flex;justify-content:space-between;gap:16px;margin-top:40px;border-top:1px solid #E3E0D8;padding-top:18px;font-size:14.5px}
+.spa{display:block;text-align:center;margin-top:28px;background:#1c2b3a;color:#fff;border-radius:12px;padding:12px}
+footer{margin-top:34px;color:#8A8A93;font-size:13px;text-align:center}
+</style>
+</head>
+<body>
+<div class="crumb"><a href="https://www.aha.voyager06.tech/">原来如此</a> / AI 与大模型 / 智能体 Agent</div>
+<span class="kick">AI 与大模型</span>
+<h1>智能体 Agent</h1>
+<div class="tagline">从只会说，到会动手做事</div>
+<div class="scene"><b>👀 日常场景</b><p>Cursor 自动写代码改 bug、&quot;AI 员工&quot;自己操作软件——模型什么时候学会&quot;动手&quot;的？答案是：它其实没动手，它只是学会了指挥你的代码动手。这套&quot;脑+手+心跳&quot;的系统，就叫智能体 Agent。</p></div>
+
+<h2>原理：它是怎么运作的</h2>
+<div class="sum">💡 LLM（脑）+工具（手）+循环（心跳）：ReAct 循环里模型自己决定下一步调什么工具，从&quot;说&quot;到&quot;做&quot;。</div>
+<h2>先看全过程</h2><ol class="steps"><li>用户给定目标</li><li>模型规划并拆解</li><li>选中工具，发出调用请求</li><li>外部执行，结果返回</li><li>模型观察再决策</li><li>循环直到目标完成</li></ol>
+<p>大语言模型有个根本局限：它只能&quot;说&quot;，不能&quot;做&quot;。它不知道今天天气，不知道你的数据库里有什么。Agent 的思路是：给模型配&quot;手&quot;（工具）和&quot;心跳&quot;（循环）。经典模式叫 ReAct：模型先思考（Thought）&quot;我需要查天气&quot;，再行动（Action）发出结构化的工具调用请求，外部编排器真正执行查询，把结果（Observation）喂回去，模型再决定下一步。</p><p>关键细节：模型从不真正执行工具——它只输出一段 JSON 说&quot;请调用 get_weather，参数是上海&quot;，执行的是你的代码。这意味着工具的权限边界完全由你控制，也意味着 Agent 的能力上限取决于你给了它什么工具。Cursor、Claude Code 这类 AI 编程工具，本质就是&quot;代码版 Agent&quot;：模型规划、调终端、读文件、跑测试，循环到 bug 修好。</p><p>在逻辑链上，Agent 承接&quot;LLM 只能说&quot;：RAG 给了它知识，Agent 给了它行动力。它是整条链从&quot;智能&quot;走向&quot;生产力&quot;的一跃——也是风险开始的地方：会行动的模型，才需要护栏。</p>
+
+<h2>我该怎么用它</h2><ul><li><b>AI 编程工具</b>：Cursor、Claude Code 这类：给目标，它自己读文件、改代码、跑测试</li><li><b>桌面/浏览器 Agent</b>：能操作软件、填表格、逛网页的 Agent</li><li><b>工作流 Agent</b>：把&quot;查资料→整理→发日报&quot;这类固定流程交给它定时跑</li></ul><ol><li>从一件具体的小事开始：比如&quot;把这个文件夹的截图按日期重命名&quot;</li><li>目标一次只给一个，边界讲清：能碰哪些文件、不能碰哪些</li><li>让它先说计划再动手，计划不对直接叫停改计划</li><li>每一步的结果都看一眼，别当甩手掌柜</li><li>删文件、花钱、发消息这类敏感操作，设成必须人工确认</li><li>复盘：哪次它理解偏了，就把那条要求写进以后的指令里</li></ol>
+<h2>延伸阅读</h2><ul><li><a href="https://www.anthropic.com/engineering/building-effective-agents" rel="noopener">Building Effective Agents（Anthropic 官方工程博客）</a></li><li><a href="https://github.com/abugamil/ds-cheatsheets/blob/HEAD/07_agentic_ai_llm/03_agents_tool_use_orchestration.md" rel="noopener">Agent / 工具调用 / 编排速查（ds-cheatsheets）</a></li></ul>
+<h2>相关条目</h2><ul class="rel"><li><a href="https://www.aha.voyager06.tech/p/network-agent-protocol.html">个人智能体协议 PAP：AI 替你下单时，商家怎么认出它</a> <span>给 AI 代理办一张&quot;身份证 + 授权书&quot;</span></li><li><a href="https://www.aha.voyager06.tech/p/ai-hallucination.html">AI 幻觉：一本正经地胡说八道</a> <span>一本正经胡说八道，是出厂设置</span></li><li><a href="https://www.aha.voyager06.tech/p/ai-rsi.html">RSI：当 AI 开始改进 AI 自己</a> <span>当 AI 开始改进 AI 自己</span></li></ul>
+
+<a class="spa" href="https://www.aha.voyager06.tech/#/p/ai-agent">在站内打开本篇（完整交互版）→</a>
+<div class="pn"><a href="https://www.aha.voyager06.tech/p/ai-hallucination.html">← 上一个：AI 幻觉：一本正经地胡说八道</a><a href="https://www.aha.voyager06.tech/p/ai-prompt-engineering.html">下一个：提示工程：和 AI 说话的技巧 →</a></div>
+<footer>原来如此 · 把听说过的技术讲透 · 内容为科普解读，具体接入请以各服务官方文档为准</footer>
+</body>
+</html>

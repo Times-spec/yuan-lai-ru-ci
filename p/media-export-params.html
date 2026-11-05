@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>视频导出参数：采样率、位深、格式一次讲明白 · 原来如此</title>
+<meta name="description" content="精度越高越清晰，文件也越大。这些参数本质都是“精度”的选择：用多少数据来描述声音和画面。精度越高越清晰，文件也越大；导出的艺术就是在清晰和体积之间找平衡。">
+<link rel="canonical" href="https://www.aha.voyager06.tech/p/media-export-params.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="视频导出参数：采样率、位深、格式一次讲明白 · 原来如此">
+<meta property="og:description" content="精度越高越清晰，文件也越大。这些参数本质都是“精度”的选择：用多少数据来描述声音和画面。精度越高越清晰，文件也越大；导出的艺术就是在清晰和体积之间找平衡。">
+<meta property="og:url" content="https://www.aha.voyager06.tech/p/media-export-params.html">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>">
+<style>
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;max-width:760px;margin:0 auto;padding:24px 20px 60px;color:#1c2b3a;line-height:1.8;background:#FDFCF9}
+a{color:#2563EB;text-decoration:none} a:hover{text-decoration:underline}
+.crumb{font-size:13px;color:#8A8A93;margin-bottom:18px}
+h1{font-size:30px;line-height:1.35;margin:6px 0 8px}
+.tagline{color:#5B6470;font-size:16px;margin-bottom:20px}
+.kick{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.1em;background:#EEF3F8;color:#31597F;border-radius:999px;padding:4px 12px}
+.scene{background:#FFF8EC;border:1px solid #F0E2C4;border-radius:12px;padding:16px 20px}
+.sum{background:#EEF4FF;border:1px solid #C9DBF5;border-radius:12px;padding:16px 20px;font-weight:600}
+h2{font-size:20px;margin:34px 0 12px}
+.steps li,.rel li{margin:6px 0}
+.cf{background:#F5F3FF;border:1px dashed #C4B5FD;border-radius:12px;padding:14px 20px;margin-top:22px}
+.mis{background:#FFF5F5;border:1px solid #F3C2C2;border-radius:12px;padding:14px 20px;margin-top:14px}
+.cf h3,.mis h3,.conf h3{margin:0 0 6px;font-size:16px}
+.cf p,.mis p{margin:0}
+.conf{border:1px solid #E3E0D8;border-radius:12px;padding:14px 20px;margin-top:22px}
+.conf p{margin:6px 0} .conf span,.rel span{color:#8A8A93;font-size:13.5px}
+.cap{color:#8A8A93;font-size:14px}
+.pn{display:flex;justify-content:space-between;gap:16px;margin-top:40px;border-top:1px solid #E3E0D8;padding-top:18px;font-size:14.5px}
+.spa{display:block;text-align:center;margin-top:28px;background:#1c2b3a;color:#fff;border-radius:12px;padding:12px}
+footer{margin-top:34px;color:#8A8A93;font-size:13px;text-align:center}
+</style>
+</head>
+<body>
+<div class="crumb"><a href="https://www.aha.voyager06.tech/">原来如此</a> / 影音媒体 / 视频导出参数：采样率、位深、格式一次讲明白</div>
+<span class="kick">影音媒体</span>
+<h1>视频导出参数：采样率、位深、格式一次讲明白</h1>
+<div class="tagline">精度越高越清晰，文件也越大</div>
+<div class="scene"><b>👀 日常场景</b><p>你在剪映里剪完视频点导出，冒出一堆选项：分辨率 1080p 还是 4K、帧率 30 还是 60、码率、编码 H.264、音频采样率 48000……全默认也能用，但发出去要么文件大得传不动，要么画质糊得没眼看。这些数字什么意思，该怎么选？</p></div>
+
+<h2>原理：它是怎么运作的</h2>
+<div class="sum">💡 这些参数本质都是“精度”的选择：用多少数据来描述声音和画面。精度越高越清晰，文件也越大；导出的艺术就是在清晰和体积之间找平衡。</div>
+<h2>先看全过程</h2><ol class="steps"><li>声音是波，先“采样”再“量化”</li><li>采样率 = 一秒给声音拍多少快照</li><li>量化位数 = 每张快照有多精细</li><li>画面也一样：分辨率管精细</li><li>帧率管流畅，码率管总账</li><li>编码格式 = 怎么打包发货</li></ol>
+<p>声音是连续的波，存进电脑要先变成数字，分两步：采样和量化。</p><p>采样率就是一秒钟给声音拍多少张“快照”：44100Hz 是 CD 标准，48000Hz 是视频行业标准。为什么是这两个数？人耳最多听到约 20000Hz 的声音，按采样定理，采样率至少要是最高频率的 2 倍，44100 就是这么来的。剪视频直接选 48000，和画面统一标准最省心。</p><p>量化位数是每张“快照”有多精细：16-bit 是 CD 标准，日常完全够用；24-bit 是专业录音的配置，后期调音余量更大。记住：采样率管“时间精度”，量化位数管“幅度精度”。</p><p>画面是同样的逻辑：分辨率（1080p/4K）是空间精度，帧率（30/60fps）是时间精度，码率是每秒给多少数据预算——画质和体积的总开关。编码（H.264/H.265）是压缩算法，格式（MP4/MOV）只是装视频的“盒子”。</p>
+
+<h2>导出时这些参数怎么选</h2><ul><li><b>画面：分辨率 + 帧率</b>：1080p/30fps 是万金油；4K/60fps 给高要求和后期裁剪留余量</li><li><b>编码 + 格式：H.264 + MP4</b>：兼容性之王，手机电脑网站全能播；H.265 体积小一半但老设备可能播不动</li><li><b>码率：画质的总开关</b>：1080p 给 8~12Mbps，4K 给 35~45Mbps；码率不够，4K 也糊</li><li><b>音频：48000Hz + 16-bit</b>：视频行业标准采样率；16-bit 足够用，24-bit 留给专业录音后期</li></ul><ol><li>先定用途：发短视频平台，还是存档收藏</li><li>分辨率帧率二选一：1080p/30fps 日常，4K/60fps 高要求</li><li>编码格式抄作业：H.264 + MP4</li><li>码率按分辨率给够：1080p 配 8~12Mbps</li><li>音频直接选 48000Hz + 16-bit，不用纠结</li></ol>
+
+<h2>相关条目</h2><ul class="rel"><li><a href="https://www.aha.voyager06.tech/p/network-json-yaml.html">JSON / YAML</a> <span>机器爱 JSON，人类爱 YAML</span></li><li><a href="https://www.aha.voyager06.tech/p/backend-iaas-paas-saas.html">IaaS/PaaS/SaaS：一张披萨讲明白</a> <span>你想管多少事，决定用哪一层</span></li><li><a href="https://www.aha.voyager06.tech/p/eng-github.html">GitHub：把开源项目玩明白</a> <span>改后缀、找宝藏、看证书、攒星标</span></li></ul>
+
+<a class="spa" href="https://www.aha.voyager06.tech/#/p/media-export-params">在站内打开本篇（完整交互版）→</a>
+<div class="pn"><a href="https://www.aha.voyager06.tech/p/media-voice-clone.html">← 上一个：AI 声音克隆：10 秒音频复制你的声音</a><a href="https://www.aha.voyager06.tech/p/media-voice-clone.html">下一个：AI 声音克隆：10 秒音频复制你的声音 →</a></div>
+<footer>原来如此 · 把听说过的技术讲透 · 内容为科普解读，具体接入请以各服务官方文档为准</footer>
+</body>
+</html>

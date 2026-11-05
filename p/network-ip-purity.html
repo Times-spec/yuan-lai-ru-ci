@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IP 纯净度：8% 和 53% 是怎么算出来的 · 原来如此</title>
+<meta name="description" content="没有权威分数，只有各家算法。纯净度=黑名单命中+滥用投诉+机器人流量占比+ASN 声誉的加权分；每家数据源和权重不同，分数打架很正常。">
+<link rel="canonical" href="https://www.aha.voyager06.tech/p/network-ip-purity.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="IP 纯净度：8% 和 53% 是怎么算出来的 · 原来如此">
+<meta property="og:description" content="没有权威分数，只有各家算法。纯净度=黑名单命中+滥用投诉+机器人流量占比+ASN 声誉的加权分；每家数据源和权重不同，分数打架很正常。">
+<meta property="og:url" content="https://www.aha.voyager06.tech/p/network-ip-purity.html">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>">
+<style>
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;max-width:760px;margin:0 auto;padding:24px 20px 60px;color:#1c2b3a;line-height:1.8;background:#FDFCF9}
+a{color:#2563EB;text-decoration:none} a:hover{text-decoration:underline}
+.crumb{font-size:13px;color:#8A8A93;margin-bottom:18px}
+h1{font-size:30px;line-height:1.35;margin:6px 0 8px}
+.tagline{color:#5B6470;font-size:16px;margin-bottom:20px}
+.kick{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.1em;background:#EEF3F8;color:#31597F;border-radius:999px;padding:4px 12px}
+.scene{background:#FFF8EC;border:1px solid #F0E2C4;border-radius:12px;padding:16px 20px}
+.sum{background:#EEF4FF;border:1px solid #C9DBF5;border-radius:12px;padding:16px 20px;font-weight:600}
+h2{font-size:20px;margin:34px 0 12px}
+.steps li,.rel li{margin:6px 0}
+.cf{background:#F5F3FF;border:1px dashed #C4B5FD;border-radius:12px;padding:14px 20px;margin-top:22px}
+.mis{background:#FFF5F5;border:1px solid #F3C2C2;border-radius:12px;padding:14px 20px;margin-top:14px}
+.cf h3,.mis h3,.conf h3{margin:0 0 6px;font-size:16px}
+.cf p,.mis p{margin:0}
+.conf{border:1px solid #E3E0D8;border-radius:12px;padding:14px 20px;margin-top:22px}
+.conf p{margin:6px 0} .conf span,.rel span{color:#8A8A93;font-size:13.5px}
+.cap{color:#8A8A93;font-size:14px}
+.pn{display:flex;justify-content:space-between;gap:16px;margin-top:40px;border-top:1px solid #E3E0D8;padding-top:18px;font-size:14.5px}
+.spa{display:block;text-align:center;margin-top:28px;background:#1c2b3a;color:#fff;border-radius:12px;padding:12px}
+footer{margin-top:34px;color:#8A8A93;font-size:13px;text-align:center}
+</style>
+</head>
+<body>
+<div class="crumb"><a href="https://www.aha.voyager06.tech/">原来如此</a> / 网络与协议 / IP 纯净度：8% 和 53% 是怎么算出来的</div>
+<span class="kick">网络与协议</span>
+<h1>IP 纯净度：8% 和 53% 是怎么算出来的</h1>
+<div class="tagline">没有权威分数，只有各家算法</div>
+<div class="scene"><b>👀 日常场景</b><p>你把节点 IP 粘进检测网站，一家说“8% 极度纯净”，另一家说“53% 中度风险”——同一个 IP，两个分数打架了。到底谁在说谎？其实都没说谎：纯净度从来不是官方标准，而是各家按自己的“黑账本”打的分。</p></div>
+
+<h2>原理：它是怎么运作的</h2>
+<div class="sum">💡 纯净度=黑名单命中+滥用投诉+机器人流量占比+ASN 声誉的加权分；每家数据源和权重不同，分数打架很正常。</div>
+<h2>先看全过程</h2><ol class="steps"><li>没有官方纯净度标准</li><li>黑名单：进过黑账本就扣分</li><li>投诉记录：被举报过留案底</li><li>人机比：机器人流量越高压分越高</li><li>ASN 声誉：机房 ASN 天生低一档</li><li>各家权重不同，分数自然打架</li></ol>
+<p>这些系数的依据大同小异，无非四本账。第一本是威胁情报黑名单：这个 IP 历史上发过垃圾邮件、参与过攻击吗？进过 Spamhaus 这类黑账本就扣分。第二本是滥用投诉记录：有没有人举报过它。第三本是人机流量比：截图里 human 83.14% / bot 16.86%，bot 占比越高，越像代理或爬虫的出口。第四本是 ASN 声誉和历史行为：机房 ASN 先天低一档，而“万人梯”这种万人用过的 IP，前任的烂账全算在它头上。</p><p>为什么两家打架？因为数据源、更新频率、权重都不同。Cloudflare 是全球大 CDN，每天看到的攻击流量最多，算法天然偏保守；小检测站数据少，打分就宽松。顺带一提，IP 定位也是估算：截图里 5 家定位报出 3 个城市（休斯顿、那不勒斯、布鲁克黑文），看的是注册信息加测量，可不是 GPS。</p>
+
+<h2>这些分数到底是怎么算出来的</h2><ul><li><b>黑名单与投诉记录</b>：查 IP 是否进过威胁情报库、有无滥用投诉</li><li><b>人机流量比</b>：bot 流量占比越高，越像代理或爬虫出口</li><li><b>ASN 与历史行为</b>：机房 ASN 先天扣分；同 IP 前任用户的行为也算账</li></ul><ol><li>复制节点 IP，粘进检测站</li><li>先看 IP 类型和 ASN，再看分数</li><li>对比两家以上：都低就是真低</li><li>分数是快照：IP 会易主，定期复测</li></ol>
+
+<h2>相关条目</h2><ul class="rel"><li><a href="https://www.aha.voyager06.tech/p/features-open-with-apps.html">「用其他应用打开」：推荐名单是怎么算出来的</a> <span>不是系统随便排的，是每个 App 自己「报名」的结果</span></li><li><a href="https://www.aha.voyager06.tech/p/network-ip-types.html">机房 IP vs 住宅 IP：差的不是速度，是“出身”</a> <span>网站看 IP，先看“户口本”</span></li><li><a href="https://www.aha.voyager06.tech/p/network-webrtc-leak.html">WebRTC 泄露：代理开着，真 IP 却在裸奔</a> <span>代理管得住网页，管不住浏览器的“悄悄话”</span></li></ul>
+
+<a class="spa" href="https://www.aha.voyager06.tech/#/p/network-ip-purity">在站内打开本篇（完整交互版）→</a>
+<div class="pn"><a href="https://www.aha.voyager06.tech/p/network-ip-types.html">← 上一个：机房 IP vs 住宅 IP：差的不是速度，是“出身”</a><a href="https://www.aha.voyager06.tech/p/network-webrtc-leak.html">下一个：WebRTC 泄露：代理开着，真 IP 却在裸奔 →</a></div>
+<footer>原来如此 · 把听说过的技术讲透 · 内容为科普解读，具体接入请以各服务官方文档为准</footer>
+</body>
+</html>

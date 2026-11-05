@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>同一个“与”字，为什么换个字体底横就出头了 · 原来如此</title>
+<meta name="description" content="不是错字，是宋体传下来的老写法。同一个 Unicode 汉字，在不同字体里是两套独立的设计；宋体“与”的底横出头，是雕版印刷传下来的传统写法。">
+<link rel="canonical" href="https://www.aha.voyager06.tech/p/ai-font-glyph-yu.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="同一个“与”字，为什么换个字体底横就出头了 · 原来如此">
+<meta property="og:description" content="不是错字，是宋体传下来的老写法。同一个 Unicode 汉字，在不同字体里是两套独立的设计；宋体“与”的底横出头，是雕版印刷传下来的传统写法。">
+<meta property="og:url" content="https://www.aha.voyager06.tech/p/ai-font-glyph-yu.html">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>">
+<style>
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;max-width:760px;margin:0 auto;padding:24px 20px 60px;color:#1c2b3a;line-height:1.8;background:#FDFCF9}
+a{color:#2563EB;text-decoration:none} a:hover{text-decoration:underline}
+.crumb{font-size:13px;color:#8A8A93;margin-bottom:18px}
+h1{font-size:30px;line-height:1.35;margin:6px 0 8px}
+.tagline{color:#5B6470;font-size:16px;margin-bottom:20px}
+.kick{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.1em;background:#EEF3F8;color:#31597F;border-radius:999px;padding:4px 12px}
+.scene{background:#FFF8EC;border:1px solid #F0E2C4;border-radius:12px;padding:16px 20px}
+.sum{background:#EEF4FF;border:1px solid #C9DBF5;border-radius:12px;padding:16px 20px;font-weight:600}
+h2{font-size:20px;margin:34px 0 12px}
+.steps li,.rel li{margin:6px 0}
+.cf{background:#F5F3FF;border:1px dashed #C4B5FD;border-radius:12px;padding:14px 20px;margin-top:22px}
+.mis{background:#FFF5F5;border:1px solid #F3C2C2;border-radius:12px;padding:14px 20px;margin-top:14px}
+.cf h3,.mis h3,.conf h3{margin:0 0 6px;font-size:16px}
+.cf p,.mis p{margin:0}
+.conf{border:1px solid #E3E0D8;border-radius:12px;padding:14px 20px;margin-top:22px}
+.conf p{margin:6px 0} .conf span,.rel span{color:#8A8A93;font-size:13.5px}
+.cap{color:#8A8A93;font-size:14px}
+.pn{display:flex;justify-content:space-between;gap:16px;margin-top:40px;border-top:1px solid #E3E0D8;padding-top:18px;font-size:14.5px}
+.spa{display:block;text-align:center;margin-top:28px;background:#1c2b3a;color:#fff;border-radius:12px;padding:12px}
+footer{margin-top:34px;color:#8A8A93;font-size:13px;text-align:center}
+</style>
+</head>
+<body>
+<div class="crumb"><a href="https://www.aha.voyager06.tech/">原来如此</a> / 小功能大智慧 / 同一个“与”字，为什么换个字体底横就出头了</div>
+<span class="kick">小功能大智慧</span>
+<h1>同一个“与”字，为什么换个字体底横就出头了</h1>
+<div class="tagline">不是错字，是宋体传下来的老写法</div>
+<div class="scene"><b>👀 日常场景</b><p>AI 帮你写的 Word 文档里，“与”字底下那一横拉得老长，超出了竖钩一大截，怎么看怎么别扭。你自己敲出来的“与”，底横却老老实实收在里面。是 AI 写错字了吗？把两个“与”放大并排一看：笔画数一模一样，只是长短不同——这不是错别字，是同一个字被“画”成了两种样子。</p></div>
+
+<h2>原理：它是怎么运作的</h2>
+<div class="sum">💡 同一个 Unicode 汉字，在不同字体里是两套独立的设计；宋体“与”的底横出头，是雕版印刷传下来的传统写法。</div>
+<h2>先看全过程</h2><ol class="steps"><li>电脑里没有“汉字”，只有每套字体的笔画设计</li><li>同一个码位 U+4E0E，每套字体各自画一遍</li><li>宋体继承雕版印刷：底横出头是传下来的老写法</li><li>黑体是现代设计：横平竖直，底横收住</li><li>AI 文档的中文回退到宋体 → 出头；你平时用黑体系字体 → 不出头</li></ol>
+<p>先说结论：你的眼睛又对了。我把“与”字分别用宋体风格和黑体风格渲染放大，底横确实一个出头、一个不出头——而两个字的 Unicode 码位完全相同（U+4E0E），笔画数量也一模一样。这不是错字，不是乱码，是“字形”层面的差异。</p><p>这里要分清三个概念：字符（character，Unicode 码位，回答“你是哪个字”）、字形（glyph，字体里的具体画法）、字体（font，一整套字形的设计）。“与”永远是 U+4E0E，但宋体设计师和黑体设计师画出来的“与”可以不一样——就像同一个人，证件照和写真是两种画法，认得出是同一个人，但观感完全不同。</p><p>为什么偏偏是“出头”还是“不出头”？这是两套设计传统的分歧。宋体（明朝体）直接继承自宋代雕版印刷，讲究横细竖粗、笔画带装饰，很多写法是几百年前的老样子：“与”的底横向右探出竖钩，就是传下来的写法。黑体是 20 世纪为现代印刷和屏幕显示设计的，追求横平竖直、干净利落，底横就收住了。两边都没错，只是普通话和方言的区别。</p><p>串回上一篇：为什么偏偏是 AI 写的文档里“与”出头？因为上一篇讲的那个坑——agent 生成的 docx 没有给中文指定字体，中文一路回退到主题默认的“宋体”；而你平时在 Word 里打字，默认中文字体是等线 / 微软雅黑这类黑体系。同一份文档里中文字体一切换，“与”的底横就“出头”了。顺带一提：骨、直、具、令这些字，宋体和黑体的写法也各不相同，你可以自己放大找找～</p><p>再往深想一层：这意味着“同一份文档在不同电脑上打开”，看到的字形可能不一样——Mac 默认苹方，Windows 默认微软雅黑，Linux 可能回退到别的字体。字还是那个字，但“长相”跟着字体走。所以重要文档定稿前，要么嵌入字体，要么转 PDF 把字形“冻”住。</p>
+
+<h2>写作者：别让字形吓到你</h2><ul><li><b>自备模板</b>：在 Word 里做好模板，把中文字体定死，Document(&#x27;模板.docx&#x27;)，从源头统一</li><li><b>转 PDF 定稿</b>：对外发送、定稿归档都用 PDF，字形被&#x27;冻&#x27;住，到哪台电脑打开都长一个样</li><li><b>接受它</b>：公文、论文里宋体是正统，出头是传统写法不是错，把心放回肚子里</li></ul><ol><li>在 Word 里敲一个&#x27;与&#x27;，逐个切换字体（宋体 / 黑体 / 微软雅黑 / 等线），放大看底横</li><li>把 AI 生成的 docx 后缀改成 zip，查 word/document.xml 里中文 run 的 eastAsia 通道是什么</li><li>对比同一份文档在 Windows 和 Mac / 手机上打开的字形，体会&#x27;字随字体走&#x27;</li></ol>
+<h2>延伸阅读</h2><ul><li><a href="https://talkpal.ai/culture/why-do-some-characters-look-different-in-different-fonts/" rel="noopener">Why do some characters look different in different fonts?</a></li></ul>
+<h2>相关条目</h2><ul class="rel"><li><a href="https://www.aha.voyager06.tech/p/ai-docx-font-split.html">AI 写的 Word 文档：数字和中文为什么像两种字体</a> <span>同一行标题里，数字是 Calibri，中文是宋体</span></li><li><a href="https://www.aha.voyager06.tech/p/features-open-with-apps.html">「用其他应用打开」：推荐名单是怎么算出来的</a> <span>不是系统随便排的，是每个 App 自己「报名」的结果</span></li><li><a href="https://www.aha.voyager06.tech/p/feat-search-autocomplete.html">搜索自动补全</a> <span>你每敲一个字，背后都在查一遍</span></li></ul>
+
+<a class="spa" href="https://www.aha.voyager06.tech/#/p/ai-font-glyph-yu">在站内打开本篇（完整交互版）→</a>
+<div class="pn"><a href="https://www.aha.voyager06.tech/p/ai-docx-font-split.html">← 上一个：AI 写的 Word 文档：数字和中文为什么像两种字体</a><a href="https://www.aha.voyager06.tech/p/feat-search-autocomplete.html">下一个：搜索自动补全 →</a></div>
+<footer>原来如此 · 把听说过的技术讲透 · 内容为科普解读，具体接入请以各服务官方文档为准</footer>
+</body>
+</html>

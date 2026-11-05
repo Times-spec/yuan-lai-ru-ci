@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>实时推送 · 原来如此</title>
+<meta name="description" content="不用刷新，消息自己“流”进来。服务端有新数据就主动推给浏览器：SSE 是单向的 HTTP 长连接，WebSocket 是全双工的双向通道。">
+<link rel="canonical" href="https://www.aha.voyager06.tech/p/feat-realtime-push.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="实时推送 · 原来如此">
+<meta property="og:description" content="不用刷新，消息自己“流”进来。服务端有新数据就主动推给浏览器：SSE 是单向的 HTTP 长连接，WebSocket 是全双工的双向通道。">
+<meta property="og:url" content="https://www.aha.voyager06.tech/p/feat-realtime-push.html">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>">
+<style>
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;max-width:760px;margin:0 auto;padding:24px 20px 60px;color:#1c2b3a;line-height:1.8;background:#FDFCF9}
+a{color:#2563EB;text-decoration:none} a:hover{text-decoration:underline}
+.crumb{font-size:13px;color:#8A8A93;margin-bottom:18px}
+h1{font-size:30px;line-height:1.35;margin:6px 0 8px}
+.tagline{color:#5B6470;font-size:16px;margin-bottom:20px}
+.kick{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.1em;background:#EEF3F8;color:#31597F;border-radius:999px;padding:4px 12px}
+.scene{background:#FFF8EC;border:1px solid #F0E2C4;border-radius:12px;padding:16px 20px}
+.sum{background:#EEF4FF;border:1px solid #C9DBF5;border-radius:12px;padding:16px 20px;font-weight:600}
+h2{font-size:20px;margin:34px 0 12px}
+.steps li,.rel li{margin:6px 0}
+.cf{background:#F5F3FF;border:1px dashed #C4B5FD;border-radius:12px;padding:14px 20px;margin-top:22px}
+.mis{background:#FFF5F5;border:1px solid #F3C2C2;border-radius:12px;padding:14px 20px;margin-top:14px}
+.cf h3,.mis h3,.conf h3{margin:0 0 6px;font-size:16px}
+.cf p,.mis p{margin:0}
+.conf{border:1px solid #E3E0D8;border-radius:12px;padding:14px 20px;margin-top:22px}
+.conf p{margin:6px 0} .conf span,.rel span{color:#8A8A93;font-size:13.5px}
+.cap{color:#8A8A93;font-size:14px}
+.pn{display:flex;justify-content:space-between;gap:16px;margin-top:40px;border-top:1px solid #E3E0D8;padding-top:18px;font-size:14.5px}
+.spa{display:block;text-align:center;margin-top:28px;background:#1c2b3a;color:#fff;border-radius:12px;padding:12px}
+footer{margin-top:34px;color:#8A8A93;font-size:13px;text-align:center}
+</style>
+</head>
+<body>
+<div class="crumb"><a href="https://www.aha.voyager06.tech/">原来如此</a> / 小功能大智慧 / 实时推送</div>
+<span class="kick">小功能大智慧</span>
+<h1>实时推送</h1>
+<div class="tagline">不用刷新，消息自己“流”进来</div>
+<div class="scene"><b>👀 日常场景</b><p>看直播时弹幕一条条冒出来、股票行情数字自己跳动、客服对话框里对方的消息秒到——页面从头到尾没刷新过，新消息却自己出现了。这种“服务器主动找你”的能力，就是实时推送。</p></div>
+
+<h2>原理：它是怎么运作的</h2>
+<div class="sum">💡 服务端有新数据就主动推给浏览器：SSE 是单向的 HTTP 长连接，WebSocket 是全双工的双向通道。</div>
+<h2>先看全过程</h2><ol class="steps"><li>浏览器发起连接请求</li><li>服务端保持连接不断开</li><li>有新数据时主动推送</li><li>前端收到后更新页面</li><li>断线自动重连恢复</li><li>心跳包检测连接是否存活</li></ol>
+<p>传统网页是“一问一答”：浏览器发请求，服务器回数据，不问就不给。但弹幕、聊天、行情这种场景等不起——总不能每秒刷新一次页面。于是有了“服务器主动推”。两条主流路线：SSE 和 WebSocket。SSE（Server-Sent Events，服务器发送事件）走的是普通 HTTP，服务器返回一个 text/event-stream 类型的响应然后不关闭连接，有新数据就往这个“水管”里写，浏览器用 EventSource 接收，自带断线重连，简单但只能单向（服务器→浏览器）。WebSocket 则是一次“升级”：先 HTTP 握手，约定 Upgrade: websocket，之后这条 TCP 连接就变成全双工（双方可随时发言），适合聊天、弹幕、协同编辑这种双向高频场景。为什么有新数据就能“秒到”？因为连接一直开着，省掉了每次“建立连接→发请求→等响应→断开”的开销。配套机制有三件套：心跳包（定期 ping/pong 证明还活着，顺便防中间代理掐掉空闲连接）、断线重连（指数退避，别一断就狂连把服务器冲垮）、消息去重（网络抖动可能导致重复推送）。</p>
+
+<h2>网站是怎么做到的</h2><ul><li><b>SSE：服务器的单向“水管”</b>：走普通 HTTP，服务器返回一个不关闭的响应，有新数据就往“水管”里写。浏览器用 EventSource 接收，自带断线重连。</li><li><b>WebSocket：全双工对讲机</b>：先 HTTP 握手约定升级，之后这条连接双方随时可发言。聊天、协同编辑这种“你来我往”的场景用它。</li><li><b>心跳包：确认对方还活着</b>：定时发一个极小的数据包探活。中间代理会掐掉长时间没动静的连接，心跳就是告诉它“我还用着”。</li><li><b>断线重连：指数退避</b>：断线后不是立刻狂试，而是 1s、2s、4s、8s 这样越等越久再试，避免把刚恢复的服务器又打挂。</li></ul><ol><li>你打开直播页，浏览器发起连接请求（SSE 或 WebSocket 握手）</li><li>服务端接受，但不关闭连接——这条“线”一直留着</li><li>有新弹幕了，服务端直接把数据推进这条连接</li><li>浏览器收到，立刻把弹幕渲染到页面上，全程无刷新</li><li>定时心跳包探活，确认连接还健在</li><li>网络一抖断线：按指数退避自动重连，回来后继续收消息</li></ol>
+<h2>延伸阅读</h2><ul><li><a href="https://github.com/learnomi/javaguide/blob/HEAD/docs/system-design/web-real-time-message-push.md" rel="noopener">Web 实时消息推送方案对比（GitHub）</a></li></ul>
+<h2>相关条目</h2><ul class="rel"><li><a href="https://www.aha.voyager06.tech/p/feat-web-push.html">Web 推送通知</a> <span>关掉网页，消息还能弹出来</span></li><li><a href="https://www.aha.voyager06.tech/p/features-open-with-apps.html">「用其他应用打开」：推荐名单是怎么算出来的</a> <span>不是系统随便排的，是每个 App 自己「报名」的结果</span></li><li><a href="https://www.aha.voyager06.tech/p/security-fde.html">FDE：给整块硬盘上锁</a> <span>电脑丢了，硬盘里的数据怎么办？</span></li></ul>
+
+<a class="spa" href="https://www.aha.voyager06.tech/#/p/feat-realtime-push">在站内打开本篇（完整交互版）→</a>
+<div class="pn"><a href="https://www.aha.voyager06.tech/p/feat-cookie-consent.html">← 上一个：Cookie 同意弹窗</a><a href="https://www.aha.voyager06.tech/p/feat-qr-code.html">下一个：网页二维码生成 →</a></div>
+<footer>原来如此 · 把听说过的技术讲透 · 内容为科普解读，具体接入请以各服务官方文档为准</footer>
+</body>
+</html>

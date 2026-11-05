@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>扫码登录 · 原来如此</title>
+<meta name="description" content="二维码只是一座一次性的桥，身份在手机那边。二维码=一次性 UUID 桥梁；服务端用状态机同步“手机已确认”的身份给 PC 端。">
+<link rel="canonical" href="https://www.aha.voyager06.tech/p/security-qr-login.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="扫码登录 · 原来如此">
+<meta property="og:description" content="二维码只是一座一次性的桥，身份在手机那边。二维码=一次性 UUID 桥梁；服务端用状态机同步“手机已确认”的身份给 PC 端。">
+<meta property="og:url" content="https://www.aha.voyager06.tech/p/security-qr-login.html">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>">
+<style>
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;max-width:760px;margin:0 auto;padding:24px 20px 60px;color:#1c2b3a;line-height:1.8;background:#FDFCF9}
+a{color:#2563EB;text-decoration:none} a:hover{text-decoration:underline}
+.crumb{font-size:13px;color:#8A8A93;margin-bottom:18px}
+h1{font-size:30px;line-height:1.35;margin:6px 0 8px}
+.tagline{color:#5B6470;font-size:16px;margin-bottom:20px}
+.kick{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.1em;background:#EEF3F8;color:#31597F;border-radius:999px;padding:4px 12px}
+.scene{background:#FFF8EC;border:1px solid #F0E2C4;border-radius:12px;padding:16px 20px}
+.sum{background:#EEF4FF;border:1px solid #C9DBF5;border-radius:12px;padding:16px 20px;font-weight:600}
+h2{font-size:20px;margin:34px 0 12px}
+.steps li,.rel li{margin:6px 0}
+.cf{background:#F5F3FF;border:1px dashed #C4B5FD;border-radius:12px;padding:14px 20px;margin-top:22px}
+.mis{background:#FFF5F5;border:1px solid #F3C2C2;border-radius:12px;padding:14px 20px;margin-top:14px}
+.cf h3,.mis h3,.conf h3{margin:0 0 6px;font-size:16px}
+.cf p,.mis p{margin:0}
+.conf{border:1px solid #E3E0D8;border-radius:12px;padding:14px 20px;margin-top:22px}
+.conf p{margin:6px 0} .conf span,.rel span{color:#8A8A93;font-size:13.5px}
+.cap{color:#8A8A93;font-size:14px}
+.pn{display:flex;justify-content:space-between;gap:16px;margin-top:40px;border-top:1px solid #E3E0D8;padding-top:18px;font-size:14.5px}
+.spa{display:block;text-align:center;margin-top:28px;background:#1c2b3a;color:#fff;border-radius:12px;padding:12px}
+footer{margin-top:34px;color:#8A8A93;font-size:13px;text-align:center}
+</style>
+</head>
+<body>
+<div class="crumb"><a href="https://www.aha.voyager06.tech/">原来如此</a> / 验证与安全 / 扫码登录</div>
+<span class="kick">验证与安全</span>
+<h1>扫码登录</h1>
+<div class="tagline">二维码只是一座一次性的桥，身份在手机那边</div>
+<div class="scene"><b>👀 日常场景</b><p>在电脑上打开微信网页版，屏幕上一个二维码；手机微信扫一下、点“确认登录”，电脑端瞬间就进去了。全程电脑上没输过密码——那台没输密码的电脑，是怎么被信任的？答案是：你手机里一直“藏”着登录态，它只是借用了一下。</p></div>
+
+<h2>原理：它是怎么运作的</h2>
+<div class="sum">💡 二维码=一次性 UUID 桥梁；服务端用状态机同步“手机已确认”的身份给 PC 端。</div>
+<h2>先看全过程</h2><ol class="steps"><li>PC 端请求登录，服务端生成 UUID</li><li>UUID 编成二维码展示，状态=待扫码</li><li>PC 端轮询或 WebSocket 等状态变化</li><li>手机（已登录）扫码并确认</li><li>服务端把手机身份绑定到该 UUID</li><li>PC 端拿到身份凭证，完成登录</li></ol>
+<p>扫码登录的本质是“借用手机上已有的登录态”。二维码里藏的不是账号密码，而是一个随机 UUID——一座一次性桥梁。服务端在 Redis 里为这个 UUID 维护一个状态机：待扫码 → 已扫码待确认 → 已确认（或过期作废）。PC 端页面用轮询（每 2 秒问一次）或 WebSocket 长连接盯着这个状态。你用已登录的手机 App 扫码时，App 把“UUID + 手机端的身份凭证”发给服务端；你在手机上点“确认”后，服务端把手机端的身份映射到这个 UUID 上。PC 端下一轮询就发现状态变成了“已确认”，于是用 UUID 换取正式的登录凭证（session/token），完成登录。二维码通常 2 分钟过期，且一人扫码后即锁定，防止被第二个人冒扫。整个过程 PC 端从没接触过密码，密码只活在手机那一端——这也是它比“在电脑上输密码”更安全的原因：键盘记录、钓鱼页面都偷不到 PC 端没有的东西。</p>
+
+<h2>网站该如何实现</h2><ul><li><b>微信开放平台扫码登录</b>：网站应用接入微信扫码，覆盖最广的国内方案。</li><li><b>企业微信/钉钉/飞书扫码</b>：各办公平台的组织内扫码登录。</li><li><b>自研（Redis+WebSocket）</b>：UUID 状态机 + 二维码生成 + 长连接推送。</li></ul><ol><li>PC 端请求 /api/qr-login，后端生成 UUID 存入 Redis（2 分钟过期，状态=待扫码）。</li><li>后端把 UUID 转成二维码图片（ZXing/qrcode.js）返回前端展示。</li><li>前端建立 WebSocket 或定时轮询，监听该 UUID 的状态变化。</li><li>手机端扫码后调用确认接口，携带手机端的登录凭证 + UUID。</li><li>后端校验手机凭证有效，把用户身份写入该 UUID 的状态=已确认。</li><li>PC 端收到“已确认”推送，用 UUID 换取正式登录 session，二维码立即作废。</li></ol>
+<h2>延伸阅读</h2><ul><li><a href="https://blog.csdn.net/dandandeshangni/article/details/153137496" rel="noopener">扫码登录 UUID+状态机+轮询完整链路</a></li></ul>
+<h2>相关条目</h2><ul class="rel"><li><a href="https://www.aha.voyager06.tech/p/security-webauthn-passkey.html">WebAuthn/指纹面容登录</a> <span>按一下指纹就登录，密码从此可以消失</span></li><li><a href="https://www.aha.voyager06.tech/p/security-oauth-login.html">第三方 OAuth 登录</a> <span>“用微信登录”时，网站全程没碰过你的密码</span></li><li><a href="https://www.aha.voyager06.tech/p/security-carrier-one-tap-login.html">本机号码一键登录</a> <span>点一下就登录，连短信都不用等</span></li></ul>
+
+<a class="spa" href="https://www.aha.voyager06.tech/#/p/security-qr-login">在站内打开本篇（完整交互版）→</a>
+<div class="pn"><a href="https://www.aha.voyager06.tech/p/security-totp.html">← 上一个：TOTP：验证器 App 的动态密码</a><a href="https://www.aha.voyager06.tech/p/security-oauth-login.html">下一个：第三方 OAuth 登录 →</a></div>
+<footer>原来如此 · 把听说过的技术讲透 · 内容为科普解读，具体接入请以各服务官方文档为准</footer>
+</body>
+</html>

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第三方 OAuth 登录 · 原来如此</title>
+<meta name="description" content="“用微信登录”时，网站全程没碰过你的密码。OAuth 2.0 授权码流程：网站拿“授权码”换“令牌”，全程不接触用户密码。">
+<link rel="canonical" href="https://www.aha.voyager06.tech/p/security-oauth-login.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="第三方 OAuth 登录 · 原来如此">
+<meta property="og:description" content="“用微信登录”时，网站全程没碰过你的密码。OAuth 2.0 授权码流程：网站拿“授权码”换“令牌”，全程不接触用户密码。">
+<meta property="og:url" content="https://www.aha.voyager06.tech/p/security-oauth-login.html">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>">
+<style>
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;max-width:760px;margin:0 auto;padding:24px 20px 60px;color:#1c2b3a;line-height:1.8;background:#FDFCF9}
+a{color:#2563EB;text-decoration:none} a:hover{text-decoration:underline}
+.crumb{font-size:13px;color:#8A8A93;margin-bottom:18px}
+h1{font-size:30px;line-height:1.35;margin:6px 0 8px}
+.tagline{color:#5B6470;font-size:16px;margin-bottom:20px}
+.kick{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.1em;background:#EEF3F8;color:#31597F;border-radius:999px;padding:4px 12px}
+.scene{background:#FFF8EC;border:1px solid #F0E2C4;border-radius:12px;padding:16px 20px}
+.sum{background:#EEF4FF;border:1px solid #C9DBF5;border-radius:12px;padding:16px 20px;font-weight:600}
+h2{font-size:20px;margin:34px 0 12px}
+.steps li,.rel li{margin:6px 0}
+.cf{background:#F5F3FF;border:1px dashed #C4B5FD;border-radius:12px;padding:14px 20px;margin-top:22px}
+.mis{background:#FFF5F5;border:1px solid #F3C2C2;border-radius:12px;padding:14px 20px;margin-top:14px}
+.cf h3,.mis h3,.conf h3{margin:0 0 6px;font-size:16px}
+.cf p,.mis p{margin:0}
+.conf{border:1px solid #E3E0D8;border-radius:12px;padding:14px 20px;margin-top:22px}
+.conf p{margin:6px 0} .conf span,.rel span{color:#8A8A93;font-size:13.5px}
+.cap{color:#8A8A93;font-size:14px}
+.pn{display:flex;justify-content:space-between;gap:16px;margin-top:40px;border-top:1px solid #E3E0D8;padding-top:18px;font-size:14.5px}
+.spa{display:block;text-align:center;margin-top:28px;background:#1c2b3a;color:#fff;border-radius:12px;padding:12px}
+footer{margin-top:34px;color:#8A8A93;font-size:13px;text-align:center}
+</style>
+</head>
+<body>
+<div class="crumb"><a href="https://www.aha.voyager06.tech/">原来如此</a> / 验证与安全 / 第三方 OAuth 登录</div>
+<span class="kick">验证与安全</span>
+<h1>第三方 OAuth 登录</h1>
+<div class="tagline">“用微信登录”时，网站全程没碰过你的密码</div>
+<div class="scene"><b>👀 日常场景</b><p>点“使用微信登录”，页面跳到微信、你点同意授权，再跳回原来的网站，直接就是登录态了。你输入密码了吗？没有。那这个网站是怎么确认“你就是你”的？整个过程里，它从头到尾没见过你的密码。</p></div>
+
+<h2>原理：它是怎么运作的</h2>
+<div class="sum">💡 OAuth 2.0 授权码流程：网站拿“授权码”换“令牌”，全程不接触用户密码。</div>
+<h2>先看全过程</h2><ol class="steps"><li>网站把用户送往第三方授权页</li><li>用户在第三方站点登录并点同意</li><li>第三方带授权码 code 跳回网站</li><li>后端用 code 换取 access_token</li><li>用 token 向第三方拉取用户信息</li><li>网站据此创建/登录本地账号</li></ol>
+<p>OAuth 2.0 解决的核心问题是“委托而不交钥匙”：你想让 A 网站知道“我是微信用户张三”，但不想把微信密码告诉 A。标准授权码流程分四步：A 网站把你重定向到微信授权页（带上 client_id 和 redirect_uri）；你在微信的地盘登录并点“同意”；微信带一个一次性授权码（code）把你送回 A 网站的回调地址；A 网站的后端拿 code + 自己的 client_secret 去微信换 access_token（令牌），再用令牌拉取你的昵称头像。这里有两个安全关键：一是 code 只能用一次、几分钟过期，且换 token 必须走后端（secret 不能暴露给前端）；二是 redirect_uri 必须在第三方后台精确报备，防止授权码被发到攻击者的网站。整个流程里你的密码只在微信输入过一次，A 网站拿到的是“微信盖过章的身份证明”，这就是为什么注销 A 网站账号不影响微信账号——两者密码体系完全隔离。</p>
+
+<h2>网站该如何实现</h2><ul><li><b>微信开放平台（网站应用）</b>：国内最刚需的第三方登录，需申请网站应用资质。</li><li><b>Sign in with Apple / Google Identity</b>：苹果和谷歌的官方登录，海外合规友好。</li><li><b>GitHub OAuth</b>：开发者社区标配，接入文档极简。</li><li><b>Auth0 / Keycloak</b>：统一聚合多种登录方式的身份中台。</li></ul><ol><li>在第三方开放平台创建应用，配置授权回调域 redirect_uri，拿到 client_id/secret。</li><li>前端“用 XX 登录”按钮跳转到第三方授权地址，带上 state 防 CSRF（随机串存 session）。</li><li>用户同意后跳回你的回调地址，带回 code 和 state。</li><li>后端先校验 state 一致，再用 code+client_secret 调 token 接口换 access_token。</li><li>用 access_token 拉取用户唯一标识（如 openid）和基本资料。</li><li>按 openid 查找或创建本地账号，写入自己站点的登录会话。</li></ol>
+<h2>延伸阅读</h2><ul><li><a href="https://www.cnblogs.com/Allen0910/p/8647935.html" rel="noopener">OAuth 2.0 授权码流程四步详解</a></li><li><a href="https://www.cnblogs.com/zuier/p/10794917.html" rel="noopener">OAuth 2.0 四种授权模式</a></li></ul>
+<h2>相关条目</h2><ul class="rel"><li><a href="https://www.aha.voyager06.tech/p/nav-oauth-callback.html">OAuth 回跳：第三方登录最后一公里</a> <span>去大厂认个证，带着暗号回来</span></li><li><a href="https://www.aha.voyager06.tech/p/security-webauthn-passkey.html">WebAuthn/指纹面容登录</a> <span>按一下指纹就登录，密码从此可以消失</span></li><li><a href="https://www.aha.voyager06.tech/p/security-2fa.html">双因素认证 2FA</a> <span>密码泄露了，攻击者还是进不来</span></li></ul>
+
+<a class="spa" href="https://www.aha.voyager06.tech/#/p/security-oauth-login">在站内打开本篇（完整交互版）→</a>
+<div class="pn"><a href="https://www.aha.voyager06.tech/p/security-qr-login.html">← 上一个：扫码登录</a><a href="https://www.aha.voyager06.tech/p/security-webauthn-passkey.html">下一个：WebAuthn/指纹面容登录 →</a></div>
+<footer>原来如此 · 把听说过的技术讲透 · 内容为科普解读，具体接入请以各服务官方文档为准</footer>
+</body>
+</html>

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DNS：网址的电话簿 · 原来如此</title>
+<meta name="description" content="你输入的每个网址，都要先问它。DNS 是互联网的“电话本”，把域名翻译成 IP；A/CNAME/MX/TXT 等记录类型是电话本里不同用途的字段。">
+<link rel="canonical" href="https://www.aha.voyager06.tech/p/network-dns-records.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="DNS：网址的电话簿 · 原来如此">
+<meta property="og:description" content="你输入的每个网址，都要先问它。DNS 是互联网的“电话本”，把域名翻译成 IP；A/CNAME/MX/TXT 等记录类型是电话本里不同用途的字段。">
+<meta property="og:url" content="https://www.aha.voyager06.tech/p/network-dns-records.html">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>">
+<style>
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;max-width:760px;margin:0 auto;padding:24px 20px 60px;color:#1c2b3a;line-height:1.8;background:#FDFCF9}
+a{color:#2563EB;text-decoration:none} a:hover{text-decoration:underline}
+.crumb{font-size:13px;color:#8A8A93;margin-bottom:18px}
+h1{font-size:30px;line-height:1.35;margin:6px 0 8px}
+.tagline{color:#5B6470;font-size:16px;margin-bottom:20px}
+.kick{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.1em;background:#EEF3F8;color:#31597F;border-radius:999px;padding:4px 12px}
+.scene{background:#FFF8EC;border:1px solid #F0E2C4;border-radius:12px;padding:16px 20px}
+.sum{background:#EEF4FF;border:1px solid #C9DBF5;border-radius:12px;padding:16px 20px;font-weight:600}
+h2{font-size:20px;margin:34px 0 12px}
+.steps li,.rel li{margin:6px 0}
+.cf{background:#F5F3FF;border:1px dashed #C4B5FD;border-radius:12px;padding:14px 20px;margin-top:22px}
+.mis{background:#FFF5F5;border:1px solid #F3C2C2;border-radius:12px;padding:14px 20px;margin-top:14px}
+.cf h3,.mis h3,.conf h3{margin:0 0 6px;font-size:16px}
+.cf p,.mis p{margin:0}
+.conf{border:1px solid #E3E0D8;border-radius:12px;padding:14px 20px;margin-top:22px}
+.conf p{margin:6px 0} .conf span,.rel span{color:#8A8A93;font-size:13.5px}
+.cap{color:#8A8A93;font-size:14px}
+.pn{display:flex;justify-content:space-between;gap:16px;margin-top:40px;border-top:1px solid #E3E0D8;padding-top:18px;font-size:14.5px}
+.spa{display:block;text-align:center;margin-top:28px;background:#1c2b3a;color:#fff;border-radius:12px;padding:12px}
+footer{margin-top:34px;color:#8A8A93;font-size:13px;text-align:center}
+</style>
+</head>
+<body>
+<div class="crumb"><a href="https://www.aha.voyager06.tech/">原来如此</a> / 网络与协议 / DNS：网址的电话簿</div>
+<span class="kick">网络与协议</span>
+<h1>DNS：网址的电话簿</h1>
+<div class="tagline">你输入的每个网址，都要先问它</div>
+<div class="scene"><b>👀 日常场景</b><p>你在浏览器输入 www.example.com 回车，页面打开了。但浏览器一开始根本不知道服务器在哪——它得先问 DNS 要 IP，几十毫秒内问答完成，而每条解析记录（A、CNAME、MX……）都在 DNS 控制台里静静躺着。</p></div>
+
+<h2>原理：它是怎么运作的</h2>
+<div class="sum">💡 DNS 是互联网的“电话本”，把域名翻译成 IP；A/CNAME/MX/TXT 等记录类型是电话本里不同用途的字段。</div>
+<h2>先看全过程</h2><ol class="steps"><li>浏览器输入域名，先查本地缓存</li><li>缓存未中，请求运营商递归解析器</li><li>递归器问根服务器：.com 归谁管</li><li>再问顶级域服务器：要权威服务器地址</li><li>权威服务器返回该域名的 IP 记录</li><li>浏览器拿到 IP，缓存并建连访问</li></ol>
+<p>DNS（域名系统）是互联网的“电话本”：人记域名，机器只认 IP，DNS 负责在两者之间翻译。</p><p>一次完整的解析是“递归+迭代”接力：浏览器先查本地缓存，没有就问运营商的递归解析器；递归解析器从根服务器问起（“.”根只知道 .com 归谁管），再问 .com 的顶级域服务器（它知道 example.com 的权威服务器是谁），最后问 example.com 的权威服务器要答案，层层拿到 IP 后缓存起来，下次直接用。</p><p>记录类型就是电话本里的不同“字段”：A 记录存 IPv4 地址、AAAA 存 IPv6 地址，是最常用的两条；CNAME 是别名（www.example.com 指向 example.com，改 IP 只改一处）；MX 告诉全世界“这个域名的邮件该投递到哪台服务器”；TXT 存任意文本，常用来放域名所有权验证码和 SPF/DKIM 反垃圾邮件配置；NS 则声明“这个子域的解析权交给谁”。TTL（生存时间）决定一条记录能被缓存多久，是“改解析多久生效”的总开关。</p>
+<div class="cf"><h3>🌀 如果没有它会怎样</h3><p>没有 DNS，你得背下每个网站的 IP 地址才能上网；网站一换服务器，全世界都要更新自己的「通讯录」。域名本质上是给机器地址起的人话名字。</p></div><div class="mis"><h3>🚫 常见误解</h3><p>改完解析，全世界立刻就能生效。其实各级缓存都按 TTL 存着旧记录：TTL 没过期之前，这次改动对一部分人来说就是还没发生。</p></div>
+<h2>想深入了解怎么办</h2><ul><li><b>动手派：dig 命令</b>：一条命令看穿 A/MX/TXT，比看十页文档直观</li><li><b>系统派：经典教材</b>：《计算机网络：自顶向下方法》的 DNS 章节，递归迭代讲得最透</li><li><b>实战派：买个域名</b>：几十块钱买个域名，亲手配 A/CNAME/MX/TXT 记录</li></ul><ol><li>先玩 dig：`dig example.com A`、`dig example.com MX`，看不同记录长什么样</li><li>用 `dig +trace` 跟一次从根服务器开始的完整解析，看“接力”过程</li><li>读《自顶向下》DNS 章节：递归 vs 迭代、缓存、TTL 一次搞懂</li><li>买个便宜域名，在 DNS 控制台亲手加 A、CNAME、TXT 记录</li><li>故意配错一次（比如 TTL 设超大再改 IP），体会“改解析多久生效”</li><li>进阶：了解 DNSSEC 是怎么防伪造的，DoH 又解决了什么</li></ol>
+<h2>延伸阅读</h2><ul><li><a href="https://www.cloudflare.com/learning/dns/dns-records/" rel="noopener">Cloudflare 学习中心：DNS 记录类型</a></li></ul>
+<h2>相关条目</h2><ul class="rel"><li><a href="https://www.aha.voyager06.tech/p/network-domain-bind.html">域名绑定网站：买完域名然后呢</a> <span>两边都要配：DNS 指路，服务端认领</span></li><li><a href="https://www.aha.voyager06.tech/p/network-fake-ip.html">Fake-IP：Clash 的 DNS 骗术</a> <span>先给浏览器一个假地址，稳住它</span></li><li><a href="https://www.aha.voyager06.tech/p/network-tcp-tls.html">TCP/TLS：建立安全连接的握手</a> <span>先握三次手，再说悄悄话</span></li></ul>
+<div class="conf"><h3>🤔 容易混淆，去分清</h3><p><a href="https://www.aha.voyager06.tech/p/network-doh.html">《DOH：加密的 DNS 查询》</a> <span>把查域名的请求，装进加密信封</span></p></div>
+<a class="spa" href="https://www.aha.voyager06.tech/#/p/network-dns-records">在站内打开本篇（完整交互版）→</a>
+<div class="pn"><a href="https://www.aha.voyager06.tech/p/network-proxychains.html">← 上一个：链式代理：把代理串成糖葫芦</a><a href="https://www.aha.voyager06.tech/p/network-doh.html">下一个：DOH：加密的 DNS 查询 →</a></div>
+<footer>原来如此 · 把听说过的技术讲透 · 内容为科普解读，具体接入请以各服务官方文档为准</footer>
+</body>
+</html>

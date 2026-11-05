@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>图片灯箱预览 · 原来如此</title>
+<meta name="description" content="点图片，全屏大图浮出来。点击缩略图后弹出全屏遮罩层，在其中展示大图并支持切换与缩放，本质是一个固定定位的模态层。">
+<link rel="canonical" href="https://www.aha.voyager06.tech/p/feat-lightbox.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="图片灯箱预览 · 原来如此">
+<meta property="og:description" content="点图片，全屏大图浮出来。点击缩略图后弹出全屏遮罩层，在其中展示大图并支持切换与缩放，本质是一个固定定位的模态层。">
+<meta property="og:url" content="https://www.aha.voyager06.tech/p/feat-lightbox.html">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>">
+<style>
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;max-width:760px;margin:0 auto;padding:24px 20px 60px;color:#1c2b3a;line-height:1.8;background:#FDFCF9}
+a{color:#2563EB;text-decoration:none} a:hover{text-decoration:underline}
+.crumb{font-size:13px;color:#8A8A93;margin-bottom:18px}
+h1{font-size:30px;line-height:1.35;margin:6px 0 8px}
+.tagline{color:#5B6470;font-size:16px;margin-bottom:20px}
+.kick{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.1em;background:#EEF3F8;color:#31597F;border-radius:999px;padding:4px 12px}
+.scene{background:#FFF8EC;border:1px solid #F0E2C4;border-radius:12px;padding:16px 20px}
+.sum{background:#EEF4FF;border:1px solid #C9DBF5;border-radius:12px;padding:16px 20px;font-weight:600}
+h2{font-size:20px;margin:34px 0 12px}
+.steps li,.rel li{margin:6px 0}
+.cf{background:#F5F3FF;border:1px dashed #C4B5FD;border-radius:12px;padding:14px 20px;margin-top:22px}
+.mis{background:#FFF5F5;border:1px solid #F3C2C2;border-radius:12px;padding:14px 20px;margin-top:14px}
+.cf h3,.mis h3,.conf h3{margin:0 0 6px;font-size:16px}
+.cf p,.mis p{margin:0}
+.conf{border:1px solid #E3E0D8;border-radius:12px;padding:14px 20px;margin-top:22px}
+.conf p{margin:6px 0} .conf span,.rel span{color:#8A8A93;font-size:13.5px}
+.cap{color:#8A8A93;font-size:14px}
+.pn{display:flex;justify-content:space-between;gap:16px;margin-top:40px;border-top:1px solid #E3E0D8;padding-top:18px;font-size:14.5px}
+.spa{display:block;text-align:center;margin-top:28px;background:#1c2b3a;color:#fff;border-radius:12px;padding:12px}
+footer{margin-top:34px;color:#8A8A93;font-size:13px;text-align:center}
+</style>
+</head>
+<body>
+<div class="crumb"><a href="https://www.aha.voyager06.tech/">原来如此</a> / 小功能大智慧 / 图片灯箱预览</div>
+<span class="kick">小功能大智慧</span>
+<h1>图片灯箱预览</h1>
+<div class="tagline">点图片，全屏大图浮出来</div>
+<div class="scene"><b>👀 日常场景</b><p>看商品详情时点一下图片，整个屏幕暗下来，一张高清大图浮在正中，左右滑动看下一张，双指还能放大看细节，点空白处就关掉。相册、新闻配图、设计作品站，点图放大的体验都长这样。</p></div>
+
+<h2>原理：它是怎么运作的</h2>
+<div class="sum">💡 点击缩略图后弹出全屏遮罩层，在其中展示大图并支持切换与缩放，本质是一个固定定位的模态层。</div>
+<h2>先看全过程</h2><ol class="steps"><li>点击缩略图触发预览</li><li>弹出全屏遮罩层</li><li>加载并展示高清大图</li><li>左右切换或滑动浏览</li><li>支持双指缩放查看细节</li><li>点击关闭或按 ESC 退出</li></ol>
+<p>灯箱的本质是一个“全屏模态层”：平时藏着，点击缩略图时，一个 fixed 定位、盖住全屏的半透明遮罩弹出来，中间放高清大图。为什么搞两套图？列表里用的是压缩过的缩略图（小、快），点开才加载原图（大、清晰），首屏速度和查看体验兼得。交互上有几件标准动作：左右箭头或滑动切换上一张下一张（移动端靠 touch 事件算滑动方向和距离）；双指缩放看细节（监听 touchmove 算两指间距变化）；ESC 键或点遮罩空白处关闭；打开时给 body 加 overflow: hidden 锁住背景滚动，不然手指一滑，背后的页面跟着跑。性能优化点是“预加载”：看第 3 张时偷偷把第 4 张下了，切换零等待。无障碍方面，灯箱打开后焦点应该移到大图上，方便键盘用户操作。现在很多组件库（antd 的 Image、element 的 ImageViewer）都内置了，自己写主要是为了定制动效。</p>
+
+<h2>网站是怎么做到的</h2><ul><li><b>全屏模态层：平时藏着</b>：一个 fixed 定位、盖住全屏的半透明遮罩，平时藏着，点击缩略图才弹出来。</li><li><b>双轨制：小图快，大图清</b>：列表里用压缩过的缩略图（小、快），点开才加载原图（大、清晰）。首屏速度和查看体验兼得。</li><li><b>预加载：偷偷下下一张</b>：你看第 3 张时，浏览器已经在后台把第 4 张下了。切换时零等待。</li><li><b>锁背景滚动：别让后面跑</b>：打开时给 body 加 overflow:hidden，不然手指一滑，背后的页面跟着跑。</li></ul><ol><li>你点击缩略图（列表里的是小图，加载飞快）</li><li>全屏遮罩层弹出，屏幕暗下来</li><li>高清原图开始加载，加载中先转个圈</li><li>大图呈现：左右滑动切换，双指缩放看细节</li><li>后台偷偷预加载下一张，切换零等待</li><li>点空白处或按 ESC：关闭，背景滚动恢复</li></ol>
+<h2>延伸阅读</h2><ul><li><a href="https://github.com/thomascupples/lightbox2" rel="noopener">Lightbox2：经典图片灯箱 JavaScript 库（GitHub）</a></li></ul>
+<h2>相关条目</h2><ul class="rel"><li><a href="https://www.aha.voyager06.tech/p/feat-image-compress-upload.html">图片压缩上传</a> <span>10MB 的照片，压成几百 KB 再传</span></li><li><a href="https://www.aha.voyager06.tech/p/feat-image-lazy-load.html">图片懒加载</a> <span>看不见的图片先不加载，省流量又快</span></li><li><a href="https://www.aha.voyager06.tech/p/ai-docx-font-split.html">AI 写的 Word 文档：数字和中文为什么像两种字体</a> <span>同一行标题里，数字是 Calibri，中文是宋体</span></li></ul>
+
+<a class="spa" href="https://www.aha.voyager06.tech/#/p/feat-lightbox">在站内打开本篇（完整交互版）→</a>
+<div class="pn"><a href="https://www.aha.voyager06.tech/p/feat-otp-countdown.html">← 上一个：验证码倒计时</a><a href="https://www.aha.voyager06.tech/p/feat-sticky-nav.html">下一个：吸顶导航 →</a></div>
+<footer>原来如此 · 把听说过的技术讲透 · 内容为科普解读，具体接入请以各服务官方文档为准</footer>
+</body>
+</html>

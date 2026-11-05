@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OAuth 回跳：第三方登录最后一公里 · 原来如此</title>
+<meta name="description" content="去大厂认个证，带着暗号回来。标准 OAuth 2.0 授权码流程：网站把用户带到第三方授权页，用户同意后，第三方带着一次性授权码跳回 redirect_uri，网站后台再拿授权码去换用户信息。">
+<link rel="canonical" href="https://www.aha.voyager06.tech/p/nav-oauth-callback.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="OAuth 回跳：第三方登录最后一公里 · 原来如此">
+<meta property="og:description" content="去大厂认个证，带着暗号回来。标准 OAuth 2.0 授权码流程：网站把用户带到第三方授权页，用户同意后，第三方带着一次性授权码跳回 redirect_uri，网站后台再拿授权码去换用户信息。">
+<meta property="og:url" content="https://www.aha.voyager06.tech/p/nav-oauth-callback.html">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>">
+<style>
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;max-width:760px;margin:0 auto;padding:24px 20px 60px;color:#1c2b3a;line-height:1.8;background:#FDFCF9}
+a{color:#2563EB;text-decoration:none} a:hover{text-decoration:underline}
+.crumb{font-size:13px;color:#8A8A93;margin-bottom:18px}
+h1{font-size:30px;line-height:1.35;margin:6px 0 8px}
+.tagline{color:#5B6470;font-size:16px;margin-bottom:20px}
+.kick{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.1em;background:#EEF3F8;color:#31597F;border-radius:999px;padding:4px 12px}
+.scene{background:#FFF8EC;border:1px solid #F0E2C4;border-radius:12px;padding:16px 20px}
+.sum{background:#EEF4FF;border:1px solid #C9DBF5;border-radius:12px;padding:16px 20px;font-weight:600}
+h2{font-size:20px;margin:34px 0 12px}
+.steps li,.rel li{margin:6px 0}
+.cf{background:#F5F3FF;border:1px dashed #C4B5FD;border-radius:12px;padding:14px 20px;margin-top:22px}
+.mis{background:#FFF5F5;border:1px solid #F3C2C2;border-radius:12px;padding:14px 20px;margin-top:14px}
+.cf h3,.mis h3,.conf h3{margin:0 0 6px;font-size:16px}
+.cf p,.mis p{margin:0}
+.conf{border:1px solid #E3E0D8;border-radius:12px;padding:14px 20px;margin-top:22px}
+.conf p{margin:6px 0} .conf span,.rel span{color:#8A8A93;font-size:13.5px}
+.cap{color:#8A8A93;font-size:14px}
+.pn{display:flex;justify-content:space-between;gap:16px;margin-top:40px;border-top:1px solid #E3E0D8;padding-top:18px;font-size:14.5px}
+.spa{display:block;text-align:center;margin-top:28px;background:#1c2b3a;color:#fff;border-radius:12px;padding:12px}
+footer{margin-top:34px;color:#8A8A93;font-size:13px;text-align:center}
+</style>
+</head>
+<body>
+<div class="crumb"><a href="https://www.aha.voyager06.tech/">原来如此</a> / 跳转与导航 / OAuth 回跳：第三方登录最后一公里</div>
+<span class="kick">跳转与导航</span>
+<h1>OAuth 回跳：第三方登录最后一公里</h1>
+<div class="tagline">去大厂认个证，带着暗号回来</div>
+<div class="scene"><b>👀 日常场景</b><p>点“使用微信登录”，页面跳到微信的授权页，你点同意后又跳回网站，而且已经是登录状态了。全程网站没碰过你的微信密码，密码只给微信看过。网站拿到的只是一张“他已验证”的凭证，干净又省心。</p></div>
+
+<h2>原理：它是怎么运作的</h2>
+<div class="sum">💡 标准 OAuth 2.0 授权码流程：网站把用户带到第三方授权页，用户同意后，第三方带着一次性授权码跳回 redirect_uri，网站后台再拿授权码去换用户信息。</div>
+<h2>先看全过程</h2><ol class="steps"><li>网站拼好授权链接跳到第三方</li><li>用户在第三方页面点同意授权</li><li>第三方带授权码跳回本站</li><li>网站后台用授权码换令牌</li><li>用令牌拉用户信息完成登录</li></ol>
+<p>OAuth 授权码回跳是“登录外包”的标准动作，核心思想是：网站永远不碰你的第三方密码。流程分四步：网站先把你带到微信、Apple、Google 的授权页（URL 里带着自家身份 client_id、跳回地址 redirect_uri 和随机数 state）；你在第三方页面点同意；第三方带着一次性授权码 code 跳回你的 redirect_uri；你的服务器拿着 code 再加上绝不能泄露的 client_secret，去第三方后台换 access_token，最后用 token 拉取你的头像昵称，完成登录。为什么绕这么大弯？因为 code 是走浏览器前台传递的，可能被看见，所以它只能用一次、几分钟就过期；真正的令牌交换发生在服务器之间，浏览器接触不到。state 参数则是防 CSRF 的：回跳时必须原样带回，服务器校验不一致就拒绝，防止攻击者劫持别人的登录态。</p>
+
+<h2>开发者：应该如何接入</h2><ul><li><b>微信开放平台（网站应用）</b>：国内最常用的第三方登录</li><li><b>Sign in with Apple / Google Identity</b>：国际通用，苹果要求上架 App 必须提供</li><li><b>Auth0 / Keycloak 自建</b>：统一对接多家，自己掌控用户体系</li></ul><ol><li>在第三方开放平台创建应用，拿到 client_id 和 client_secret，登记 redirect_uri</li><li>登录按钮拼授权 URL：带上 client_id、redirect_uri、scope、随机 state</li><li>用户同意后，第三方 302 带 code 跳回你的 redirect_uri</li><li>后端用 code 加 client_secret 调 token 接口换 access_token</li><li>用 access_token 拉取用户信息，建本地账号并种登录态</li></ol>
+<h2>延伸阅读</h2><ul><li><a href="https://www.cnblogs.com/Allen0910/p/8647935.html" rel="noopener">博客园：OAuth 2.0 授权码流程详解</a></li><li><a href="https://www.cnblogs.com/zuier/p/10794917.html" rel="noopener">博客园：OAuth 四种授权模式</a></li></ul>
+<h2>相关条目</h2><ul class="rel"><li><a href="https://www.aha.voyager06.tech/p/security-oauth-login.html">第三方 OAuth 登录</a> <span>“用微信登录”时，网站全程没碰过你的密码</span></li><li><a href="https://www.aha.voyager06.tech/p/nav-login-redirect.html">登录后回跳：回到你来的地方</a> <span>登录完，送你回你本来要去的地方</span></li><li><a href="https://www.aha.voyager06.tech/p/network-policy-groups.html">策略组：自动选最快节点</a> <span>手动挡、自动挡、四驱，任你挑选</span></li></ul>
+
+<a class="spa" href="https://www.aha.voyager06.tech/#/p/nav-oauth-callback">在站内打开本篇（完整交互版）→</a>
+<div class="pn"><a href="https://www.aha.voyager06.tech/p/nav-login-redirect.html">← 上一个：登录后回跳：回到你来的地方</a><a href="https://www.aha.voyager06.tech/p/nav-payment-return.html">下一个：支付成功回跳：回到商户页面 →</a></div>
+<footer>原来如此 · 把听说过的技术讲透 · 内容为科普解读，具体接入请以各服务官方文档为准</footer>
+</body>
+</html>

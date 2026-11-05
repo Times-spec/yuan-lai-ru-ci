@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tauri/Electron：用网页技术做桌面 App · 原来如此</title>
+<meta name="description" content="用网页技术，做桌面应用。Electron 是“自带整个 Chromium 浏览器”：体验一致但包大；Tauri 是“借用系统自带的浏览器内核”：包小但依赖系统环境。">
+<link rel="canonical" href="https://www.aha.voyager06.tech/p/eng-tauri-electron.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Tauri/Electron：用网页技术做桌面 App · 原来如此">
+<meta property="og:description" content="用网页技术，做桌面应用。Electron 是“自带整个 Chromium 浏览器”：体验一致但包大；Tauri 是“借用系统自带的浏览器内核”：包小但依赖系统环境。">
+<meta property="og:url" content="https://www.aha.voyager06.tech/p/eng-tauri-electron.html">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>">
+<style>
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;max-width:760px;margin:0 auto;padding:24px 20px 60px;color:#1c2b3a;line-height:1.8;background:#FDFCF9}
+a{color:#2563EB;text-decoration:none} a:hover{text-decoration:underline}
+.crumb{font-size:13px;color:#8A8A93;margin-bottom:18px}
+h1{font-size:30px;line-height:1.35;margin:6px 0 8px}
+.tagline{color:#5B6470;font-size:16px;margin-bottom:20px}
+.kick{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.1em;background:#EEF3F8;color:#31597F;border-radius:999px;padding:4px 12px}
+.scene{background:#FFF8EC;border:1px solid #F0E2C4;border-radius:12px;padding:16px 20px}
+.sum{background:#EEF4FF;border:1px solid #C9DBF5;border-radius:12px;padding:16px 20px;font-weight:600}
+h2{font-size:20px;margin:34px 0 12px}
+.steps li,.rel li{margin:6px 0}
+.cf{background:#F5F3FF;border:1px dashed #C4B5FD;border-radius:12px;padding:14px 20px;margin-top:22px}
+.mis{background:#FFF5F5;border:1px solid #F3C2C2;border-radius:12px;padding:14px 20px;margin-top:14px}
+.cf h3,.mis h3,.conf h3{margin:0 0 6px;font-size:16px}
+.cf p,.mis p{margin:0}
+.conf{border:1px solid #E3E0D8;border-radius:12px;padding:14px 20px;margin-top:22px}
+.conf p{margin:6px 0} .conf span,.rel span{color:#8A8A93;font-size:13.5px}
+.cap{color:#8A8A93;font-size:14px}
+.pn{display:flex;justify-content:space-between;gap:16px;margin-top:40px;border-top:1px solid #E3E0D8;padding-top:18px;font-size:14.5px}
+.spa{display:block;text-align:center;margin-top:28px;background:#1c2b3a;color:#fff;border-radius:12px;padding:12px}
+footer{margin-top:34px;color:#8A8A93;font-size:13px;text-align:center}
+</style>
+</head>
+<body>
+<div class="crumb"><a href="https://www.aha.voyager06.tech/">原来如此</a> / 工程与协作 / Tauri/Electron：用网页技术做桌面 App</div>
+<span class="kick">工程与协作</span>
+<h1>Tauri/Electron：用网页技术做桌面 App</h1>
+<div class="tagline">用网页技术，做桌面应用</div>
+<div class="scene"><b>👀 日常场景</b><p>VS Code 界面像网页，却能读写本地文件——它是 Web 技术做的桌面应用。而 1Password 安装包只有十几 MB。同样“网页做桌面”，一个走 Electron，一个走 Tauri，体积差出一个数量级。</p></div>
+
+<h2>原理：它是怎么运作的</h2>
+<div class="sum">💡 Electron 是“自带整个 Chromium 浏览器”：体验一致但包大；Tauri 是“借用系统自带的浏览器内核”：包小但依赖系统环境。</div>
+<h2>先看全过程</h2><ol class="steps"><li>想复用 Web 技术栈开发桌面应用</li><li>Electron：打包整个浏览器</li><li>前端跑在自带浏览器里，体验处处一致</li><li>代价：每个应用都背着上百 MB 的浏览器</li><li>Tauri：改用系统自带的 WebView 渲染</li><li>Rust 写后端，安装包只剩几 MB</li></ol>
+<p>Electron 的思路是“大力出奇迹”：把 Chromium（渲染网页）和 Node.js（读写文件、调系统 API）打包进每一个应用。前端开发者用熟悉的 HTML/CSS/JS 就能做出 VS Code、Slack、Discord 这样的桌面软件，且 Windows/macOS/Linux 渲染完全一致。但代价是每个应用都自带一个浏览器：安装包动辄上百 MB，内存占用也高。</p><p>Tauri 走了另一条路：不打包浏览器，直接调用操作系统自带的网页渲染内核（Windows 的 WebView2、macOS 的 WebKit），后端用 Rust 写（替代 Node.js 的角色，负责文件、系统调用）。1Password 8 就是这么做的，安装包只有十几 MB，内存占用也小一个量级。</p><p>Trade-off 很清晰：Electron 生态成熟、行为一致，适合复杂应用和快速交付；Tauri 轻量、安全模型更严格（默认能力受限），适合对体积敏感的新项目，代价是 Rust 学习成本，以及不同系统 WebView 版本差异可能带来的样式小坑。没有银弹，只有取舍。</p>
+
+<h2>开发者：应该如何接入</h2><ul><li><b>Electron</b>：打包 Chromium + Node，生态最成熟</li><li><b>Tauri 2.0</b>：系统 WebView + Rust 后端，轻量还支持移动端</li><li><b>PWA / Web 应用</b>：干脆不做桌面端，浏览器即应用</li></ul><ol><li>评估：需要文件系统/托盘/全局快捷键等系统能力吗</li><li>Electron：electron-forge 脚手架起项目，前端照常用</li><li>主进程（Node）负责系统调用，渲染进程负责界面</li><li>Tauri：npm create tauri-app 起项目，学基础 Rust</li><li>Rust 端用 #[tauri::command] 暴露能力给前端调用</li><li>打包：注意签名和自动更新通道（electron-updater / tauri updater）</li></ol>
+<h2>延伸阅读</h2><ul><li><a href="https://www.gethopp.app/blog/tauri-vs-electron?ref=hopp" rel="noopener">Tauri vs Electron 实测对比：体积、内存与取舍</a></li><li><a href="https://www.electronjs.org/docs" rel="noopener">Electron 官方文档</a></li><li><a href="https://tauri.app/start/" rel="noopener">Tauri 官方快速开始</a></li></ul>
+<h2>相关条目</h2><ul class="rel"><li><a href="https://www.aha.voyager06.tech/p/eng-adr.html">ADR：给技术选型留的字条</a> <span>给未来的自己留一张纸条</span></li><li><a href="https://www.aha.voyager06.tech/p/nav-universal-link.html">Universal Link：直达 App 内页</a> <span>用普通 https 链接，优雅地直达 App</span></li><li><a href="https://www.aha.voyager06.tech/p/nav-hsts.html">HSTS：强制全站 HTTPS</a> <span>告诉浏览器：以后只许走加密通道</span></li></ul>
+
+<a class="spa" href="https://www.aha.voyager06.tech/#/p/eng-tauri-electron">在站内打开本篇（完整交互版）→</a>
+<div class="pn"><a href="https://www.aha.voyager06.tech/p/eng-npm-nodejs.html">← 上一个：npm / Node.js</a><a href="https://www.aha.voyager06.tech/p/eng-github.html">下一个：GitHub：把开源项目玩明白 →</a></div>
+<footer>原来如此 · 把听说过的技术讲透 · 内容为科普解读，具体接入请以各服务官方文档为准</footer>
+</body>
+</html>

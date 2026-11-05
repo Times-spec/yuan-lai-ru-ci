@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>搜索自动补全 · 原来如此</title>
+<meta name="description" content="你每敲一个字，背后都在查一遍。把输入的前缀实时发给服务端，在海量词库里做前缀匹配加排序，返回候选列表即时展示。">
+<link rel="canonical" href="https://www.aha.voyager06.tech/p/feat-search-autocomplete.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="搜索自动补全 · 原来如此">
+<meta property="og:description" content="你每敲一个字，背后都在查一遍。把输入的前缀实时发给服务端，在海量词库里做前缀匹配加排序，返回候选列表即时展示。">
+<meta property="og:url" content="https://www.aha.voyager06.tech/p/feat-search-autocomplete.html">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>">
+<style>
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;max-width:760px;margin:0 auto;padding:24px 20px 60px;color:#1c2b3a;line-height:1.8;background:#FDFCF9}
+a{color:#2563EB;text-decoration:none} a:hover{text-decoration:underline}
+.crumb{font-size:13px;color:#8A8A93;margin-bottom:18px}
+h1{font-size:30px;line-height:1.35;margin:6px 0 8px}
+.tagline{color:#5B6470;font-size:16px;margin-bottom:20px}
+.kick{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.1em;background:#EEF3F8;color:#31597F;border-radius:999px;padding:4px 12px}
+.scene{background:#FFF8EC;border:1px solid #F0E2C4;border-radius:12px;padding:16px 20px}
+.sum{background:#EEF4FF;border:1px solid #C9DBF5;border-radius:12px;padding:16px 20px;font-weight:600}
+h2{font-size:20px;margin:34px 0 12px}
+.steps li,.rel li{margin:6px 0}
+.cf{background:#F5F3FF;border:1px dashed #C4B5FD;border-radius:12px;padding:14px 20px;margin-top:22px}
+.mis{background:#FFF5F5;border:1px solid #F3C2C2;border-radius:12px;padding:14px 20px;margin-top:14px}
+.cf h3,.mis h3,.conf h3{margin:0 0 6px;font-size:16px}
+.cf p,.mis p{margin:0}
+.conf{border:1px solid #E3E0D8;border-radius:12px;padding:14px 20px;margin-top:22px}
+.conf p{margin:6px 0} .conf span,.rel span{color:#8A8A93;font-size:13.5px}
+.cap{color:#8A8A93;font-size:14px}
+.pn{display:flex;justify-content:space-between;gap:16px;margin-top:40px;border-top:1px solid #E3E0D8;padding-top:18px;font-size:14.5px}
+.spa{display:block;text-align:center;margin-top:28px;background:#1c2b3a;color:#fff;border-radius:12px;padding:12px}
+footer{margin-top:34px;color:#8A8A93;font-size:13px;text-align:center}
+</style>
+</head>
+<body>
+<div class="crumb"><a href="https://www.aha.voyager06.tech/">原来如此</a> / 小功能大智慧 / 搜索自动补全</div>
+<span class="kick">小功能大智慧</span>
+<h1>搜索自动补全</h1>
+<div class="tagline">你每敲一个字，背后都在查一遍</div>
+<div class="scene"><b>👀 日常场景</b><p>在淘宝搜“连衣裙”、在B站搜视频标题，你才敲了两三个字，下拉框里就冒出一串完整的搜索词：“连衣裙夏新款”“连衣裙碎花长裙”。点一下就能直达结果，连剩下的字都不用敲。你有没有想过，这些词到底从哪儿冒出来，又为什么总能猜中你想搜什么？</p></div>
+
+<h2>原理：它是怎么运作的</h2>
+<div class="sum">💡 把输入的前缀实时发给服务端，在海量词库里做前缀匹配加排序，返回候选列表即时展示。</div>
+<h2>先看全过程</h2><ol class="steps"><li>用户输入字符触发输入事件</li><li>前端防抖等待输入停顿</li><li>取消上一次未返回的请求</li><li>请求接口发送当前关键词</li><li>服务端前缀匹配候选词</li><li>按热度与相关性排序返回</li></ol>
+<p>这件事是浏览器和服务器分工完成的。浏览器端监听输入框的 input 事件，但不会每敲一个字就发请求——而是做“防抖”（debounce，一种“等用户停手再执行”的技巧）：等你停顿约200～300毫秒才发一次，避免请求风暴；同时取消上一次还没返回的请求，防止慢请求的结果覆盖掉新输入。请求打到服务端的建议接口（比如 /api/suggest?q=连衣），服务端在词库里做前缀匹配。词库通常用前缀树（Trie，一种按字首组织词的树形结构）或 Elasticsearch 的 suggest 功能实现，毫秒级就能从上百万词里捞出候选。排序是关键：按搜索热度、你的历史偏好、地理位置加权，热词排前面。为什么这样设计？核心权衡是“快”和“准”：防抖省带宽、取消旧请求保正确、热度排序让你大概率在前三个候选中找到目标，少敲字就是省时间。注意，浏览器自带的表单自动填充（autocomplete 属性）和这是两回事：那只是记住你以前填过的内容，而搜索补全背后是一套实时查询服务。</p>
+
+<h2>网站是怎么做到的</h2><ul><li><b>防抖：等你停手再发请求</b>：你每敲一个字并不直接发请求，浏览器会等你停顿约250ms，确认你“说完了”才发一次——把一串击键合并成一次请求。</li><li><b>作废旧请求：慢的别捣乱</b>：每次发新请求前，先把上一发还没返回的请求取消掉。否则网速一抖，慢请求迟到了，反而把你新输入的正确结果覆盖掉。</li><li><b>前缀树 Trie：百万词库毫秒级捞词</b>：词库按字首组织成树形结构，输入“连衣”就顺着“连→衣”这条枝往下找，所有后缀一次捞出，根本不用全表扫描。</li><li><b>排序才是灵魂：热度加权</b>：捞出一堆候选后，按搜索热度、你的历史偏好、地理位置加权排序。猜中的秘诀不在“找到”，而在“把最可能的前三个放你眼前”。</li></ul><ol><li>你敲下字符，浏览器监听到输入框的 input 事件</li><li>但它不急着发请求——先等你停顿约250ms（防抖），确认你这一串字敲完了</li><li>同时把上一发还没返回的请求直接作废，防止慢结果覆盖新输入</li><li>请求打到服务端的 /suggest 接口，带上你输入的前缀</li><li>服务端在前缀树里顺着字首往下捞，一次捞出所有候选词</li><li>候选按热度、你的偏好、地域加权排序，前三个大概率命中，点一下直达</li></ol>
+<h2>延伸阅读</h2><ul><li><a href="https://blog.csdn.net/qq_53816329/article/details/154738867" rel="noopener">CSDN：带防抖的搜索输入框实现（自动补全核心思路）</a></li></ul>
+<h2>相关条目</h2><ul class="rel"><li><a href="https://www.aha.voyager06.tech/p/ai-font-glyph-yu.html">同一个“与”字，为什么换个字体底横就出头了</a> <span>不是错字，是宋体传下来的老写法</span></li><li><a href="https://www.aha.voyager06.tech/p/network-policy-groups.html">策略组：自动选最快节点</a> <span>手动挡、自动挡、四驱，任你挑选</span></li><li><a href="https://www.aha.voyager06.tech/p/feat-form-draft-autosave.html">表单草稿自动保存</a> <span>写到一半关掉，回来还在</span></li></ul>
+
+<a class="spa" href="https://www.aha.voyager06.tech/#/p/feat-search-autocomplete">在站内打开本篇（完整交互版）→</a>
+<div class="pn"><a href="https://www.aha.voyager06.tech/p/ai-font-glyph-yu.html">← 上一个：同一个“与”字，为什么换个字体底横就出头了</a><a href="https://www.aha.voyager06.tech/p/feat-image-lazy-load.html">下一个：图片懒加载 →</a></div>
+<footer>原来如此 · 把听说过的技术讲透 · 内容为科普解读，具体接入请以各服务官方文档为准</footer>
+</body>
+</html>

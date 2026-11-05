@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SSH：安全连上远程服务器 · 原来如此</title>
+<meta name="description" content="私钥从不出门，也能证明你就是你。非对称加密的挑战应答：服务端用你的公钥加密一个随机数，只有持有私钥的你能解开，从而证明身份——私钥从不传输。">
+<link rel="canonical" href="https://www.aha.voyager06.tech/p/network-ssh.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="SSH：安全连上远程服务器 · 原来如此">
+<meta property="og:description" content="私钥从不出门，也能证明你就是你。非对称加密的挑战应答：服务端用你的公钥加密一个随机数，只有持有私钥的你能解开，从而证明身份——私钥从不传输。">
+<meta property="og:url" content="https://www.aha.voyager06.tech/p/network-ssh.html">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>">
+<style>
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;max-width:760px;margin:0 auto;padding:24px 20px 60px;color:#1c2b3a;line-height:1.8;background:#FDFCF9}
+a{color:#2563EB;text-decoration:none} a:hover{text-decoration:underline}
+.crumb{font-size:13px;color:#8A8A93;margin-bottom:18px}
+h1{font-size:30px;line-height:1.35;margin:6px 0 8px}
+.tagline{color:#5B6470;font-size:16px;margin-bottom:20px}
+.kick{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.1em;background:#EEF3F8;color:#31597F;border-radius:999px;padding:4px 12px}
+.scene{background:#FFF8EC;border:1px solid #F0E2C4;border-radius:12px;padding:16px 20px}
+.sum{background:#EEF4FF;border:1px solid #C9DBF5;border-radius:12px;padding:16px 20px;font-weight:600}
+h2{font-size:20px;margin:34px 0 12px}
+.steps li,.rel li{margin:6px 0}
+.cf{background:#F5F3FF;border:1px dashed #C4B5FD;border-radius:12px;padding:14px 20px;margin-top:22px}
+.mis{background:#FFF5F5;border:1px solid #F3C2C2;border-radius:12px;padding:14px 20px;margin-top:14px}
+.cf h3,.mis h3,.conf h3{margin:0 0 6px;font-size:16px}
+.cf p,.mis p{margin:0}
+.conf{border:1px solid #E3E0D8;border-radius:12px;padding:14px 20px;margin-top:22px}
+.conf p{margin:6px 0} .conf span,.rel span{color:#8A8A93;font-size:13.5px}
+.cap{color:#8A8A93;font-size:14px}
+.pn{display:flex;justify-content:space-between;gap:16px;margin-top:40px;border-top:1px solid #E3E0D8;padding-top:18px;font-size:14.5px}
+.spa{display:block;text-align:center;margin-top:28px;background:#1c2b3a;color:#fff;border-radius:12px;padding:12px}
+footer{margin-top:34px;color:#8A8A93;font-size:13px;text-align:center}
+</style>
+</head>
+<body>
+<div class="crumb"><a href="https://www.aha.voyager06.tech/">原来如此</a> / 网络与协议 / SSH：安全连上远程服务器</div>
+<span class="kick">网络与协议</span>
+<h1>SSH：安全连上远程服务器</h1>
+<div class="tagline">私钥从不出门，也能证明你就是你</div>
+<div class="scene"><b>👀 日常场景</b><p>程序员打开终端，敲下 ssh root@云服务器IP，输一次密钥口令就进去了；Git push 走的也是 SSH，不用每次输密码。第一次连接时，终端还会较真地问：服务器指纹对吗？这套流程是互联网上最常用的远程管理方式。</p></div>
+
+<h2>原理：它是怎么运作的</h2>
+<div class="sum">💡 非对称加密的挑战应答：服务端用你的公钥加密一个随机数，只有持有私钥的你能解开，从而证明身份——私钥从不传输。</div>
+<h2>先看全过程</h2><ol class="steps"><li>本地生成密钥对（公钥+私钥）</li><li>公钥写入服务器 authorized_keys</li><li>发起连接，先协商会话加密</li><li>服务端发来随机数挑战</li><li>本地用私钥签名后发回</li><li>服务端验签通过，登录成功</li></ol>
+<p>SSH 要解决的问题很原始：怎么通过不安全的网络，安全地操作另一台机器。早年用 Telnet，账号密码明文传输，中间抓个包就全看见了。SSH 先加密再说话：协商出只有双方知道的会话密钥，之后传输全加密。</p><p>登录用的是非对称加密的“挑战应答”：公钥（锁）放在服务器的 ~/.ssh/authorized_keys 里，私钥（钥匙）只存在你自己电脑上，绝不传输。登录时服务端生成随机数，用你的公钥加密发给你；只有你的私钥能解开，你签名发回，服务端验签通过，就知道“对面确实是私钥持有者”。</p><p>为什么比密码安全？密码注定熵低：会被撞库、钓鱼、键盘记录，还可能多站复用。一把 ed25519 密钥暴力破解在物理上不可行，私钥文件还能再加一层口令加密。</p><p>第一次连接的指纹确认防的是中间人攻击：SSH 用 TOFU 模型，第一次把服务器公钥指纹记进 ~/.ssh/known_hosts，以后每次比对——指纹变了就直接拒绝并警告。随手敲 yes 等于白做；正确做法是去云厂商控制台核对。</p><p>它同时是 Git over SSH、Ansible、VS Code Remote 的底层通道。</p>
+
+<h2>第一次用 SSH</h2><ul><li><b>macOS / Linux 自带终端</b>：开箱就有 ssh 命令，不用装任何东西</li><li><b>Windows Terminal</b>：Win10/11 自带 OpenSSH，终端里直接敲 ssh</li><li><b>手机端：Termius</b>：手机上也能连服务器，应急排障</li></ul><ol><li>打开终端，敲 `ssh 用户名@服务器IP`（云厂商给的，如 `ssh root@1.2.3.4`）</li><li>第一次会问“指纹对吗”：先去云厂商控制台核对指纹，确认无误再敲 yes</li><li>输入密码（输入时屏幕没反应是正常的，输完回车）</li><li>进去后先生成密钥：`ssh-keygen -t ed25519`，一路回车</li><li>`ssh-copy-id -i ~/.ssh/id_ed25519.pub 用户名@服务器IP`，把公钥送上去</li><li>以后再连就不用输密码了（如果设了密钥口令，只输那一次）</li></ol>
+
+<h2>相关条目</h2><ul class="rel"><li><a href="https://www.aha.voyager06.tech/p/ai-rsi.html">RSI：当 AI 开始改进 AI 自己</a> <span>当 AI 开始改进 AI 自己</span></li><li><a href="https://www.aha.voyager06.tech/p/nav-hsts.html">HSTS：强制全站 HTTPS</a> <span>告诉浏览器：以后只许走加密通道</span></li><li><a href="https://www.aha.voyager06.tech/p/backend-trellis.html">Trellis：一键配出生产服务器</a> <span>一条命令，WordPress 服务器全自动上线</span></li></ul>
+
+<a class="spa" href="https://www.aha.voyager06.tech/#/p/network-ssh">在站内打开本篇（完整交互版）→</a>
+<div class="pn"><a href="https://www.aha.voyager06.tech/p/network-domain-money.html">← 上一个：域名：你买的不是域名，是租约</a><a href="https://www.aha.voyager06.tech/p/network-clash-what.html">下一个：Clash 是什么 →</a></div>
+<footer>原来如此 · 把听说过的技术讲透 · 内容为科普解读，具体接入请以各服务官方文档为准</footer>
+</body>
+</html>

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Web 推送通知 · 原来如此</title>
+<meta name="description" content="关掉网页，消息还能弹出来。网站向浏览器推送服务订阅，拿到订阅地址后，服务端随时经推送服务把消息推到设备，由 Service Worker 弹出通知。">
+<link rel="canonical" href="https://www.aha.voyager06.tech/p/feat-web-push.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Web 推送通知 · 原来如此">
+<meta property="og:description" content="关掉网页，消息还能弹出来。网站向浏览器推送服务订阅，拿到订阅地址后，服务端随时经推送服务把消息推到设备，由 Service Worker 弹出通知。">
+<meta property="og:url" content="https://www.aha.voyager06.tech/p/feat-web-push.html">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>">
+<style>
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;max-width:760px;margin:0 auto;padding:24px 20px 60px;color:#1c2b3a;line-height:1.8;background:#FDFCF9}
+a{color:#2563EB;text-decoration:none} a:hover{text-decoration:underline}
+.crumb{font-size:13px;color:#8A8A93;margin-bottom:18px}
+h1{font-size:30px;line-height:1.35;margin:6px 0 8px}
+.tagline{color:#5B6470;font-size:16px;margin-bottom:20px}
+.kick{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.1em;background:#EEF3F8;color:#31597F;border-radius:999px;padding:4px 12px}
+.scene{background:#FFF8EC;border:1px solid #F0E2C4;border-radius:12px;padding:16px 20px}
+.sum{background:#EEF4FF;border:1px solid #C9DBF5;border-radius:12px;padding:16px 20px;font-weight:600}
+h2{font-size:20px;margin:34px 0 12px}
+.steps li,.rel li{margin:6px 0}
+.cf{background:#F5F3FF;border:1px dashed #C4B5FD;border-radius:12px;padding:14px 20px;margin-top:22px}
+.mis{background:#FFF5F5;border:1px solid #F3C2C2;border-radius:12px;padding:14px 20px;margin-top:14px}
+.cf h3,.mis h3,.conf h3{margin:0 0 6px;font-size:16px}
+.cf p,.mis p{margin:0}
+.conf{border:1px solid #E3E0D8;border-radius:12px;padding:14px 20px;margin-top:22px}
+.conf p{margin:6px 0} .conf span,.rel span{color:#8A8A93;font-size:13.5px}
+.cap{color:#8A8A93;font-size:14px}
+.pn{display:flex;justify-content:space-between;gap:16px;margin-top:40px;border-top:1px solid #E3E0D8;padding-top:18px;font-size:14.5px}
+.spa{display:block;text-align:center;margin-top:28px;background:#1c2b3a;color:#fff;border-radius:12px;padding:12px}
+footer{margin-top:34px;color:#8A8A93;font-size:13px;text-align:center}
+</style>
+</head>
+<body>
+<div class="crumb"><a href="https://www.aha.voyager06.tech/">原来如此</a> / 小功能大智慧 / Web 推送通知</div>
+<span class="kick">小功能大智慧</span>
+<h1>Web 推送通知</h1>
+<div class="tagline">关掉网页，消息还能弹出来</div>
+<div class="scene"><b>👀 日常场景</b><p>关掉购物网站去干别的事，手机突然弹出一条通知：“您收藏的商品降价了！”网页明明关了，消息却还能找到你——这不是 App 的专利，浏览器网页也能做到，靠的就是 Web 推送。</p></div>
+
+<h2>原理：它是怎么运作的</h2>
+<div class="sum">💡 网站向浏览器推送服务订阅，拿到订阅地址后，服务端随时经推送服务把消息推到设备，由 Service Worker 弹出通知。</div>
+<h2>先看全过程</h2><ol class="steps"><li>请求用户授权通知权限</li><li>Service Worker 注册并订阅</li><li>生成 VAPID 密钥标识身份</li><li>订阅信息发给服务端保存</li><li>服务端经推送服务发消息</li><li>SW 收到后弹出系统通知</li></ol>
+<p>它和“实时推送”名字像，但完全是两回事：实时推送要求网页开着，Web 推送网页关了也能收到。魔法在 Service Worker（SW，浏览器在后台跑的独立脚本，页面关了它还在）身上。首先网站向用户申请通知权限（Notification.requestPermission），用户点了“允许”；然后 SW 用 PushManager 生成一个订阅（subscription），包含推送服务的 endpoint 地址和加密密钥，发给自家服务器存好；之后服务器想推消息时，把内容加密发到 endpoint（Chrome 走的是 Google 的 FCM 推送服务），推送服务再下发到设备，SW 被唤醒，调 registration.showNotification 弹出通知。为什么需要 VAPID 密钥？它是网站的“身份证”（自愿应用服务器标识），防止别人冒充你的网站给用户推消息。点击通知一般要跳到对应页面，靠监听 SW 里的 notificationclick 事件。限制也有：iOS 直到近年才跟进支持且限制较多；用户一旦在浏览器设置里关了通知权限，网站无法再次弹窗，只能引导用户手动去开。</p>
+
+<h2>该允许网站发通知吗</h2><ul><li><b>允许：适合“等不起”的消息</b>：降价提醒、物流动态、抢票结果——这类“错过就亏”的消息，允许推送很值。</li><li><b>拒绝：营销号一律拒绝</b>：“点我领券”“限时秒杀”这种，允许一次就会被轰炸。第一次弹窗直接点“拒绝”。</li><li><b>随时可反悔</b>：允许了也能关：浏览器设置 → 隐私和安全 → 网站设置 → 通知，找到它关掉就行。</li></ul><ol><li>网站第一次弹窗问你要通知权限</li><li>想清楚：是“等不起”的消息就允许，是营销就拒绝</li><li>点了允许：关掉网页，降价消息还能推到你手机上</li><li>被轰炸了：去浏览器设置 → 网站权限 → 通知里关掉它</li></ol>
+<h2>延伸阅读</h2><ul><li><a href="https://codelabs.developers.google.com/codelabs/push-notifications?hl=zh-tw" rel="noopener">Google Codelabs：在网页应用中加入推送通知</a></li><li><a href="https://blog.csdn.net/JakeMa1024/article/details/154830018" rel="noopener">CSDN：Push API 实现原理（Service Worker + Notification）</a></li></ul>
+<h2>相关条目</h2><ul class="rel"><li><a href="https://www.aha.voyager06.tech/p/feat-realtime-push.html">实时推送</a> <span>不用刷新，消息自己“流”进来</span></li><li><a href="https://www.aha.voyager06.tech/p/network-webrtc-leak.html">WebRTC 泄露：代理开着，真 IP 却在裸奔</a> <span>代理管得住网页，管不住浏览器的“悄悄话”</span></li><li><a href="https://www.aha.voyager06.tech/p/nav-client-redirect.html">页面自动跳转：meta 与 JS</a> <span>服务器不说话，浏览器自己数完秒就走</span></li></ul>
+
+<a class="spa" href="https://www.aha.voyager06.tech/#/p/feat-web-push">在站内打开本篇（完整交互版）→</a>
+<div class="pn"><a href="https://www.aha.voyager06.tech/p/feat-image-compress-upload.html">← 上一个：图片压缩上传</a><a href="https://www.aha.voyager06.tech/p/feat-otp-countdown.html">下一个：验证码倒计时 →</a></div>
+<footer>原来如此 · 把听说过的技术讲透 · 内容为科普解读，具体接入请以各服务官方文档为准</footer>
+</body>
+</html>

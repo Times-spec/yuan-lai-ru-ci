@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SVG 矢量图 · 原来如此</title>
+<meta name="description" content="放大一百倍，依然清晰锐利。PNG/JPG 是像素点阵（位图），放大只能拉伸像素；SVG 是用数学公式描述图形（矢量），渲染时实时计算，任意缩放都不失真。">
+<link rel="canonical" href="https://www.aha.voyager06.tech/p/network-svg.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="SVG 矢量图 · 原来如此">
+<meta property="og:description" content="放大一百倍，依然清晰锐利。PNG/JPG 是像素点阵（位图），放大只能拉伸像素；SVG 是用数学公式描述图形（矢量），渲染时实时计算，任意缩放都不失真。">
+<meta property="og:url" content="https://www.aha.voyager06.tech/p/network-svg.html">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>">
+<style>
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;max-width:760px;margin:0 auto;padding:24px 20px 60px;color:#1c2b3a;line-height:1.8;background:#FDFCF9}
+a{color:#2563EB;text-decoration:none} a:hover{text-decoration:underline}
+.crumb{font-size:13px;color:#8A8A93;margin-bottom:18px}
+h1{font-size:30px;line-height:1.35;margin:6px 0 8px}
+.tagline{color:#5B6470;font-size:16px;margin-bottom:20px}
+.kick{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.1em;background:#EEF3F8;color:#31597F;border-radius:999px;padding:4px 12px}
+.scene{background:#FFF8EC;border:1px solid #F0E2C4;border-radius:12px;padding:16px 20px}
+.sum{background:#EEF4FF;border:1px solid #C9DBF5;border-radius:12px;padding:16px 20px;font-weight:600}
+h2{font-size:20px;margin:34px 0 12px}
+.steps li,.rel li{margin:6px 0}
+.cf{background:#F5F3FF;border:1px dashed #C4B5FD;border-radius:12px;padding:14px 20px;margin-top:22px}
+.mis{background:#FFF5F5;border:1px solid #F3C2C2;border-radius:12px;padding:14px 20px;margin-top:14px}
+.cf h3,.mis h3,.conf h3{margin:0 0 6px;font-size:16px}
+.cf p,.mis p{margin:0}
+.conf{border:1px solid #E3E0D8;border-radius:12px;padding:14px 20px;margin-top:22px}
+.conf p{margin:6px 0} .conf span,.rel span{color:#8A8A93;font-size:13.5px}
+.cap{color:#8A8A93;font-size:14px}
+.pn{display:flex;justify-content:space-between;gap:16px;margin-top:40px;border-top:1px solid #E3E0D8;padding-top:18px;font-size:14.5px}
+.spa{display:block;text-align:center;margin-top:28px;background:#1c2b3a;color:#fff;border-radius:12px;padding:12px}
+footer{margin-top:34px;color:#8A8A93;font-size:13px;text-align:center}
+</style>
+</head>
+<body>
+<div class="crumb"><a href="https://www.aha.voyager06.tech/">原来如此</a> / 小功能大智慧 / SVG 矢量图</div>
+<span class="kick">小功能大智慧</span>
+<h1>SVG 矢量图</h1>
+<div class="tagline">放大一百倍，依然清晰锐利</div>
+<div class="scene"><b>👀 日常场景</b><p>手机 App 的图标在高清屏上依然锐利，网站 logo 从 16px 的小图标放到首页大横幅都不模糊——它们大多是 SVG。而你拍的照片放大就全是马赛克。同是图片，“放大不糊”和“放大成马赛克”的分界线，就在“矢量”和“位图”之间。</p></div>
+
+<h2>原理：它是怎么运作的</h2>
+<div class="sum">💡 PNG/JPG 是像素点阵（位图），放大只能拉伸像素；SVG 是用数学公式描述图形（矢量），渲染时实时计算，任意缩放都不失真。</div>
+<h2>先看全过程</h2><ol class="steps"><li>位图：把画面切成几百万个小格子存颜色</li><li>放大位图：格子被拉大，边缘出现马赛克</li><li>矢量：只记录“画圆心在哪半径多少的圆”</li><li>渲染时按当前尺寸实时计算每个像素</li><li>尺寸翻 100 倍：公式不变，重算一遍即可</li><li>结果：任意缩放，边缘永远锐利</li></ol>
+<p>位图（PNG/JPG/WebP）是“数像素”的：1000×1000 的图就是 100 万个颜色点。放大时信息量不会增加，只能把已有的像素拉大，所以糊成马赛克。JPG 还为了体积对颜色做有损压缩，文字边缘容易出现“毛边”。</p><p>SVG（Scalable Vector Graphics）反其道而行：它根本不存像素，存的是“画图指令”——一个圆就是一段带圆心半径的标签，一条曲线就是一段贝塞尔路径。浏览器渲染时按当前显示尺寸实时计算，所以 16px 和 1600px 用的是同一份文件，边缘永远锐利。而且 SVG 本质是 XML 文本：体积小、可直接内联进 HTML、能用 CSS 改颜色、能用 JS 做动画（图标 hover 变色、数据可视化、加载动画全是这个路数）。</p><p>边界也很清楚：照片这种色彩连续、细节随机的内容，用数学公式描述反而比存像素更占地方——所以照片永远是 JPG/WebP 的地盘。记住：几何形状、图标、logo、图表用 SVG；照片、复杂渐变用位图。</p>
+
+<h2>开发者：应该如何接入</h2><ul><li><b>内联 SVG</b>：把 SVG 代码直接写进 HTML，CSS/JS 可随意控制</li><li><b>SVG Sprites</b>：多个图标合并成一个文件，用 use 标签按需引用</li><li><b>D3.js / ECharts</b>：数据可视化库用 SVG 画图表</li></ul><ol><li>判断素材类型：图标/logo/简单插画才适合转 SVG</li><li>用 Figma/Illustrator 导出 SVG，或找设计师要矢量源文件</li><li>用 SVGO 等工具压缩，删掉编辑器塞的冗余信息</li><li>图标场景：内联或做成 sprite，保证可跟随文字换色</li><li>上线前检查：在普通屏和高清屏、浅色深色模式下各看一眼</li></ol>
+
+
+
+<a class="spa" href="https://www.aha.voyager06.tech/#/p/network-svg">在站内打开本篇（完整交互版）→</a>
+<div class="pn"><a href="https://www.aha.voyager06.tech/p/network-json-yaml.html">← 上一个：JSON / YAML</a><a href="https://www.aha.voyager06.tech/p/features-open-with-apps.html">下一个：「用其他应用打开」：推荐名单是怎么算出来的 →</a></div>
+<footer>原来如此 · 把听说过的技术讲透 · 内容为科普解读，具体接入请以各服务官方文档为准</footer>
+</body>
+</html>

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>点选/九宫格图像验证 · 原来如此</title>
+<meta name="description" content="“请点选所有红绿灯”，考的是语义理解。用人类擅长、机器曾不擅长的图像语义理解做门槛，叠加点选行为分析。">
+<link rel="canonical" href="https://www.aha.voyager06.tech/p/security-image-select-captcha.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="点选/九宫格图像验证 · 原来如此">
+<meta property="og:description" content="“请点选所有红绿灯”，考的是语义理解。用人类擅长、机器曾不擅长的图像语义理解做门槛，叠加点选行为分析。">
+<meta property="og:url" content="https://www.aha.voyager06.tech/p/security-image-select-captcha.html">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>">
+<style>
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;max-width:760px;margin:0 auto;padding:24px 20px 60px;color:#1c2b3a;line-height:1.8;background:#FDFCF9}
+a{color:#2563EB;text-decoration:none} a:hover{text-decoration:underline}
+.crumb{font-size:13px;color:#8A8A93;margin-bottom:18px}
+h1{font-size:30px;line-height:1.35;margin:6px 0 8px}
+.tagline{color:#5B6470;font-size:16px;margin-bottom:20px}
+.kick{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.1em;background:#EEF3F8;color:#31597F;border-radius:999px;padding:4px 12px}
+.scene{background:#FFF8EC;border:1px solid #F0E2C4;border-radius:12px;padding:16px 20px}
+.sum{background:#EEF4FF;border:1px solid #C9DBF5;border-radius:12px;padding:16px 20px;font-weight:600}
+h2{font-size:20px;margin:34px 0 12px}
+.steps li,.rel li{margin:6px 0}
+.cf{background:#F5F3FF;border:1px dashed #C4B5FD;border-radius:12px;padding:14px 20px;margin-top:22px}
+.mis{background:#FFF5F5;border:1px solid #F3C2C2;border-radius:12px;padding:14px 20px;margin-top:14px}
+.cf h3,.mis h3,.conf h3{margin:0 0 6px;font-size:16px}
+.cf p,.mis p{margin:0}
+.conf{border:1px solid #E3E0D8;border-radius:12px;padding:14px 20px;margin-top:22px}
+.conf p{margin:6px 0} .conf span,.rel span{color:#8A8A93;font-size:13.5px}
+.cap{color:#8A8A93;font-size:14px}
+.pn{display:flex;justify-content:space-between;gap:16px;margin-top:40px;border-top:1px solid #E3E0D8;padding-top:18px;font-size:14.5px}
+.spa{display:block;text-align:center;margin-top:28px;background:#1c2b3a;color:#fff;border-radius:12px;padding:12px}
+footer{margin-top:34px;color:#8A8A93;font-size:13px;text-align:center}
+</style>
+</head>
+<body>
+<div class="crumb"><a href="https://www.aha.voyager06.tech/">原来如此</a> / 验证与安全 / 点选/九宫格图像验证</div>
+<span class="kick">验证与安全</span>
+<h1>点选/九宫格图像验证</h1>
+<div class="tagline">“请点选所有红绿灯”，考的是语义理解</div>
+<div class="scene"><b>👀 日常场景</b><p>勾选“我不是机器人”之后，弹出一组九宫格图片：“请点击所有包含红绿灯的图片”。你一张张点过去，点完它又换一批：“再选出所有斑马线”。三轮下来你开始怀疑人生——这到底在验证谁？</p></div>
+
+<h2>原理：它是怎么运作的</h2>
+<div class="sum">💡 用人类擅长、机器曾不擅长的图像语义理解做门槛，叠加点选行为分析。</div>
+<h2>先看全过程</h2><ol class="steps"><li>服务端下发一组待识别图片</li><li>用户按语义要求点选目标图片</li><li>记录点选顺序、坐标和耗时</li><li>服务端比对答案并分析行为</li><li>答错或行为异常就换题重来</li><li>多次失败升级为更难的挑战</li></ol>
+<p>九宫格验证的逻辑是：识别“这张图里有没有红绿灯”对人类是本能，对早期的机器却是难题——它需要语义理解，而不只是像素匹配。每道题的答案由服务端预先标注或众包（有意思的是，你答的题本身也在帮服务商标注训练数据，这就是 reCAPTCHA 当年顺带数字化书籍的思路）。除了答对，系统还会记录你的点选行为：点的顺序、每次点击的坐标落点、两题之间的间隔。真人点选会有犹豫和修正，脚本则往往是瞬间按固定坐标连点。现在图像识别 AI 进步很快，纯语义题的门槛在降低，所以这类验证越来越依赖“行为+语义”的组合拳：题目本身拦住简单脚本，行为分析拦住高级脚本，而持续换题、动态难度则让打码平台（雇真人代答的黑产）的成本居高不下。攻防的天平还在倾斜：随着多模态大模型普及，纯图片语义题的寿命越来越短，行业共识是把它退化为“二级挑战”，一线防御交给无感的行为评分。</p>
+
+<h2>网站该如何接入</h2><ul><li><b>Google reCAPTCHA v2 图片挑战</b>：v2 高风险时自动弹出的图片挑战，生态最成熟。</li><li><b>hCaptcha</b>：隐私友好的 reCAPTCHA 替代品，同样有点选挑战。</li><li><b>极验点选验证</b>：国内方案，中文语义题库更贴合国内用户。</li></ul><ol><li>选择服务商并在后台创建站点，获取 site key（前端用）和 secret key（后端用）。</li><li>前端加载服务商 SDK 并渲染验证组件，用户完成点选后拿到 token。</li><li>前端把 token 随表单提交到后端。</li><li>后端调用服务商的 siteverify 类接口，用 secret key 校验 token 真伪和时效。</li><li>校验通过后再放行登录/注册等业务动作。</li><li>记录验证失败率，异常升高时排查是否被针对性攻击。</li></ol>
+<h2>延伸阅读</h2><ul><li><a href="https://blog.csdn.net/EzCaptchaTeam/article/details/152080492" rel="noopener">reCAPTCHA v2 图像/音频挑战机制介绍</a></li></ul>
+<h2>相关条目</h2><ul class="rel"><li><a href="https://www.aha.voyager06.tech/p/security-slider-captcha.html">滑块拼图验证</a> <span>拖一下滑块，它看的其实是你的手</span></li><li><a href="https://www.aha.voyager06.tech/p/security-behavior-captcha.html">行为验证码/无感验证</a> <span>什么都不用点，“验证通过”一闪而过</span></li><li><a href="https://www.aha.voyager06.tech/p/security-2fa.html">双因素认证 2FA</a> <span>密码泄露了，攻击者还是进不来</span></li></ul>
+
+<a class="spa" href="https://www.aha.voyager06.tech/#/p/security-image-select-captcha">在站内打开本篇（完整交互版）→</a>
+<div class="pn"><a href="https://www.aha.voyager06.tech/p/security-slider-captcha.html">← 上一个：滑块拼图验证</a><a href="https://www.aha.voyager06.tech/p/security-recaptcha-v2.html">下一个：reCAPTCHA v2「我不是机器人」 →</a></div>
+<footer>原来如此 · 把听说过的技术讲透 · 内容为科普解读，具体接入请以各服务官方文档为准</footer>
+</body>
+</html>
